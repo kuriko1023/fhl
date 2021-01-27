@@ -1,0 +1,12 @@
+*.swp
+
+all.txt
+err.txt
+
+dedup/target/
+
+poetry/
+poems-db/
+poetry-source/
+
+backups/
