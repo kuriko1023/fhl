@@ -1,4 +1,4 @@
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write, BufWriter};
 
 type UniResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -14,13 +14,11 @@ impl PartialEq for Article {
   fn eq(&self, other: &Self) -> bool { self.id == other.id }
 }
 impl Eq for Article { }
-impl PartialOrd for Article {
-  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    self.id.partial_cmp(&other.id)
+impl std::fmt::Display for Article {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}\t{}\t{}\t{}",
+      self.dynasty, self.author, self.title, self.content)
   }
-}
-impl Ord for Article {
-  fn cmp(&self, other: &Self) -> std::cmp::Ordering { self.id.cmp(&other.id) }
 }
 
 fn read_dataset(path: &str) -> UniResult<Vec<Article>> {
@@ -57,24 +55,6 @@ fn sliding_hashes(s: &str) -> Vec<u32> {
     .map(|s| s.chars().map(|c| c as u32).fold(0, |x, y| x * 997 + y))
     .collect()
 }
-
-/*
-const HASH_WIN: usize = 5;
-const HASH_BASE: u32 = 997;
-fn sliding_hashes(s: &str) -> Vec<u32> {
-  let mut window = [0u32; HASH_WIN];
-  let mut hash = 0;
-  let mut hashes = vec![];
-  for (i, ch) in s.chars().enumerate() {
-    hash -= window[0] * HASH_BASE.pow(HASH_WIN as u32);
-    window.rotate_left(1);
-    window[HASH_WIN - 1] = ch as u32;
-    hash = hash * HASH_BASE + ch as u32;
-    if i >= HASH_WIN - 1 { hashes.push(hash); }
-  }
-  hashes
-}
-*/
 
 const HASH_N_DIMS: usize = 256;
 fn charcode_hash(s: &str) -> [u16; HASH_N_DIMS] {
@@ -119,10 +99,14 @@ impl DSU {
 }
 
 fn main() {
-  // let dataset = read_dataset("../../all.txt").unwrap();
-  // let dataset = dataset[..10].to_vec();
-  // println!("{:?}", dataset);
-  let dataset = read_dataset("test.txt").unwrap();
+  const DATASET_PATH: &str = "test.txt";
+  const ACCEPT_PATH: &str = "test_accept.txt";
+  // const DATASET_PATH: &str = "../../all.txt";
+  // const ACCEPT_PATH: &str = "all_accept.txt";
+  const OUT_DUPS_PATH: &str = "dups.txt";
+  const OUT_DATA_PATH: &str = "dedup.txt";
+
+  let dataset = read_dataset(DATASET_PATH).unwrap();
 
   eprintln!("building hashes");
   let mut hashset = vec![];
@@ -141,7 +125,7 @@ fn main() {
   for (art, hashes) in dataset.as_slice().iter().zip(hashset.iter()) {
     let mut all: Vec<&Article> = vec![];
     hashes.iter().for_each(|h| all.extend(map.get(&h).unwrap()));
-    all.sort();
+    all.sort_by_key(|art| art.id);
     all.dedup();
     // println!("{:?}", all.iter().map(|art| art.id).collect::<Vec<_>>());
     for other_art in all {
@@ -158,18 +142,33 @@ fn main() {
     if art.id % 10000 == 0 { eprintln!("{}/{}", art.id, dataset.len()); }
   }
 
-  eprintln!("printing duplicates");
+  eprintln!("printing/accepting duplicates");
+  let accept =
+    BufReader::new(std::fs::File::open(ACCEPT_PATH).unwrap())
+      .lines().flat_map(|s| s)
+      .collect::<std::collections::HashSet<_>>();
+  let mut f_dups =
+    BufWriter::new(std::fs::File::create(OUT_DUPS_PATH).unwrap());
+  let mut f_data =
+    BufWriter::new(std::fs::File::create(OUT_DATA_PATH).unwrap());
+
   let mut groups = vec![vec![]; dataset.len()];
   for i in 0..dataset.len() { groups[dsu.root(i)].push(i); }
   for i in 0..dataset.len() {
+    if groups[i].is_empty() { continue; }
     let mut g = groups[i].iter()
-      .map(|&id| &dataset[id].content)
+      .map(|&id| (id, &dataset[id].content))
       .collect::<Vec<_>>();
-    g.sort();
-    g.dedup();
-    if g.len() > 1 {
-      for s in g { println!("{}", s); }
-      println!();
+    g.sort_by_key(|a| a.1);
+    g.dedup_by_key(|a| a.1);
+    let gacc = g.iter().filter(|s| accept.contains(&**s.1)).collect::<Vec<_>>();
+    if !gacc.is_empty() {
+      for a in gacc { writeln!(f_data, "{}", dataset[a.0]).unwrap(); }
+    } else if g.len() > 1 {
+      for a in g { writeln!(f_dups, "{}", a.1).unwrap(); }
+      writeln!(f_dups).unwrap();
+    } else {
+      writeln!(f_data, "{}", dataset[i]).unwrap();
     }
     if i % 10000 == 0 { eprintln!("{}/{}", i, dataset.len()); }
   }
