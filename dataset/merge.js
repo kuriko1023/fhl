@@ -41,7 +41,7 @@ const process = function (s) {
   const a = s
     .replace(/\(.+?\)/g, '')
     .replace(/（.+?）/g, '')
-    .replace(/[、《》「」『』“” ]/g, '')
+    .replace(/[、《》「」『』“”　 ]/g, '')
     .replace(/<.+?>/g, '')
     .replace(/[⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇]/g, '')
     .split(/[。，：；？！.,:;?!\n]+/)
