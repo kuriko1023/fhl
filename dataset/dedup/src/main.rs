@@ -99,10 +99,10 @@ impl DSU {
 }
 
 fn main() {
-  const DATASET_PATH: &str = "test.txt";
-  const ACCEPT_PATH: &str = "test_accept.txt";
-  // const DATASET_PATH: &str = "../../all.txt";
-  // const ACCEPT_PATH: &str = "all_accept.txt";
+  // const DATASET_PATH: &str = "test.txt";
+  // const ACCEPT_PATH: &str = "test_accept.txt";
+  const DATASET_PATH: &str = "../../all.txt";
+  const ACCEPT_PATH: &str = "all_accept.txt";
   const OUT_DUPS_PATH: &str = "dups.txt";
   const OUT_DATA_PATH: &str = "dedup.txt";
 
@@ -143,10 +143,11 @@ fn main() {
   }
 
   eprintln!("printing/accepting duplicates");
-  let accept =
-    BufReader::new(std::fs::File::open(ACCEPT_PATH).unwrap())
+  let accept = (|| -> UniResult<_> {
+    Ok(BufReader::new(std::fs::File::open(ACCEPT_PATH)?)
       .lines().flat_map(|s| s)
-      .collect::<std::collections::HashSet<_>>();
+      .collect::<std::collections::HashSet<_>>())
+  })().unwrap_or(std::collections::HashSet::new());
   let mut f_dups =
     BufWriter::new(std::fs::File::create(OUT_DUPS_PATH).unwrap());
   let mut f_data =
@@ -155,6 +156,7 @@ fn main() {
   let mut groups = vec![vec![]; dataset.len()];
   for i in 0..dataset.len() { groups[dsu.root(i)].push(i); }
   for i in 0..dataset.len() {
+    if i % 10000 == 0 { eprintln!("{}/{}", i, dataset.len()); }
     if groups[i].is_empty() { continue; }
     let mut g = groups[i].iter()
       .map(|&id| (id, &dataset[id].content))
@@ -170,7 +172,6 @@ fn main() {
     } else {
       writeln!(f_data, "{}", dataset[i]).unwrap();
     }
-    if i % 10000 == 0 { eprintln!("{}/{}", i, dataset.len()); }
   }
 
   eprintln!("done!");
