@@ -167,7 +167,10 @@ fn main() {
     if !gacc.is_empty() {
       for a in gacc { writeln!(f_data, "{}", dataset[a.0]).unwrap(); }
     } else if g.len() > 1 {
-      for a in g { writeln!(f_dups, "{}", a.1).unwrap(); }
+      for a in g {
+        writeln!(f_dups, "{}", a.1).unwrap();
+        writeln!(f_data, "{}", dataset[a.0]).unwrap();
+      }
       writeln!(f_dups).unwrap();
     } else {
       writeln!(f_data, "{}", dataset[i]).unwrap();
