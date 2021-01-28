@@ -120,6 +120,10 @@ for (const f of fs.readdirSync('./poetry-source/全唐诗/ZZU_JSON_chs')) {
   }
 }
 
+for (const line of fs.readFileSync('./extra.txt').toString().split('\n')) {
+  if (line) all.push(line.split('\t'));
+}
+
 let collCount = 0;
 let errCount = 0;
 const fdAll = fs.openSync('all.txt', 'w');
