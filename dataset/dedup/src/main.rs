@@ -1,14 +1,26 @@
 use std::io::{BufRead, BufReader};
-use kdtree::KdTree;
 
 type UniResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 #[derive(Debug, Clone)]
 struct Article {
+  id: usize,
   dynasty: String,
   author: String,
   title: String,
   content: String,
+}
+impl PartialEq for Article {
+  fn eq(&self, other: &Self) -> bool { self.id == other.id }
+}
+impl Eq for Article { }
+impl PartialOrd for Article {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    self.id.partial_cmp(&other.id)
+  }
+}
+impl Ord for Article {
+  fn cmp(&self, other: &Self) -> std::cmp::Ordering { self.id.cmp(&other.id) }
 }
 
 fn read_dataset(path: &str) -> UniResult<Vec<Article>> {
@@ -18,6 +30,7 @@ fn read_dataset(path: &str) -> UniResult<Vec<Article>> {
     let line = line?;
     let fields = line.split('\t').collect::<Vec<_>>();
     articles.push(Article {
+      id: articles.len(),
       dynasty: fields[0].to_string(),
       author: fields[1].to_string(),
       title: fields[2].to_string(),
@@ -27,9 +40,44 @@ fn read_dataset(path: &str) -> UniResult<Vec<Article>> {
   Ok(articles)
 }
 
-const HASH_N_DIMS: usize = 64;
+// https://stackoverflow.com/a/51261570
+fn char_windows<'a>(src: &str, win_size: usize) -> impl Iterator<Item = &str> {
+  src.char_indices().flat_map(move |(from, _)| {
+    src[from ..].char_indices()
+      .nth(win_size - 1)
+      .map(|(to, c)| {
+        &src[from .. from + to + c.len_utf8()]
+      })
+  })
+}
 
-fn calc_hash(s: &str) -> [u16; HASH_N_DIMS] {
+fn sliding_hashes(s: &str) -> Vec<u32> {
+  // for t in char_windows(&s, 5) { println!("{}", t); }
+  char_windows(&s, 5)
+    .map(|s| s.chars().map(|c| c as u32).fold(0, |x, y| x * 997 + y))
+    .collect()
+}
+
+/*
+const HASH_WIN: usize = 5;
+const HASH_BASE: u32 = 997;
+fn sliding_hashes(s: &str) -> Vec<u32> {
+  let mut window = [0u32; HASH_WIN];
+  let mut hash = 0;
+  let mut hashes = vec![];
+  for (i, ch) in s.chars().enumerate() {
+    hash -= window[0] * HASH_BASE.pow(HASH_WIN as u32);
+    window.rotate_left(1);
+    window[HASH_WIN - 1] = ch as u32;
+    hash = hash * HASH_BASE + ch as u32;
+    if i >= HASH_WIN - 1 { hashes.push(hash); }
+  }
+  hashes
+}
+*/
+
+const HASH_N_DIMS: usize = 256;
+fn charcode_hash(s: &str) -> [u16; HASH_N_DIMS] {
   let mut ret = [0; HASH_N_DIMS];
   for c in s.chars() {
     if c == '/' { continue; }
@@ -38,66 +86,93 @@ fn calc_hash(s: &str) -> [u16; HASH_N_DIMS] {
   ret
 }
 
-// Make this a procedural macro
-macro_rules! array_convert {
-  ($a: expr, $t: ty, $n: expr) => {
-    [
-      $a[ 0] as $t, $a[ 1] as $t, $a[ 2] as $t, $a[ 3] as $t,
-      $a[ 4] as $t, $a[ 5] as $t, $a[ 6] as $t, $a[ 7] as $t,
-      $a[ 8] as $t, $a[ 9] as $t, $a[10] as $t, $a[11] as $t,
-      $a[12] as $t, $a[13] as $t, $a[14] as $t, $a[15] as $t,
-      $a[16] as $t, $a[17] as $t, $a[18] as $t, $a[19] as $t,
-      $a[20] as $t, $a[21] as $t, $a[22] as $t, $a[23] as $t,
-      $a[24] as $t, $a[25] as $t, $a[26] as $t, $a[27] as $t,
-      $a[28] as $t, $a[29] as $t, $a[30] as $t, $a[31] as $t,
-      $a[32] as $t, $a[33] as $t, $a[34] as $t, $a[35] as $t,
-      $a[36] as $t, $a[37] as $t, $a[38] as $t, $a[39] as $t,
-      $a[40] as $t, $a[41] as $t, $a[42] as $t, $a[43] as $t,
-      $a[44] as $t, $a[45] as $t, $a[46] as $t, $a[47] as $t,
-      $a[48] as $t, $a[49] as $t, $a[50] as $t, $a[51] as $t,
-      $a[52] as $t, $a[53] as $t, $a[54] as $t, $a[55] as $t,
-      $a[56] as $t, $a[57] as $t, $a[58] as $t, $a[59] as $t,
-      $a[60] as $t, $a[61] as $t, $a[62] as $t, $a[63] as $t,
-    ]
-  };
-}
-
-fn dist_manhattan(a: &[f32], b: &[f32]) -> f32 {
+fn dist_manhattan(a: &[u16], b: &[u16]) -> u16 {
   debug_assert_eq!(a.len(), b.len());
   a.iter().zip(b.iter())
-    .map(|(x, y)| (*x - *y).abs())
-    .fold(0.0, |x, y| { x + y })
+    .map(|(x, y)| (*x as i16 - *y as i16).abs())
+    .sum::<i16>() as u16
+}
+
+// DSU
+struct DSU {
+  p: Vec<usize>,
+}
+impl DSU {
+  fn new(n: usize) -> DSU {
+    let mut p = Vec::with_capacity(n);
+    for i in 0..n { p.push(i); }
+    DSU { p }
+  }
+
+  fn root(&mut self, x: usize) -> usize {
+    if self.p[x] != x {
+      self.p[x] = self.root(self.p[x]);
+    }
+    self.p[x]
+  }
+
+  fn union(&mut self, x: usize, y: usize) {
+    let x = self.root(x);
+    let y = self.root(y);
+    self.p[y] = x;
+  }
 }
 
 fn main() {
-  let dataset = read_dataset("../../all.txt").unwrap();
+  // let dataset = read_dataset("../../all.txt").unwrap();
   // let dataset = dataset[..10].to_vec();
   // println!("{:?}", dataset);
+  let dataset = read_dataset("test.txt").unwrap();
 
-  println!("building tree");
-  let mut tree = KdTree::new(HASH_N_DIMS);
-  let mut hashes = vec![];
-  for (i, article) in dataset.iter().enumerate() {
-    let hash = calc_hash(&article.content);
-    let hashf = array_convert!(hash, f32, HASH_N_DIMS);
-    hashes.push(hashf);
-    tree.add(hashf, i).unwrap();
-    if i % 10000 == 0 { println!("{}/{}", i, dataset.len()); }
-  }
-
-  println!("checking for duplicates");
-  let mut i = 0;
-  for (article, hash) in dataset.iter().zip(hashes.iter()) {
-    let nghbrs = tree.within(hash, 12.0, &dist_manhattan).unwrap();
-    let nghbrs = nghbrs.iter().filter(|x| x.0 > 0.0).collect::<Vec<_>>();
-    if nghbrs.len() > 0 {
-      println!("{}", article.content);
-      for (dist, idx) in nghbrs {
-        println!("{} {:?}", dist, dataset[**idx as usize].content);
-      }
-      println!("");
+  eprintln!("building hashes");
+  let mut hashset = vec![];
+  let mut map = std::collections::HashMap::new();
+  for art in &dataset {
+    let hashes = sliding_hashes(&art.content);
+    for &h in &hashes {
+      map.entry(h).or_insert(vec![]).push(art);
     }
-    i += 1;
-    if i % 100 == 0 { println!("{}/{}", i, dataset.len()); }
+    hashset.push(hashes);
+    if art.id % 10000 == 0 { eprintln!("{}/{}", art.id, dataset.len()); }
   }
+
+  eprintln!("checking for duplicates");
+  let mut dsu = DSU::new(dataset.len());
+  for (art, hashes) in dataset.as_slice().iter().zip(hashset.iter()) {
+    let mut all: Vec<&Article> = vec![];
+    hashes.iter().for_each(|h| all.extend(map.get(&h).unwrap()));
+    all.sort();
+    all.dedup();
+    // println!("{:?}", all.iter().map(|art| art.id).collect::<Vec<_>>());
+    for other_art in all {
+      if art == other_art { continue; }
+      let dist = dist_manhattan(
+        &charcode_hash(&art.content),
+        &charcode_hash(&other_art.content),
+      );
+      if dist <= 20 {
+        dsu.union(art.id, other_art.id);
+        // println!("{}\n{}\n{}\n", dist, art.content, other_art.content);
+      }
+    }
+    if art.id % 10000 == 0 { eprintln!("{}/{}", art.id, dataset.len()); }
+  }
+
+  eprintln!("printing duplicates");
+  let mut groups = vec![vec![]; dataset.len()];
+  for i in 0..dataset.len() { groups[dsu.root(i)].push(i); }
+  for i in 0..dataset.len() {
+    let mut g = groups[i].iter()
+      .map(|&id| &dataset[id].content)
+      .collect::<Vec<_>>();
+    g.sort();
+    g.dedup();
+    if g.len() > 1 {
+      for s in g { println!("{}", s); }
+      println!();
+    }
+    if i % 10000 == 0 { eprintln!("{}/{}", i, dataset.len()); }
+  }
+
+  eprintln!("done!");
 }
