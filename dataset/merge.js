@@ -1,8 +1,10 @@
 const fs = require('fs');
 
+// awk 'BEGIN { FS = "\t" } { print $1 }' < all.txt | sort -u
 const normalizeDynasty = function (s) {
-  if (s.match(/[近现]/g)) return '近现代';
-  return s.replace(/代/, '');
+  if (s.match(/[近现当]/g)) return '近现代';
+  if (s.match(/五代/g)) return '五代十国';
+  return s.trim().replace(/[朝代]/, '');
 };
 
 const specCharList = [];
