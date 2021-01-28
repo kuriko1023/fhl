@@ -4,6 +4,8 @@ all.txt
 err.txt
 
 dedup/target/
+dedup/src/dups.txt
+dedup/src/dedup.txt
 
 poetry/
 poems-db/
