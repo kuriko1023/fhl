@@ -41,10 +41,10 @@ const process = function (s) {
   const a = s
     .replace(/\(.+?\)/g, '')
     .replace(/（.+?）/g, '')
-    .replace(/[、《》「」『』“” \n]/g, '')
+    .replace(/[、《》「」『』“” ]/g, '')
     .replace(/<.+?>/g, '')
     .replace(/[⓪①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳⑴⑵⑶⑷⑸⑹⑺⑻⑼⑽⑾⑿⒀⒁⒂⒃⒄⒅⒆⒇]/g, '')
-    .split(/[。，：；？！.,:;?!]/)
+    .split(/[。，：；？！.,:;?!\n]+/)
     .filter(e => e !== '');
   if (a.some(e => specChar(e))) return null;
   return a;
@@ -75,7 +75,7 @@ for (let i = 1; i <= 4; i++) {
       item.dynasty,
       item.author,
       item.name,
-      item.content.join(''),
+      item.content.join('\n'),
     ]);
   }
 }
@@ -92,9 +92,31 @@ for (const name of '诗词曲') {
           item.dynasty,
           item.authorName,
           item.title,
-          item.content.join(''),
+          item.content.join('\n'),
         ]);
     }
+  }
+}
+for (const item of
+  JSON.parse(fs.readFileSync('./poetry-source/source/其他/诗经.json')))
+{
+  all.push([
+    '先秦',
+    '佚名',
+    item.title,
+    item.content.join('\n'),
+  ]);
+}
+for (const f of fs.readdirSync('./poetry-source/全唐诗/ZZU_JSON_chs')) {
+  for (const item of
+    JSON.parse(fs.readFileSync('./poetry-source/全唐诗/ZZU_JSON_chs/' + f)))
+  {
+    all.push([
+      '唐',
+      item.author,
+      item.title,
+      item.content.join('\n'),
+    ]);
   }
 }
 
