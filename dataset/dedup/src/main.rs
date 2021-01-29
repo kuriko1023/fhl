@@ -52,7 +52,8 @@ fn char_windows<'a>(src: &str, win_size: usize) -> impl Iterator<Item = &str> {
 fn sliding_hashes(s: &str) -> Vec<u32> {
   // for t in char_windows(&s, 5) { println!("{}", t); }
   char_windows(&s, 5)
-    .map(|s| s.chars().map(|c| c as u32).fold(0, |x, y| x * 997 + y))
+    .map(|s| s.chars().map(|c| c as u32)
+      .fold(0u32, |x, y| x.wrapping_mul(997).wrapping_add(y)))
     .collect()
 }
 
@@ -102,7 +103,7 @@ fn main() {
   // const DATASET_PATH: &str = "test.txt";
   // const ACCEPT_PATH: &str = "test_accept.txt";
   const DATASET_PATH: &str = "../../all.txt";
-  const ACCEPT_PATH: &str = "all_accept.txt";
+  const ACCEPT_PATH: &str = "../../all_accept.txt";
   const OUT_DUPS_PATH: &str = "dups.txt";
   const OUT_DATA_PATH: &str = "dedup.txt";
 
@@ -145,7 +146,10 @@ fn main() {
   eprintln!("printing/accepting duplicates");
   let accept = (|| -> UniResult<_> {
     Ok(BufReader::new(std::fs::File::open(ACCEPT_PATH)?)
-      .lines().flat_map(|s| s)
+      .lines().flat_map(|s| {
+        let s = s.ok()?;
+        if s.is_empty() || s.starts_with('#') { None } else { Some(s) }
+      })
       .collect::<std::collections::HashSet<_>>())
   })().unwrap_or(std::collections::HashSet::new());
   let mut f_dups =
