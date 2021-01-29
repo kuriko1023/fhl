@@ -52,6 +52,25 @@ const process = function (s) {
 
 const all = [];
 
+console.log('chinese-poetry/chinese-poetry');
+for (const f of fs.readdirSync('./chinese-poetry/wudai/huajianji')) {
+  if (f.indexOf('juan') === -1) continue;
+  for (const item of
+    JSON.parse(fs.readFileSync('./chinese-poetry/wudai/huajianji/' + f)))
+  {
+    if (item.author === '尹鹗 六首') item.author = '尹鹗';
+    if (item.author === '欧陽炯') item.author = '欧阳炯';
+    if (item.title === '河传·曲槛') continue;
+    all.push([
+      (item.author === '温庭筠' || item.author === '皇甫松') ?
+        '唐' : '五代',
+      item.author,
+      item.title,
+      item.paragraphs.join('\n').replace('B*', '圭')
+    ]);
+  }
+}
+
 console.log('javayhu/poetry');
 for (const f of fs.readdirSync('./poetry/data/poetry')) {
   const item = JSON.parse(fs.readFileSync('./poetry/data/poetry/' + f));
