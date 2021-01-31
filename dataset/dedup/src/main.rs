@@ -132,16 +132,19 @@ fn main() {
     g.sort_by_key(|a| a.1);
     g.dedup_by_key(|a| a.1);
     let gacc = g.iter().filter(|s| accept.contains(&**s.1)).collect::<Vec<_>>();
+    let marker = |i| if i == 0 { '*' } else { ' ' };
     if !gacc.is_empty() {
-      for a in gacc { writeln!(f_data, "{}", dataset[a.0]).unwrap(); }
+      for (i, a) in gacc.iter().enumerate() {
+        writeln!(f_data, "{}\t{}", marker(i), dataset[a.0]).unwrap();
+      }
     } else if g.len() > 1 {
-      for a in g {
+      for (i, a) in g.iter().enumerate() {
         writeln!(f_dups, "{}", a.1).unwrap();
-        writeln!(f_data, "{}", dataset[a.0]).unwrap();
+        writeln!(f_data, "{}\t{}", marker(i), dataset[a.0]).unwrap();
       }
       writeln!(f_dups).unwrap();
     } else {
-      writeln!(f_data, "{}", dataset[i]).unwrap();
+      writeln!(f_data, "{}\t{}", marker(0), dataset[i]).unwrap();
     }
   }
 
