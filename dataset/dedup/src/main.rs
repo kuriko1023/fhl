@@ -64,10 +64,11 @@ impl DSU {
 }
 
 fn main() {
-  // const DATASET_PATH: &str = "test.txt";
-  // const ACCEPT_PATH: &str = "test_accept.txt";
-  const DATASET_PATH: &str = "../../all.txt";
-  const ACCEPT_PATH: &str = "../../all_accept.txt";
+  const DATASET_PATH: &str = "test.txt";
+  const ACCEPT_PATH: &str = "test_accept.txt";
+  const CURATE_PATH: &str = "test_curate.txt";
+  // const DATASET_PATH: &str = "../../all.txt";
+  // const ACCEPT_PATH: &str = "../../all_accept.txt";
   const OUT_DUPS_PATH: &str = "dups.txt";
   const OUT_DATA_PATH: &str = "dedup.txt";
 
@@ -116,6 +117,11 @@ fn main() {
       })
       .collect::<std::collections::HashSet<_>>())
   })().unwrap_or(std::collections::HashSet::new());
+  let curated = (|| -> UniResult<_> {
+    Ok(BufReader::new(std::fs::File::open(CURATE_PATH)?)
+      .lines().flat_map(|s| Some(s.ok()?))
+      .collect::<std::collections::HashSet<_>>())
+  })().unwrap_or(std::collections::HashSet::new());
   let mut f_dups =
     BufWriter::new(std::fs::File::create(OUT_DUPS_PATH).unwrap());
   let mut f_data =
@@ -126,13 +132,16 @@ fn main() {
   for i in 0..dataset.len() {
     if i % 10000 == 0 { eprintln!("{}/{}", i, dataset.len()); }
     if groups[i].is_empty() { continue; }
+    let is_curated = groups[i].iter()
+      .any(|&id| curated.contains(
+        &(dataset[id].author.clone() + "\t" + &dataset[id].title)));
     let mut g = groups[i].iter()
       .map(|&id| (id, &dataset[id].content))
       .collect::<Vec<_>>();
     g.sort_by_key(|a| a.1);
     g.dedup_by_key(|a| a.1);
     let gacc = g.iter().filter(|s| accept.contains(&**s.1)).collect::<Vec<_>>();
-    let marker = |i| if i == 0 { '*' } else { ' ' };
+    let marker = |i| if i == 0 { if is_curated { '!' } else { '*' } } else { ' ' };
     if !gacc.is_empty() {
       for (i, a) in gacc.iter().enumerate() {
         writeln!(f_data, "{}\t{}", marker(i), dataset[a.0]).unwrap();
