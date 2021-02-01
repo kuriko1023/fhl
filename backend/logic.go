@@ -92,26 +92,40 @@ func generateB(sizeLeft, sizeRight int) ([]string, []string) {
 
 		// 寻找包含任意选出字的名篇
 		// 如果性能不足可以后续优化
-		leftJoined := strings.Join(left, "")
-		articles := []Article{}
+		type Sentence struct {
+			Article
+			index int
+		}
+		count := make([]int, len(left))
+		sentences := []Sentence{}
 		for _, article := range hotArticles {
-			contains := false
-			for _, s := range article.Content {
-				if strings.ContainsAny(s, leftJoined) {
-					contains = true
+			sentenceIndex := -1
+			for j, t := range left {
+				if count[j] >= sizeRight * 3 / 4 { continue }
+				for i, s := range article.Content {
+					if strings.Contains(s, t) {
+						count[j] += 1
+						sentenceIndex = i
+						break
+					}
+				}
+				if sentenceIndex != -1 {
 					break
 				}
 			}
-			if contains {
-				articles = append(articles, article)
+			if sentenceIndex != -1 {
+				sentences = append(sentences, Sentence{article, sentenceIndex})
 			}
 		}
 
-		if len(articles) < sizeRight {
+		if len(sentences) < sizeRight * 3 / 2 {
 			continue
 		}
 
-		fmt.Println(left, len(articles))
+		fmt.Println(left, len(sentences))
+		for _, s := range sentences {
+			fmt.Println(s.Article.Content[s.index])
+		}
 
 		// TODO: 调用 getHotWords，从 articles 中找出一些高频词
 		break

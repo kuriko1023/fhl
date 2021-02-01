@@ -10,7 +10,7 @@ func main() {
 	for i := 0; i < 10; i++ {
 		fmt.Println(generateA(5, 3))
 	}
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 10; i++ {
 		generateB(3, 10)
 	}
 }
