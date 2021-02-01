@@ -109,6 +109,48 @@ fn main() {
     if art.id % 10000 == 0 { eprintln!("{}/{}", art.id, dataset.len()); }
   }
 
+  eprintln!("marking curated articles");
+  let mut contains = std::collections::HashMap::new();
+  let mut is_curated = vec![false; dataset.len()];
+  for art in &dataset {
+    for s in art.content.split('/') {
+      contains.entry(s.to_string()).or_insert(vec![]).push(art.id);
+    }
+  }
+  let curated = (|| -> UniResult<_> {
+    Ok(BufReader::new(std::fs::File::open(CURATE_PATH)?)
+      .lines().flat_map(|s|
+        Some(s.ok()?.split(|c|
+            c == '，' || c == '。' || c == '、' ||
+            c == '？' || c == '！' || c == '：')
+          .flat_map(|s| if s.is_empty() { None } else { Some(s.to_string()) })
+          .collect::<Vec<_>>()))
+      .collect::<Vec<_>>())
+  })().unwrap_or(vec![]);
+  for line in curated {
+    let mut candidates = std::collections::HashSet::<usize>::new();
+    for s in &line {
+      match contains.get(&s.to_string()) {
+        Some(list) => { candidates.extend(list); },
+        None => (),
+      }
+    }
+    let joined = line.join("/");
+    let mut best = (usize::MAX, usize::MAX);
+    for id in candidates {
+      if dataset[id].content.contains(&joined) {
+        let cur_len = dataset[id].content.len();
+        if cur_len < best.1 {
+          best = (id, cur_len);
+        }
+      }
+    }
+    if best.1 < usize::MAX {
+      // eprintln!("{} {} {}", joined, dsu.root(best.0), dataset[best.0].content);
+      is_curated[dsu.root(best.0)] = true;
+    }
+  }
+
   eprintln!("printing/accepting duplicates");
   let accept = (|| -> UniResult<_> {
     Ok(BufReader::new(std::fs::File::open(ACCEPT_PATH)?)
@@ -116,11 +158,6 @@ fn main() {
         let s = s.ok()?;
         if s.is_empty() || s.starts_with('#') { None } else { Some(s) }
       })
-      .collect::<std::collections::HashSet<_>>())
-  })().unwrap_or(std::collections::HashSet::new());
-  let curated = (|| -> UniResult<_> {
-    Ok(BufReader::new(std::fs::File::open(CURATE_PATH)?)
-      .lines().flat_map(|s| Some(s.ok()?))
       .collect::<std::collections::HashSet<_>>())
   })().unwrap_or(std::collections::HashSet::new());
   let mut f_dups =
@@ -133,16 +170,15 @@ fn main() {
   for i in 0..dataset.len() {
     if i % 10000 == 0 { eprintln!("{}/{}", i, dataset.len()); }
     if groups[i].is_empty() { continue; }
-    let is_curated = groups[i].iter()
-      .any(|&id| curated.contains(
-        &(dataset[id].author.clone() + "\t" + &dataset[id].title)));
     let mut g = groups[i].iter()
       .map(|&id| (id, &dataset[id].content))
       .collect::<Vec<_>>();
     g.sort_by_key(|a| a.1);
     g.dedup_by_key(|a| a.1);
     let gacc = g.iter().filter(|s| accept.contains(&**s.1)).collect::<Vec<_>>();
-    let marker = |i| if i == 0 { if is_curated { '!' } else { '*' } } else { ' ' };
+    let marker = |j| if j == 0 {
+      if is_curated[i] { '!' } else { '*' }
+    } else { ' ' };
     if !gacc.is_empty() {
       for (i, a) in gacc.iter().enumerate() {
         writeln!(f_data, "{}\t{}", marker(i), dataset[a.0]).unwrap();
