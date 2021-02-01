@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"sort"
 	"strings"
@@ -30,7 +31,12 @@ var hotWords2 []string
 
 // 检查一句诗词是否符合规则
 func check(sentence string, keywords []string) bool {
-	return false
+	for _, keyword := range keywords {
+		if !strings.Contains(sentence, keyword) {
+			return false
+		}
+	}
+	return true
 }
 
 // 返回一句诗词中的所有高频词，按出现次数降序排序；若无，返回空列表
@@ -38,13 +44,79 @@ func getHotWords(sentence string) []string {
 	return nil
 }
 
-// 生成普通飞花题目备选列表，返回 count 个不重复的单字/词
-func generateA(count int) []string {
-	return nil
+func randomSample(n, count int) []int {
+	picked := map[int]struct{}{}
+	ret := []int{}
+	for i := n - count; i < n; i++ {
+		x := rand.Intn(i + 1)
+		if _, dup := picked[x]; dup {
+			x = i
+		}
+		picked[x] = struct{}{}
+		ret = append(ret, x)
+	}
+	return ret
 }
 
-// 生成超级飞花题目，返回长度为 n 和 m 的字符串列表
-func generateB() ([]string, []string) {
+// 生成普通飞花题目备选列表
+// 返回 count1 个不重复的单字与 count2 个不重复的双字
+func generateA(count1, count2 int) []string {
+	ret := []string{}
+
+	// 单字
+	n := len(hotWords1) / 2
+	for _, i := range randomSample(n, count1 - 1) {
+		ret = append(ret, hotWords1[i])
+	}
+	ret = append(ret, hotWords1[rand.Intn(n) + n])
+
+	// 双字
+	if count2 > 0 {
+		n = len(hotWords2) / 2
+		for _, i := range randomSample(n, count2 - 1) {
+			ret = append(ret, hotWords2[i])
+		}
+		ret = append(ret, hotWords2[rand.Intn(n) + n])
+	}
+
+	return ret
+}
+
+// 生成超级飞花题目，返回长度为 sizeLeft 和 sizeRight 的字符串列表
+func generateB(sizeLeft, sizeRight int) ([]string, []string) {
+	var left []string
+
+	for {
+		// 先选取 n 个高频字
+		left = generateA(sizeLeft, 0)
+
+		// 寻找包含任意选出字的名篇
+		// 如果性能不足可以后续优化
+		leftJoined := strings.Join(left, "")
+		articles := []Article{}
+		for _, article := range hotArticles {
+			contains := false
+			for _, s := range article.Content {
+				if strings.ContainsAny(s, leftJoined) {
+					contains = true
+					break
+				}
+			}
+			if contains {
+				articles = append(articles, article)
+			}
+		}
+
+		if len(articles) < sizeRight {
+			continue
+		}
+
+		fmt.Println(left, len(articles))
+
+		// TODO: 调用 getHotWords，从 articles 中找出一些高频词
+		break
+	}
+
 	return nil, nil
 }
 
@@ -166,4 +238,6 @@ func initDataset() {
 		}
 		hotWords2 = append(hotWords2, hotWords2List[i].string)
 	}
+
+	rand.Seed(1023)
 }
