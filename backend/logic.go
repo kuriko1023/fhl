@@ -40,8 +40,20 @@ func check(sentence string, keywords []string) bool {
 }
 
 // 返回一句诗词中的所有高频词，按出现次数降序排序；若无，返回空列表
-func getHotWords(sentence string) []string {
-	return nil
+func getHotWords(sentence string) ([]string, []string) {
+	var singleHotWords []string
+	var doubleHotWords []string
+	for _, str := range hotWords1 {
+		if strings.Index(sentence, str) != -1 {
+			singleHotWords = append(singleHotWords, str)
+		}
+	}
+	for _, str := range hotWords2 {
+		if strings.Index(sentence, str) != -1 {
+			doubleHotWords = append(doubleHotWords, str)
+		}
+	}
+	return singleHotWords, doubleHotWords
 }
 
 func randomSample(n, count int) []int {
@@ -121,7 +133,8 @@ func generateB(sizeLeft, sizeRight int) ([]string, []string) {
 }
 
 // 生成 2 个长度为 n 的关键词组作为谜之飞花题目
-func generateC() ([]string, []string) {
+func generateC(n int) ([]string, []string) {
+	
 	return nil, nil
 }
 
