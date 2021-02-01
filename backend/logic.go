@@ -24,9 +24,9 @@ var articles []Article
 // 名篇的列表
 var hotArticles []Article
 
-// 所有高频词组成的列表，包含单字和双字
-// 键表示高频词，值表示该词出现的频数
-var hotWords map[string]int
+// 所有高频词组成的列表，单字和双字分开，各自按频率降序排序
+var hotWords1 []string
+var hotWords2 []string
 
 // 检查一句诗词是否符合规则
 func check(sentence string, keywords []string) bool {
@@ -53,6 +53,7 @@ func generateC() ([]string, []string) {
 	return nil, nil
 }
 
+// 排序用比较器
 type KVPair struct {
 	string
 	int
@@ -71,6 +72,11 @@ func (s byValueDesc) Less(i, j int) bool {
 
 // 读入数据集，填充所有全局变量
 func initDataset() {
+	articles = []Article{}
+	hotArticles = []Article{}
+	hotWords1 = []string{}
+	hotWords2 = []string{}
+
 	file, err := os.Open("dataset.txt")
 	if err != nil {
 		panic(err)
@@ -78,8 +84,8 @@ func initDataset() {
 	defer file.Close()
 
 	type RunePair struct{ a, b rune }
-	hotWords1 := map[rune]int{}
-	hotWords2 := map[RunePair]int{}
+	hotWords1Count := map[rune]int{}
+	hotWords2Count := map[RunePair]int{}
 
 	i := 0
 	sc := bufio.NewScanner(file)
@@ -116,9 +122,9 @@ func initDataset() {
 			for _, s := range article.Content {
 				s := []rune(s)
 				for i, c := range s {
-					hotWords1[c] += weight
+					hotWords1Count[c] += weight
 					if i < len(s)-1 {
-						hotWords2[RunePair{c, s[i+1]}] += weight
+						hotWords2Count[RunePair{c, s[i+1]}] += weight
 					}
 				}
 			}
@@ -132,10 +138,10 @@ func initDataset() {
 
 	hotWords1List := byValueDesc{}
 	hotWords2List := byValueDesc{}
-	for k, v := range hotWords1 {
+	for k, v := range hotWords1Count {
 		hotWords1List = append(hotWords1List, KVPair{string(k), v})
 	}
-	for k, v := range hotWords2 {
+	for k, v := range hotWords2Count {
 		hotWords2List = append(hotWords2List, KVPair{
 			string(k.a) + string(k.b),
 			v,
@@ -150,6 +156,7 @@ func initDataset() {
 		if (i+1)%50 == 0 {
 			fmt.Println()
 		}
+		hotWords1 = append(hotWords1, hotWords1List[i].string)
 	}
 	fmt.Println("高频双字，每行二十个")
 	for i := 0; i < 200; i++ {
@@ -157,5 +164,6 @@ func initDataset() {
 		if (i+1)%20 == 0 {
 			fmt.Println()
 		}
+		hotWords2 = append(hotWords2, hotWords2List[i].string)
 	}
 }
