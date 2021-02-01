@@ -133,10 +133,67 @@ func generateB(sizeLeft, sizeRight int) ([]string, []string) {
 }
 
 // 生成 2 个长度为 n 的关键词组作为谜之飞花题目
+//其中第二个关键词组全部由双字高频词构成,第一个关键词组由单字或双字高频词构成
 func generateC(n int) ([]string, []string) {
-	
-	return nil, nil
+	var hotWordsList1 []string
+	var hotWordsList2 []string
+
+	count := 0
+	length := len(hotArticles)
+	//储存已被选择过的诗
+	var tmp map[int]int
+	tmp = make(map[int]int)
+
+	for count < n {
+		i := rand.Intn(length)
+		//该诗已被选择过
+		if _, ok := tmp[i]; ok {
+			continue
+		}
+		tmp[i] = 1
+
+		content := hotArticles[i].Content
+		//随机选择某一句
+		j := rand.Intn(len(content))
+
+		sHotWords, dHotWords := getHotWords(content[j])
+		//由诗句获得的单字高频词组或双字高频词组为空
+		if len(sHotWords) == 0 || len(dHotWords) == 0 {
+			continue
+		}
+
+		//在双字高频词组长度大于1的情况下， 有0.2的概率贡献两个双字高频词填入题目
+		k := rand.Intn(5)
+		if k >= 4 && len(dHotWords) > 1 {
+			hotWordsList1 = append(hotWordsList2, dHotWords[1])
+		}else {
+			flag := 0
+			//选择第一个与dHotWords[0]无重的单字
+			for _, str := range sHotWords {
+				if strings.Index(dHotWords[0], str) == -1 {
+					hotWordsList1 = append(hotWordsList1, str)
+					flag = 1
+					goto success
+				}
+			}
+			if flag == 0 {
+				continue
+			}
+		}
+		success:
+		hotWordsList2 = append(hotWordsList2, dHotWords[0])
+
+		//计数加1
+		count++
+		fmt.Println(content[j])
+	}
+
+	sort.Strings(hotWordsList1)
+	sort.Strings(hotWordsList2)
+
+	return hotWordsList1, hotWordsList2
 }
+
 
 // 排序用比较器
 type KVPair struct {
