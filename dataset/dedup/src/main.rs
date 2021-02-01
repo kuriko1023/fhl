@@ -64,11 +64,12 @@ impl DSU {
 }
 
 fn main() {
-  const DATASET_PATH: &str = "test.txt";
-  const ACCEPT_PATH: &str = "test_accept.txt";
-  const CURATE_PATH: &str = "test_curate.txt";
-  // const DATASET_PATH: &str = "../../all.txt";
-  // const ACCEPT_PATH: &str = "../../all_accept.txt";
+  // const DATASET_PATH: &str = "test.txt";
+  // const ACCEPT_PATH: &str = "test_accept.txt";
+  // const CURATE_PATH: &str = "test_curate.txt";
+  const DATASET_PATH: &str = "../../all.txt";
+  const ACCEPT_PATH: &str = "../../all_accept.txt";
+  const CURATE_PATH: &str = "../../curate.txt";
   const OUT_DUPS_PATH: &str = "dups.txt";
   const OUT_DATA_PATH: &str = "dedup.txt";
 
