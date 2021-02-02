@@ -6,6 +6,7 @@ import (
 
 func main() {
 	fmt.Println("Hello, world!")
+/*
 	initDataset()
 	for i := 0; i < 10; i++ {
 		fmt.Println(generateA(5, 3))
@@ -21,4 +22,13 @@ func main() {
 	for i := 0; i < 8; i++ {
 		fmt.Println(sl1[i], sl2[i])
 	}
+*/
+
+	r := Room{Subject: &SubjectA{Word: "花"}}
+	fmt.Println(r.Subject)
+
+	s := SubjectB{}
+	s.Parse("春花秋月何时了 3")
+	fmt.Println(s)
+	fmt.Println(s.Dump())
 }
