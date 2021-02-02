@@ -29,6 +29,11 @@ var hotArticles []Article
 var hotWords1 []string
 var hotWords2 []string
 
+// 全部都是高频字的句子
+var allHotSentences [][]string
+const ALL_HOT_LEN_MIN = 5
+const ALL_HOT_LEN_MAX = 9
+
 // 检查一句诗词是否符合规则
 func check(sentence string, keywords []string) bool {
 	for _, keyword := range keywords {
@@ -92,6 +97,13 @@ func generateA(count1, count2 int) []string {
 	return ret
 }
 
+// 生成多字飞花题目，返回一句长度为 length 的句子
+// 需确保 ALL_HOT_LEN_MIN <= length <= ALL_HOT_LEN_MAX
+func generateB(length int) string {
+	collection := allHotSentences[length - ALL_HOT_LEN_MIN]
+	return collection[rand.Intn(len(collection))]
+}
+
 // 生成超级飞花题目，返回长度为 sizeLeft 和 sizeRight 的字符串列表
 func generateC(sizeLeft, sizeRight int) ([]string, []string) {
 	var left []string
@@ -142,7 +154,7 @@ func generateC(sizeLeft, sizeRight int) ([]string, []string) {
 					continue
 				}
 				for i, s := range article.Content {
-					if len(s) >= 4 && strings.Contains(s, t) {
+					if len([]rune(s)) >= 4 && strings.Contains(s, t) {
 						count[j] += 1
 						sentenceIndex = i
 						break
@@ -377,6 +389,50 @@ func initDataset() {
 			fmt.Println()
 		}
 		hotWords2 = append(hotWords2, hotWords2List[i].string)
+	}
+
+	// 找出仅由不重复的高频字组成的句子
+	allHotSentences = make([][]string, ALL_HOT_LEN_MAX - ALL_HOT_LEN_MIN + 1)
+	for i := range allHotSentences {
+		allHotSentences[i] = []string{}
+	}
+	for _, article := range articles {
+		for _, s := range article.Content {
+			runes := []rune(s)
+			if len(runes) < ALL_HOT_LEN_MIN || len(runes) > ALL_HOT_LEN_MAX {
+				continue
+			}
+			// 确认每个字是否是高频字
+			minCount := hotWords1List[len(hotWords1)/2-1].int
+			if len(runes) >= ALL_HOT_LEN_MAX - 2 {
+				minCount = hotWords1List[len(hotWords1)-1].int
+			}
+			allHot := true
+			for _, r := range runes {
+				if hotWords1Count[r] < minCount {
+					allHot = false
+					break
+				}
+			}
+			if allHot {
+				i := len(runes) - ALL_HOT_LEN_MIN
+				// 确认是否有重复字
+				// 因为 runes 至多只有九个元素，所以用朴素算法
+				for i, r := range runes {
+					for j := 0; j < i; j++ {
+						if runes[j] == r {
+							goto out
+						}
+					}
+				}
+				allHotSentences[i] = append(allHotSentences[i], s)
+			out:
+			}
+		}
+	}
+	fmt.Println("仅由不重复的高频字组成的句子")
+	for i, c := range allHotSentences {
+		fmt.Printf("%d 字：%d 句\n", i + ALL_HOT_LEN_MIN, len(c))
 	}
 
 	rand.Seed(1023)
