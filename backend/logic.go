@@ -29,6 +29,11 @@ var hotArticles []Article
 var hotWords1 []string
 var hotWords2 []string
 
+// 高频词的出现频数，单字和双字分开
+type RunePair struct{ a, b rune }
+var hotWords1Count map[rune]int
+var hotWords2Count map[RunePair]int
+
 // 全部都是高频字的句子
 var allHotSentences [][]string
 const ALL_HOT_LEN_MIN = 5
@@ -46,17 +51,35 @@ func check(sentence string, keywords []string) bool {
 
 // 返回一句诗词中的所有高频词，按出现次数降序排序；若无，返回空列表
 func getHotWords(sentence string) ([]string, []string) {
-	var singleHotWords []string
-	var doubleHotWords []string
-	for _, str := range hotWords1 {
-		if strings.Index(sentence, str) != -1 {
-			singleHotWords = append(singleHotWords, str)
+	count1 := []KVPair{}
+	count2 := []KVPair{}
+
+	// 单字词
+	s := []rune(sentence)
+	for i, c := range s {
+		if n, has := hotWords1Count[c]; has {
+			count1 = append(count1, KVPair{string(c), n})
+		}
+		if i < len(s)-1 {
+			if n, has := hotWords2Count[RunePair{c, s[i+1]}]; has {
+				count2 = append(count2, KVPair{
+					string(c) + string(s[i + 1]),
+					n,
+				})
+			}
 		}
 	}
-	for _, str := range hotWords2 {
-		if strings.Index(sentence, str) != -1 {
-			doubleHotWords = append(doubleHotWords, str)
-		}
+
+	sort.Sort(byValueDesc(count1))
+	sort.Sort(byValueDesc(count2))
+
+	singleHotWords := []string{}
+	doubleHotWords := []string{}
+	for _, p := range count1 {
+		singleHotWords = append(singleHotWords, p.string)
+	}
+	for _, p := range count2 {
+		doubleHotWords = append(doubleHotWords, p.string)
 	}
 	return singleHotWords, doubleHotWords
 }
@@ -307,9 +330,8 @@ func initDataset() {
 	}
 	defer file.Close()
 
-	type RunePair struct{ a, b rune }
-	hotWords1Count := map[rune]int{}
-	hotWords2Count := map[RunePair]int{}
+	hotWords1Count = map[rune]int{}
+	hotWords2Count = map[RunePair]int{}
 
 	i := 0
 	sc := bufio.NewScanner(file)
@@ -391,6 +413,16 @@ func initDataset() {
 		hotWords2 = append(hotWords2, hotWords2List[i].string)
 	}
 
+	// 删去非高频词
+	for i := len(hotWords1); i < len(hotWords1List); i++ {
+		runes := []rune(hotWords1List[i].string)
+		delete(hotWords1Count, runes[0])
+	}
+	for i := len(hotWords2); i < len(hotWords2List); i++ {
+		runes := []rune(hotWords2List[i].string)
+		delete(hotWords2Count, RunePair{runes[0], runes[1]})
+	}
+
 	// 找出仅由不重复的高频字组成的句子
 	allHotSentences = make([][]string, ALL_HOT_LEN_MAX - ALL_HOT_LEN_MIN + 1)
 	for i := range allHotSentences {
@@ -409,7 +441,7 @@ func initDataset() {
 			}
 			allHot := true
 			for _, r := range runes {
-				if hotWords1Count[r] < minCount {
+				if n, has := hotWords1Count[r]; !has || n < minCount {
 					allHot = false
 					break
 				}
