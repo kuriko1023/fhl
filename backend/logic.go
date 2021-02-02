@@ -83,39 +83,64 @@ func generateA(count1, count2 int) []string {
 	ret = append(ret, hotWords1[rand.Intn(n) + n])
 
 	// 双字
-	if count2 > 0 {
-		n = len(hotWords2) / 2
-		for _, i := range randomSample(n, count2 - 1) {
-			ret = append(ret, hotWords2[i])
-		}
-		ret = append(ret, hotWords2[rand.Intn(n) + n])
+	n = len(hotWords2) / 2
+	for _, i := range randomSample(n, count2 - 1) {
+		ret = append(ret, hotWords2[i])
 	}
+	ret = append(ret, hotWords2[rand.Intn(n) + n])
 
 	return ret
 }
 
 // 生成超级飞花题目，返回长度为 sizeLeft 和 sizeRight 的字符串列表
-func generateB(sizeLeft, sizeRight int) ([]string, []string) {
+func generateC(sizeLeft, sizeRight int) ([]string, []string) {
 	var left []string
+	var right []string
 
-	for {
+	leftTopPart := sizeLeft
+	leftBottomPart := 0
+	if sizeLeft >= 3 {
+		leftTopPart -= 1
+		leftBottomPart += 1
+	}
+	n := len(hotWords1)
+
+	// 左侧的一个字最多对应右侧的多少字
+	singleWordLimit := sizeRight / sizeLeft + 2
+	word2Limit := sizeRight / 5
+
+	for len(right) < sizeRight {
+		// 所有已选字的集合
+		all := map[string]struct{}{}
+
 		// 先选取 n 个高频字
-		left = generateA(sizeLeft, 0)
-
-		// 寻找包含任意选出字的名篇
-		// 如果性能不足可以后续优化
-		type Sentence struct {
-			Article
-			index int
+		left = []string{}
+		for _, i := range randomSample(n / 4, leftTopPart) {
+			left = append(left, hotWords1[i])
 		}
+		for _, i := range randomSample(n - n / 4, leftBottomPart) {
+			left = append(left, hotWords1[i + n / 4])
+		}
+		for _, c := range left {
+			all[c] = struct{}{}
+		}
+
+		// 寻找包含任意选出字的名篇句子，并从中找出一些高频词
+		// 如果性能不足可以后续优化
+		right = []string{}
+		// 记录 left 中每个字已经对应了 right 中多少个字
 		count := make([]int, len(left))
-		sentences := []Sentence{}
-		for _, article := range hotArticles {
+		// 有多少个双字
+		word2Count := 0
+		// 先打乱
+		perm := rand.Perm(len(hotArticles))
+		for _, id := range perm {
+			article := hotArticles[id]
 			sentenceIndex := -1
 			for j, t := range left {
-				if count[j] >= sizeRight * 3 / 4 { continue }
+				if count[j] >= singleWordLimit { continue }
 				for i, s := range article.Content {
-					if strings.Contains(s, t) {
+					if len(s) >= 4 && strings.Contains(s, t) {
 						count[j] += 1
 						sentenceIndex = i
 						break
@@ -125,30 +150,60 @@ func generateB(sizeLeft, sizeRight int) ([]string, []string) {
 					break
 				}
 			}
-			if sentenceIndex != -1 {
-				sentences = append(sentences, Sentence{article, sentenceIndex})
+			if sentenceIndex == -1 {
+				continue
+			}
+			h1, h2 := getHotWords(article.Content[sentenceIndex])
+			// 先考虑双字词，如有且不与单字重复，则加入
+			word2Valid := false
+			if word2Count < word2Limit {
+				for _, word := range h2 {
+					runes := []rune(word)
+					_, picked0 := all[string(runes[0])]
+					_, picked1 := all[string(runes[1])]
+					_, picked := all[word]
+					if !picked0 && !picked1 && !picked {
+						right = append(right, word)
+						all[string(runes[0])] = struct{}{}
+						all[string(runes[1])] = struct{}{}
+						all[word] = struct{}{}
+						word2Valid = true
+						word2Count++
+						break
+					}
+				}
+			}
+			if !word2Valid {
+				// 随机选取一个常见字
+				// 先打乱
+				for i := range h1 {
+					j := rand.Intn(i + 1)
+					h1[i], h1[j] = h1[j], h1[i]
+				}
+				for _, word := range h1 {
+					if _, picked := all[word]; !picked {
+						right = append(right, word)
+						all[word] = struct{}{}
+						break
+					}
+				}
+			}
+			if len(right) == sizeRight {
+				break
 			}
 		}
-
-		if len(sentences) < sizeRight * 3 / 2 {
-			continue
-		}
-
-		fmt.Println(left, len(sentences))
-		for _, s := range sentences {
-			fmt.Println(s.Article.Content[s.index])
-		}
-
-		// TODO: 调用 getHotWords，从 articles 中找出一些高频词
-		break
 	}
 
-	return nil, nil
+	sort.Slice(right, func(i, j int) bool {
+		return len(right[i]) < len(right[j])
+	})
+
+	return left, right
 }
 
 // 生成 2 个长度为 n 的关键词组作为谜之飞花题目
 //其中第二个关键词组全部由双字高频词构成,第一个关键词组由单字或双字高频词构成
-func generateC(n int) ([]string, []string) {
+func generateD(n int) ([]string, []string) {
 	var hotWordsList1 []string
 	var hotWordsList2 []string
 
@@ -248,7 +303,7 @@ func initDataset() {
 	for sc.Scan() {
 		// 随机抽取十分之一
 		i++
-		if i%10 != 0 {
+		if sc.Text()[0] != '!' && i%10 != 0 {
 			continue
 		}
 
@@ -307,7 +362,7 @@ func initDataset() {
 	sort.Sort(hotWords2List)
 
 	fmt.Println("高频单字，每行五十个")
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 400; i++ {
 		fmt.Print(hotWords1List[i].string)
 		if (i+1)%50 == 0 {
 			fmt.Println()
