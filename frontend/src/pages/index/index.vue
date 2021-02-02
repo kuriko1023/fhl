@@ -3,6 +3,8 @@
 		<image class="logo" src="/static/logo.png"></image>
 		<view>
 			<text class="title">{{title}}</text>
+			<br>
+			<text>User ID: {{uid}}</text>
 		</view>
 	</view>
 </template>
@@ -11,14 +13,26 @@
 	export default {
 		data() {
 			return {
-				title: 'Hello World!'
+				title: 'Hello World!',
+				uid: 'unknown',
 			}
 		},
 		onLoad() {
-
+			this.login()
 		},
 		methods: {
-
+			login() {
+				this.uid = 'loading'
+				uni.login({
+					provider: 'weixin',
+					success: (ret) => {
+						this.uid = ret.code
+					},
+					fail: () => {
+						this.uid = 'fail'
+					},
+				})
+			}
 		}
 	}
 </script>
