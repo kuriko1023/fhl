@@ -77,17 +77,17 @@ func generateA(count1, count2 int) []string {
 
 	// 单字
 	n := len(hotWords1) / 2
-	for _, i := range randomSample(n, count1 - 1) {
+	for _, i := range randomSample(n, count1-1) {
 		ret = append(ret, hotWords1[i])
 	}
-	ret = append(ret, hotWords1[rand.Intn(n) + n])
+	ret = append(ret, hotWords1[rand.Intn(n)+n])
 
 	// 双字
 	n = len(hotWords2) / 2
-	for _, i := range randomSample(n, count2 - 1) {
+	for _, i := range randomSample(n, count2-1) {
 		ret = append(ret, hotWords2[i])
 	}
-	ret = append(ret, hotWords2[rand.Intn(n) + n])
+	ret = append(ret, hotWords2[rand.Intn(n)+n])
 
 	return ret
 }
@@ -106,7 +106,7 @@ func generateC(sizeLeft, sizeRight int) ([]string, []string) {
 	n := len(hotWords1)
 
 	// 左侧的一个字最多对应右侧的多少字
-	singleWordLimit := sizeRight / sizeLeft + 2
+	singleWordLimit := sizeRight/sizeLeft + 2
 	word2Limit := sizeRight / 5
 
 	for len(right) < sizeRight {
@@ -115,11 +115,11 @@ func generateC(sizeLeft, sizeRight int) ([]string, []string) {
 
 		// 先选取 n 个高频字
 		left = []string{}
-		for _, i := range randomSample(n / 4, leftTopPart) {
+		for _, i := range randomSample(n/4, leftTopPart) {
 			left = append(left, hotWords1[i])
 		}
-		for _, i := range randomSample(n - n / 4, leftBottomPart) {
-			left = append(left, hotWords1[i + n / 4])
+		for _, i := range randomSample(n-n/4, leftBottomPart) {
+			left = append(left, hotWords1[i+n/4])
 		}
 		for _, c := range left {
 			all[c] = struct{}{}
@@ -138,7 +138,9 @@ func generateC(sizeLeft, sizeRight int) ([]string, []string) {
 			article := hotArticles[id]
 			sentenceIndex := -1
 			for j, t := range left {
-				if count[j] >= singleWordLimit { continue }
+				if count[j] >= singleWordLimit {
+					continue
+				}
 				for i, s := range article.Content {
 					if len(s) >= 4 && strings.Contains(s, t) {
 						count[j] += 1
@@ -235,7 +237,7 @@ func generateD(n int) ([]string, []string) {
 		k := rand.Intn(5)
 		if k >= 4 && len(dHotWords) > 1 {
 			hotWordsList1 = append(hotWordsList2, dHotWords[1])
-		}else {
+		} else {
 			flag := 0
 			//选择第一个与dHotWords[0]无重的单字
 			for _, str := range sHotWords {
@@ -249,7 +251,7 @@ func generateD(n int) ([]string, []string) {
 				continue
 			}
 		}
-		success:
+	success:
 		hotWordsList2 = append(hotWordsList2, dHotWords[0])
 
 		//计数加1
@@ -262,7 +264,6 @@ func generateD(n int) ([]string, []string) {
 
 	return hotWordsList1, hotWordsList2
 }
-
 
 // 排序用比较器
 type KVPair struct {
