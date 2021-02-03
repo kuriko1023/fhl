@@ -39,6 +39,13 @@ func main() {
 	fmt.Println(a, b)
 	a, b = s.Answer("千古兴亡多少事", SideHost)
 	fmt.Println(a, b)
-	fmt.Println(s)
+	fmt.Println(s.Dump())
+
+	s = &SubjectD{}
+	s.Parse("万 书 今 凉 得 来 柳 欲/一片 丝 如此 孤 庭 细 舟 觉/00000000/00000000")
+	a, b = s.Answer("孤帆一片日边来", SideHost)
+	fmt.Println(a, b)
+	a, b = s.Answer("孤蓬万里征", SideHost)
+	fmt.Println(a, b)
 	fmt.Println(s.Dump())
 }
