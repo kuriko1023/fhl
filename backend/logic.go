@@ -43,16 +43,6 @@ const ALL_HOT_LEN_MAX = 9
 //用于优化谜之飞花令的题目选择
 var hotWordsFreq map[string]int
 
-// 检查一句诗词是否符合规则
-func check(sentence string, keywords []string) bool {
-	for _, keyword := range keywords {
-		if !strings.Contains(sentence, keyword) {
-			return false
-		}
-	}
-	return true
-}
-
 // 返回一句诗词中的所有高频词，按出现次数降序排序；若无，返回空列表
 // 单字高频词与双字高频词分别返回，第一个返回值为单字
 func getHotWords(sentence string) ([]string, []string) {
