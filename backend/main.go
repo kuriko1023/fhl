@@ -22,7 +22,6 @@ func main() {
 	for i := 0; i < 8; i++ {
 		fmt.Println(sl1[i], sl2[i])
 	}
-*/
 
 	r := Room{Subject: &SubjectA{Word: "花"}}
 	fmt.Println(r.Subject)
@@ -48,4 +47,7 @@ func main() {
 	a, b = s.Answer("孤蓬万里征", SideHost)
 	fmt.Println(a, b)
 	fmt.Println(s.Dump())
+*/
+
+	SetUpHttp()
 }
