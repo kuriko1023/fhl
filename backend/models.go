@@ -3,12 +3,15 @@ package main
 import (
 	"strconv"
 	"strings"
+
+	"database/sql"
 )
 
 type Player struct {
 	Id       string
 	InRoom   string
 	Nickname string
+	Avatar   string
 
 	// 传送消息的信道，往这里发送的消息会由 WebSocket 传至客户端
 	Channel chan interface{}
@@ -245,4 +248,14 @@ func (s *SubjectD) Answer(str string, from Side) ([]IntPair, interface{}) {
 // 计算一个字符串中的 Unicode 字符数
 func runes(s string) int {
 	return len([]rune(s))
+}
+
+// 与数据库交互的逻辑
+
+func SetUpDatabase() (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", "fhl.db")
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
