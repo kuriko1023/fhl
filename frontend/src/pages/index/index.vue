@@ -27,6 +27,7 @@
 					provider: 'weixin',
 					success: (ret) => {
 						this.uid = ret.code
+						console.log(this.uid)
 					},
 					fail: () => {
 						this.uid = 'fail'
