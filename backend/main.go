@@ -1,8 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 )
+
+var Config struct {
+	Port int `json:"port"`
+	AppID string `json:"appid"`
+	AppSecret string `json:"appsecret"`
+}
 
 func main() {
 	fmt.Println("Hello, world!")
@@ -48,6 +56,17 @@ func main() {
 	fmt.Println(a, b)
 	fmt.Println(s.Dump())
 */
+
+	// 读取配置
+	content, err := ioutil.ReadFile("config.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(content, &Config)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(Config)
 
 	SetUpHttp()
 }
