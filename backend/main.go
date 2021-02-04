@@ -4,13 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var Config struct {
-	Port int `json:"port"`
-	AppID string `json:"appid"`
+	Port      int    `json:"port"`
+	AppID     string `json:"appid"`
 	AppSecret string `json:"appsecret"`
 }
+
+var db *sql.DB
 
 func main() {
 	fmt.Println("Hello, world!")
@@ -58,15 +64,23 @@ func main() {
 */
 
 	// 读取配置
-	content, err := ioutil.ReadFile("config.json")
+	configPath := os.Getenv("CONFIG")
+	if configPath == "" {
+		configPath = "config.json"
+	}
+	content, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		panic(err)
 	}
-	err = json.Unmarshal(content, &Config)
-	if err != nil {
+	if err = json.Unmarshal(content, &Config); err != nil {
 		panic(err)
 	}
 	fmt.Println(Config)
+
+	if db, err = SetUpDatabase(); err != nil {
+		panic(err)
+	}
+	defer db.Close()
 
 	SetUpHttp()
 }
