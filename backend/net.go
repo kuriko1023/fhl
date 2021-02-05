@@ -253,13 +253,28 @@ messageLoop:
 	log.Println("connection closed")
 }
 
+var testCounter = 0
+
 func testHandler(w http.ResponseWriter, r *http.Request) {
 	content, err := ioutil.ReadFile("test.html")
 	if err != nil {
 		w.WriteHeader(404)
 		return
 	}
-	w.Write(content)
+	s := string(content)
+	var host string
+	var me string
+	if testCounter%2 == 0 {
+		host = "my"
+		me = "kuriko1023"
+	} else {
+		host = "kuriko1023"
+		me = "PiscesOvO"
+	}
+	testCounter++
+	s = strings.Replace(s, "~ host ~", host, 1)
+	s = strings.Replace(s, "~ me ~", me, 1)
+	w.Write([]byte(s))
 }
 
 func SetUpHttp() {
