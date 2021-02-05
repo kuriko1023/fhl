@@ -38,7 +38,7 @@ window.addEventListener("load", function(evt) {
             ws = null;
         }
         ws.onmessage = function(evt) {
-            print("RESPONSE", "#46f", true);
+            print("RECEIVE", "#46f", true);
             print(evt.data, "#238");
         }
         ws.onerror = function(evt) {
