@@ -21,9 +21,9 @@ var upgrader = websocket.Upgrader{
 // 传入微信登录 wx.login() 获得的 code
 // 返回 OpenID
 func login(code string) string {
-	// 调试用，若 code 以 "!" 开头，则 OpenID 等于 code 将 "!" 替换为 "+"
+	// 调试用，若 code 以 "!" 开头，则 OpenID 等于 code 去掉 "!"
 	if Config.Debug && len(code) >= 2 && code[0] == '!' {
-		return "+" + code[1:]
+		return code[1:]
 	}
 
 	resp, err := http.Get(
@@ -223,8 +223,20 @@ messageLoop:
 	log.Println("connection closed")
 }
 
+func testHandler(w http.ResponseWriter, r *http.Request) {
+	content, err := ioutil.ReadFile("test.html")
+	if err != nil {
+		w.WriteHeader(404)
+		return
+	}
+	w.Write(content)
+}
+
 func SetUpHttp() {
 	http.HandleFunc("/channel/", channelHandler)
+	if Config.Debug {
+		http.HandleFunc("/test", testHandler)
+	}
 
 	port := Config.Port
 	log.Printf("Listening on http://localhost:%d/\n", port)
