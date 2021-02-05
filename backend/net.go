@@ -71,6 +71,37 @@ func removeElement(s []*Player, p *Player) []*Player {
 	return s
 }
 
+// 向所有房间中的玩家更新房间状态
+func broadcastRoomStatus(room *Room) {
+	object := map[string]interface{}{
+		"type":        "room_status",
+		"host":        GetPlayer(room.Host).Nickname,
+		"host_status": "absent",
+		"guest":       nil,
+	}
+	if room.HostReady {
+		object["host_status"] = "ready"
+	} else {
+		hostPresent := false
+		for _, p := range room.People {
+			if p.Id == room.Host {
+				hostPresent = true
+				break
+			}
+		}
+		if hostPresent {
+			object["host_status"] = "present"
+		}
+	}
+	if g := room.Guest; g != "" {
+		object["guest"] = g
+	}
+	// 向所有玩家的连接发送消息
+	for _, p := range room.People {
+		p.Channel <- object
+	}
+}
+
 func channelHandler(w http.ResponseWriter, r *http.Request) {
 	cmpns := strings.SplitN(r.URL.Path[len("/channel/"):], "/", 2)
 	if len(cmpns) != 2 {
@@ -116,7 +147,7 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		Players[player.Id] = player
 	}
-	player.Channel = make(chan interface{})
+	player.Channel = make(chan interface{}, 3)
 	player.InRoom = room
 	room.People = append(room.People, player)
 	DataMutex.Unlock()
@@ -128,7 +159,7 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inChannel := make(chan interface{})
+	inChannel := make(chan interface{}, 3)
 	outChannel := player.Channel
 
 	go func(c *websocket.Conn, ch chan interface{}) {
@@ -150,6 +181,8 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		close(ch)
 	}(c, inChannel)
+
+	broadcastRoomStatus(room)
 
 messageLoop:
 	for inChannel != nil && outChannel != nil {
@@ -184,6 +217,8 @@ messageLoop:
 	player.InRoom = nil
 	player.Channel = nil // 清空 Channel 作为连接结束的信号
 	DataMutex.Unlock()
+
+	broadcastRoomStatus(room)
 
 	log.Println("connection closed")
 }
