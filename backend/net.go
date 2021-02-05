@@ -239,6 +239,11 @@ messageLoop:
 	// 清除状态
 	DataMutex.Lock()
 	room.People = removeElement(room.People, player)
+	if player.Id == room.Host {
+		room.HostReady = false
+	} else if player.Id == room.Guest {
+		room.Guest = ""
+	}
 	player.InRoom = nil
 	player.Channel = nil
 	DataMutex.Unlock()
@@ -285,5 +290,8 @@ func SetUpHttp() {
 
 	port := Config.Port
 	log.Printf("Listening on http://localhost:%d/\n", port)
+	if Config.Debug {
+		log.Printf("Visit http://localhost:%d/test for testing\n", port)
+	}
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
