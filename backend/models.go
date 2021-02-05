@@ -276,7 +276,7 @@ func SetUpDatabase() (*sql.DB, error) {
 
 	// 创建表
 	cmd := "CREATE TABLE IF NOT EXISTS players" +
-		"(id TEXT, nickname TEXT, avatar TEXT)"
+		"(id TEXT UNIQUE PRIMARY KEY, nickname TEXT, avatar TEXT)"
 	if _, err := db.Exec(cmd); err != nil {
 		db.Close()
 		return nil, err
@@ -310,13 +310,12 @@ func (p *Player) Save() error {
 	if Rooms[p.Id] == nil {
 		Rooms[p.Id] = &Room{Host: p.Id}
 	}
-	_, err := db.Exec("INSERT INTO players(nickname, avatar) "+
-		"VALUES($1, $2) "+
-		"ON CONFLICT DO UPDATE SET "+
-		"nickname=excluded.nickname, "+
-		"avatar=excluded.avatar "+
-		"WHERE id=$3",
-		p.Nickname, p.Avatar, p.Id)
+	_, err := db.Exec("INSERT INTO players(id, nickname, avatar) "+
+		"VALUES($1, $2, $3) "+
+		"ON CONFLICT(id) DO UPDATE SET "+
+		"nickname = excluded.nickname, "+
+		"avatar = excluded.avatar",
+		p.Id, p.Nickname, p.Avatar)
 	return err
 }
 
@@ -326,7 +325,7 @@ func GetPlayer(id string) *Player {
 	}
 	p := &Player{
 		Id:       id,
-		Nickname: "kuriko",
+		Nickname: "猫猫" + id[1:],
 		Avatar:   "https://kawa.moe/favicon.ico",
 	}
 	p.Save()
