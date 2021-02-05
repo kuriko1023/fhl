@@ -25,7 +25,8 @@ window.addEventListener("load", function(evt) {
             return false;
         }
         ws = new WebSocket(
-            'wss://flyhana.starrah.cn/channel/' + host.value +
+            (location.protocol === 'https:' ? 'wss:' : 'ws:') +
+            '//' + location.host + '/channel/' + host.value +
             '/!' + me.value);
         print("CONNECTING", "#aaa", true);
         ws.onopen = function(evt) {
@@ -70,7 +71,6 @@ window.addEventListener("load", function(evt) {
 <table style="padding: 12px; width: 100%">
 <tr><td valign="top" width="30%">
 <p>
-<form>
 房主
 <input id="host" type="text" value="kuriko">
 <p>
@@ -87,7 +87,6 @@ window.addEventListener("load", function(evt) {
 </textarea>
 <p>
 <button id="send">Send</button>
-</form>
 </td><td valign="top" width="70%">
 <div id="output" style="max-height: 500px; overflow: scroll"></div>
 </td></tr></table>
