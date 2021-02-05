@@ -39,9 +39,8 @@ type CorrectAnswer struct {
 
 type Room struct {
 	Host       string  // 房主 id
-	Guest      string  // 客人 id
-	HostReady  bool    // 房主是否准备
-	GuestReady bool    // 客人是否准备
+	HostReady  bool    // 房主是否坐下
+	Guest      string  // 已经坐下的客人 id
 	Mode       string  // 游戏模式，空字符串或 "A" "B" "C" "D" 之一
 	Subject    Subject // 游戏题目与进度（详细见下）
 	// 之前提交的所有文本，偶数下标对应房主，奇数下标对应客人

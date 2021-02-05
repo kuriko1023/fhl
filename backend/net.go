@@ -102,13 +102,33 @@ func broadcastRoomStatus(room *Room) {
 	}
 }
 
-// 令一个玩家做好准备
-func playerReady(p *Player) {
+// 一位玩家选择坐下
+func playerSetReady(p *Player) bool {
+	room := p.InRoom
+	if room.Host == p.Id {
+		room.HostReady = true
+	} else {
+		if room.Guest != "" && room.Guest != p.Id {
+			// 已经有人了 T-T
+			return false
+		}
+		room.Guest = p.Id
+	}
+	broadcastRoomStatus(room)
+	return true
 }
 
 // 处理玩家客户端发来的消息
 func handlePlayerMessage(p *Player, object map[string]interface{}) {
-	fmt.Println(object)
+	switch object["type"] {
+	case "ready":
+		if !playerSetReady(p) {
+			// TODO: 错误信息？
+			p.Channel <- struct{}{}
+		}
+	default:
+		p.Channel <- struct{}{}
+	}
 }
 
 func channelHandler(w http.ResponseWriter, r *http.Request) {
