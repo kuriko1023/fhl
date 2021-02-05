@@ -102,6 +102,15 @@ func broadcastRoomStatus(room *Room) {
 	}
 }
 
+// 令一个玩家做好准备
+func playerReady(p *Player) {
+}
+
+// 处理玩家客户端发来的消息
+func handlePlayerMessage(p *Player, object map[string]interface{}) {
+	fmt.Println(object)
+}
+
 func channelHandler(w http.ResponseWriter, r *http.Request) {
 	cmpns := strings.SplitN(r.URL.Path[len("/channel/"):], "/", 2)
 	if len(cmpns) != 2 {
@@ -138,7 +147,7 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 	// 写入连接状态
 	DataMutex.Lock()
 	if player.Channel != nil {
-		close(player.Channel)
+		player.Channel <- nil
 		// 复制一份
 		player = &Player{
 			Id:       player.Id,
@@ -159,11 +168,11 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inChannel := make(chan interface{}, 3)
+	inChannel := make(chan map[string]interface{}, 3)
 	outChannel := player.Channel
 
-	go func(c *websocket.Conn, ch chan interface{}) {
-		var object interface{}
+	go func(c *websocket.Conn, ch chan map[string]interface{}) {
+		var object map[string]interface{}
 		for {
 			if err := c.ReadJSON(&object); err != nil {
 				// NOTE: Go 1.16 起使用 net.ErrorClosed
@@ -190,14 +199,13 @@ messageLoop:
 		case object, ok := <-inChannel:
 			if !ok {
 				inChannel = nil
-				break
+				break messageLoop
 			}
-			fmt.Println(object)
+			handlePlayerMessage(player, object)
 
-		case object, ok := <-outChannel:
-			if !ok {
-				outChannel = nil
-				break
+		case object := <-outChannel:
+			if object == nil {
+				break messageLoop
 			}
 			if err := c.WriteJSON(object); err != nil {
 				log.Println(err)
@@ -207,16 +215,18 @@ messageLoop:
 	}
 
 	c.Close()
-	// inChannel 由 goroutine 在 c.Close() 触发的错误之后关闭
-	if outChannel != nil {
-		close(outChannel)
-	}
 
+	// 清除状态
 	DataMutex.Lock()
-	player.InRoom.People = removeElement(player.InRoom.People, player)
+	room.People = removeElement(room.People, player)
 	player.InRoom = nil
-	player.Channel = nil // 清空 Channel 作为连接结束的信号
+	player.Channel = nil
 	DataMutex.Unlock()
+
+	// 即使 inChannel 尚未关闭，它也将由
+	// goroutine 在 c.Close() 触发的错误之后关闭
+	// 而 outChannel 不能被外界关闭
+	close(outChannel)
 
 	broadcastRoomStatus(room)
 
