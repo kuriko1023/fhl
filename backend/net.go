@@ -189,10 +189,9 @@ messageLoop:
 }
 
 func SetUpHttp() {
-	port := 2310
-
 	http.HandleFunc("/channel/", channelHandler)
 
+	port := Config.Port
 	log.Printf("Listening on http://localhost:%d/\n", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
