@@ -1,8 +1,22 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 )
+
+var Config struct {
+	Port      int    `json:"port"`
+	AppID     string `json:"appid"`
+	AppSecret string `json:"appsecret"`
+}
+
+var db *sql.DB
 
 func main() {
 	fmt.Println("Hello, world!")
@@ -22,7 +36,6 @@ func main() {
 	for i := 0; i < 8; i++ {
 		fmt.Println(sl1[i], sl2[i])
 	}
-*/
 
 	r := Room{Subject: &SubjectA{Word: "花"}}
 	fmt.Println(r.Subject)
@@ -39,6 +52,35 @@ func main() {
 	fmt.Println(a, b)
 	a, b = s.Answer("千古兴亡多少事", SideHost)
 	fmt.Println(a, b)
-	fmt.Println(s)
 	fmt.Println(s.Dump())
+
+	s = &SubjectD{}
+	s.Parse("万 书 今 凉 得 来 柳 欲/一片 丝 如此 孤 庭 细 舟 觉/00000000/00000000")
+	a, b = s.Answer("孤帆一片日边来", SideHost)
+	fmt.Println(a, b)
+	a, b = s.Answer("孤蓬万里征", SideHost)
+	fmt.Println(a, b)
+	fmt.Println(s.Dump())
+*/
+
+	// 读取配置
+	configPath := os.Getenv("CONFIG")
+	if configPath == "" {
+		configPath = "config.json"
+	}
+	content, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		panic(err)
+	}
+	if err = json.Unmarshal(content, &Config); err != nil {
+		panic(err)
+	}
+	fmt.Println(Config)
+
+	if db, err = SetUpDatabase(); err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	SetUpHttp()
 }
