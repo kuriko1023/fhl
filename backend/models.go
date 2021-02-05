@@ -250,6 +250,14 @@ func runes(s string) int {
 	return len([]rune(s))
 }
 
+// 数据库
+
+// 所有玩家，键为玩家 ID
+var Players map[string]*Player
+
+// 所有房间，键为房主 ID
+var Rooms map[string]*Room
+
 // 与数据库交互的逻辑
 
 func SetUpDatabase() (*sql.DB, error) {
@@ -257,5 +265,41 @@ func SetUpDatabase() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// 创建表
+	cmd := "CREATE TABLE IF NOT EXISTS players" +
+		"(id TEXT, nickname TEXT, avatar TEXT)"
+	if _, err := db.Exec(cmd); err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	// 读取玩家信息
+	rows, err := db.Query("SELECT * FROM players")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		p := Player{}
+		err := rows.Scan(&p.Id, &p.Nickname, &p.Avatar)
+		if err != nil {
+			return nil, err
+		}
+		Players[p.Id] = &p
+	}
+
 	return db, nil
+}
+
+func (p *Player) Save() error {
+	Players[p.Id] = p
+	_, err := db.Exec("INSERT INTO players(nickname, avatar) "+
+		"VALUES($1, $2) "+
+		"ON CONFLICT DO UPDATE SET "+
+		"nickname=excluded.nickname, "+
+		"avatar=excluded.avatar "+
+		"WHERE id=$3",
+		p.Nickname, p.Avatar, p.Id)
+	return err
 }
