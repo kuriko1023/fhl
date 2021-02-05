@@ -14,6 +14,7 @@ var Config struct {
 	Port      int    `json:"port"`
 	AppID     string `json:"appid"`
 	AppSecret string `json:"appsecret"`
+	Debug     bool   `json:"debug"`
 }
 
 var db *sql.DB
@@ -75,7 +76,6 @@ func main() {
 	if err = json.Unmarshal(content, &Config); err != nil {
 		panic(err)
 	}
-	fmt.Println(Config)
 
 	if db, err = SetUpDatabase(); err != nil {
 		panic(err)
