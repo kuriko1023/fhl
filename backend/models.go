@@ -3,15 +3,18 @@ package main
 import (
 	"strconv"
 	"strings"
+	"sync"
 
 	"database/sql"
 )
 
 type Player struct {
 	Id       string
-	InRoom   string
 	Nickname string
 	Avatar   string
+
+	// 当前所处的房间
+	InRoom *Room
 
 	// 传送消息的信道，往这里发送的消息会由 WebSocket 传至客户端
 	Channel chan interface{}
@@ -49,6 +52,8 @@ type Room struct {
 	CurMove    Side // 当前正答题的一方
 	HostTimer  int  // 房主的剩余时间
 	GuestTimer int  // 客人的剩余时间
+
+	People []*Player // 建立了此房间的 WebSocket 连接的人
 }
 
 // 游戏题目与进度的接口，下面的 SubjectA/B/C/D 都会实现之。
@@ -252,6 +257,9 @@ func runes(s string) int {
 
 // 数据库
 
+// 访问两个全局 map 的互斥锁
+var DataMutex = &sync.Mutex{}
+
 // 所有玩家，键为玩家 ID
 var Players map[string]*Player
 
@@ -274,6 +282,10 @@ func SetUpDatabase() (*sql.DB, error) {
 		return nil, err
 	}
 
+	// 清空全局数据
+	Players = map[string]*Player{}
+	Rooms = map[string]*Room{}
+
 	// 读取玩家信息
 	rows, err := db.Query("SELECT * FROM players")
 	if err != nil {
@@ -287,6 +299,7 @@ func SetUpDatabase() (*sql.DB, error) {
 			return nil, err
 		}
 		Players[p.Id] = &p
+		Rooms[p.Id] = &Room{Host: p.Id}
 	}
 
 	return db, nil
@@ -294,6 +307,9 @@ func SetUpDatabase() (*sql.DB, error) {
 
 func (p *Player) Save() error {
 	Players[p.Id] = p
+	if Rooms[p.Id] == nil {
+		Rooms[p.Id] = &Room{Host: p.Id}
+	}
 	_, err := db.Exec("INSERT INTO players(nickname, avatar) "+
 		"VALUES($1, $2) "+
 		"ON CONFLICT DO UPDATE SET "+
@@ -302,4 +318,17 @@ func (p *Player) Save() error {
 		"WHERE id=$3",
 		p.Nickname, p.Avatar, p.Id)
 	return err
+}
+
+func GetPlayer(id string) *Player {
+	if p := Players[id]; p != nil {
+		return p
+	}
+	p := &Player{
+		Id:       id,
+		Nickname: "kuriko",
+		Avatar:   "https://kawa.moe/favicon.ico",
+	}
+	p.Save()
+	return p
 }
