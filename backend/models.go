@@ -325,7 +325,7 @@ func GetPlayer(id string) *Player {
 	}
 	p := &Player{
 		Id:       id,
-		Nickname: "猫猫" + id[1:],
+		Nickname: "猫猫" + id,
 		Avatar:   "https://kawa.moe/favicon.ico",
 	}
 	p.Save()
