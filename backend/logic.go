@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"index/suffixarray"
 	"math/rand"
@@ -432,6 +433,13 @@ restartCalculate:
 
 // 读入数据集，填充所有全局变量
 func initDataset() {
+	// 创建 precal/ 目录
+	if err := os.Mkdir("precal", os.ModeDir | 0755); err != nil {
+		if !errors.Is(err, os.ErrExist) {
+			panic(err)
+		}
+	}
+
 	articles = []Article{}
 	hotArticles = []Article{}
 	hotWords1 = []string{}
