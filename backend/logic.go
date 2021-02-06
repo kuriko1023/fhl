@@ -537,3 +537,117 @@ func initDataset() {
 
 	rand.Seed(1023)
 }
+
+// 对称删除模糊匹配算法
+
+// 词典，包含一个 hash 对应的所有句子位置 (文章编号, 句子下标)
+var symDelDict map[uint64][]IntPair
+
+// 过滤器，所有错误 hash 的集合
+var symDelFilter map[uint64]struct{}
+
+// 初始化词典
+func initSymDel() {
+	symDelDict = map[uint64][]IntPair{}
+	symDelFilter = map[uint64]struct{}{}
+	for i, article := range articles {
+		for j, s := range article.Content {
+			runes := []rune(s)
+			hash := uint64(0)
+			for _, c := range runes {
+				hash += uint64(c) * (uint64(c) + 97)
+			}
+			// 加入词典
+			value := symDelDict[hash]
+			if value == nil {
+				value = []IntPair{}
+			}
+			value = append(value, IntPair{i, j})
+			symDelDict[hash] = value
+			// 加入过滤器
+			symDelFilter[hash] = struct{}{}
+			for p, c := range runes {
+				pval := uint64(c) * (uint64(c) + 97)
+				for q := -1; q < 0 && q < p; q++ {
+					qval := uint64(0)
+					if q != -1 {
+						qval = uint64(runes[q]) * (uint64(runes[q]) + 97)
+					}
+					symDelFilter[hash-pval-qval] = struct{}{}
+				}
+			}
+		}
+	}
+}
+
+// 检查句子是否在诗词库中
+// 返回：(篇目编号, 句子下标)
+// 找不到时，返回的第一个值为 -2；若有接近，则为 -1
+func checkSentenceInDataset(text []string) (int, int) {
+	pivot := 0
+	// 找到第一个长度 >= 4 的句子；若无，则取第一句
+	for i, s := range text {
+		if len([]rune(s)) >= 4 {
+			pivot = i
+			break
+		}
+	}
+
+	// 查找数据库
+	hash := uint64(0)
+	for _, c := range text[pivot] {
+		hash += uint64(c) * (uint64(c) + 97)
+	}
+	if list := symDelDict[hash]; list != nil {
+		for _, pos := range list {
+			article := &articles[pos.a]
+			start := pos.b - pivot
+			if start >= 0 && start+len(text) <= len(article.Content) {
+				valid := true
+				for i, s := range text {
+					if article.Content[start+i] != s {
+						valid = false
+						break
+					}
+				}
+				if valid {
+					return pos.a, start
+				}
+			}
+		}
+	}
+
+	// 检查是否有接近
+	near := true
+nearLoop:
+	for _, s := range text {
+		runes := []rune(s)
+		hash := uint64(0)
+		for _, c := range runes {
+			hash += uint64(c) * (uint64(c) + 97)
+		}
+		if _, has := symDelFilter[hash]; has {
+			continue nearLoop
+		}
+		for p, c := range runes {
+			pval := uint64(c) * (uint64(c) + 97)
+			for q := -1; q < p; q++ {
+				qval := uint64(0)
+				if q != -1 {
+					qval = uint64(runes[q]) * (uint64(runes[q]) + 97)
+				}
+				if _, has := symDelFilter[hash-pval-qval]; has {
+					continue nearLoop
+				}
+			}
+		}
+		near = false
+		break
+	}
+
+	if near {
+		return -1, -1
+	} else {
+		return -2, -2
+	}
+}
