@@ -23,17 +23,17 @@ func main() {
 	fmt.Println("Hello, world!")
 	initDataset()
 	var a, b int
-	a, b = checkSentenceInDataset([]string{"悠哉悠哉", "辗转反侧"})
+	a, b = lookupText([]string{"悠哉悠哉", "辗转反侧"})
 	fmt.Println(a, b)
-	a, b = checkSentenceInDataset([]string{"悠哉游哉", "辗转反侧"})
+	a, b = lookupText([]string{"悠哉游哉", "辗转反侧"})
 	fmt.Println(a, b)
-	a, b = checkSentenceInDataset([]string{"辗转反侧", "呜呜呜呜"})
+	a, b = lookupText([]string{"辗转反侧", "呜呜呜呜"})
 	fmt.Println(a, b)
-	a, b = checkSentenceInDataset([]string{"梳洗罢", "独倚望江楼"})
+	a, b = lookupText([]string{"梳洗罢", "独倚望江楼"})
 	fmt.Println(a, b)
-	a, b = checkSentenceInDataset([]string{"梳洗黑", "独倚望江楼"})
+	a, b = lookupText([]string{"梳洗黑", "独倚望江楼"})
 	fmt.Println(a, b)
-	a, b = checkSentenceInDataset([]string{"江南好"})
+	a, b = lookupText([]string{"江南好"})
 	fmt.Println(a, b)
 
 	for i := 0; i < 10; i++ {
