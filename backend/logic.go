@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -344,6 +345,30 @@ func (s byValueDesc) Less(i, j int) bool {
 }
 
 func furtherInit() {
+	if file, err := os.Open("precal/pairs.txt"); err == nil {
+		defer file.Close()
+
+		hotWordsFreq = make(map[string]int)
+
+		sc := bufio.NewScanner(file)
+		for sc.Scan() {
+			fields := strings.SplitN(sc.Text(), " ", 2)
+			if len(fields) < 2 {
+				fmt.Println("Incorrect precalculated data format")
+				goto restartCalculate
+			}
+			count, err := strconv.Atoi(fields[1])
+			if err != nil {
+				fmt.Println(err)
+				goto restartCalculate
+			}
+			hotWordsFreq[fields[0]] = count
+		}
+
+		return
+	}
+restartCalculate:
+
 	hotWordsFreq = make(map[string]int)
 
 	// 初始化高频词组合频次表，令其包括所有单字&单字、单字&双字、双字&双字的组合
@@ -383,6 +408,22 @@ func furtherInit() {
 	// 	fmt.Println(k,v)
 	// }
 	// fmt.Println("finish")
+
+	f, err := os.Create("precal/pairs.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	w := bufio.NewWriter(f)
+	for k, v := range hotWordsFreq {
+		if v >= 50 {
+			_, err := w.WriteString(fmt.Sprintf("%s %d\n", k, v))
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+	w.Flush()
 }
 
 // 读入数据集，填充所有全局变量

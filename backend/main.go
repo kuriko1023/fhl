@@ -21,9 +21,7 @@ var db *sql.DB
 
 func main() {
 	fmt.Println("Hello, world!")
-/*
 	initDataset()
-	initSymDel()
 	var a, b int
 	a, b = checkSentenceInDataset([]string{"悠哉悠哉", "辗转反侧"})
 	fmt.Println(a, b)
@@ -37,7 +35,6 @@ func main() {
 	fmt.Println(a, b)
 	a, b = checkSentenceInDataset([]string{"江南好"})
 	fmt.Println(a, b)
-	return
 
 	for i := 0; i < 10; i++ {
 		fmt.Println(generateA(5, 3))
@@ -53,6 +50,10 @@ func main() {
 	for i := 0; i < 8; i++ {
 		fmt.Println(sl1[i], sl2[i])
 	}
+	//os.Stdin.Read(make([]byte, 1))
+	return
+/*
+	return
 
 	r := Room{Subject: &SubjectA{Word: "花"}}
 	fmt.Println(r.Subject)
@@ -65,19 +66,20 @@ func main() {
 
 	s = &SubjectC{}
 	s.Parse("古 梦 雁/长 舟 送 寄 事 神 不 生 西风 多少/1000010011")
-	a, b := s.Answer("千古兴亡多少事", SideHost)
-	fmt.Println(a, b)
-	a, b = s.Answer("千古兴亡多少事", SideHost)
-	fmt.Println(a, b)
+	c, d := s.Answer("千古兴亡多少事", SideHost)
+	fmt.Println(c, d)
+	c, d = s.Answer("千古兴亡多少事", SideHost)
+	fmt.Println(c, d)
 	fmt.Println(s.Dump())
 
 	s = &SubjectD{}
 	s.Parse("万 书 今 凉 得 来 柳 欲/一片 丝 如此 孤 庭 细 舟 觉/00000000/00000000")
-	a, b = s.Answer("孤帆一片日边来", SideHost)
-	fmt.Println(a, b)
-	a, b = s.Answer("孤蓬万里征", SideHost)
-	fmt.Println(a, b)
+	c, d = s.Answer("孤帆一片日边来", SideHost)
+	fmt.Println(c, d)
+	c, d = s.Answer("孤蓬万里征", SideHost)
+	fmt.Println(c, d)
 	fmt.Println(s.Dump())
+	os.Stdin.Read(make([]byte, 1))
 */
 
 	// 读取配置
