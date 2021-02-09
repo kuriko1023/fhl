@@ -2,12 +2,12 @@ package main
 
 import (
 	"bufio"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"math/rand"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/agnivade/levenshtein"
@@ -34,7 +34,7 @@ var hotWords1 []string
 var hotWords2 []string
 
 // 高频词的出现频数，单字和双字分开
-type RunePair struct{ a, b rune }
+type RunePair struct{ A, B rune }
 var hotWords1Count map[rune]int
 var hotWords2Count map[RunePair]int
 
@@ -348,30 +348,6 @@ func (s byValueDesc) Less(i, j int) bool {
 }
 
 func furtherInit() {
-	if file, err := os.Open("precal/pairs.txt"); err == nil {
-		defer file.Close()
-
-		hotWordsFreq = make(map[string]int)
-
-		sc := bufio.NewScanner(file)
-		for sc.Scan() {
-			fields := strings.SplitN(sc.Text(), " ", 2)
-			if len(fields) < 2 {
-				fmt.Println("Incorrect precalculated data format")
-				goto restartCalculate
-			}
-			count, err := strconv.Atoi(fields[1])
-			if err != nil {
-				fmt.Println(err)
-				goto restartCalculate
-			}
-			hotWordsFreq[fields[0]] = count
-		}
-
-		return
-	}
-restartCalculate:
-
 	hotWordsFreq = make(map[string]int)
 
 	// 初始化高频词组合频次表，令其包括所有单字&单字、单字&双字、双字&双字的组合
@@ -412,31 +388,50 @@ restartCalculate:
 	// }
 	// fmt.Println("finish")
 
-	f, err := os.Create("precal/pairs.txt")
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-	w := bufio.NewWriter(f)
 	for k, v := range hotWordsFreq {
-		if v >= 50 {
-			_, err := w.WriteString(fmt.Sprintf("%s %d\n", k, v))
-			if err != nil {
-				panic(err)
-			}
+		if v < 50 {
+			delete(hotWordsFreq, k)
 		}
 	}
-	w.Flush()
 }
 
 // 读入数据集，填充所有全局变量
 func initDataset() {
+	rand.Seed(1023)
+
 	// 创建 precal/ 目录
 	if err := os.Mkdir("precal", os.ModeDir | 0755); err != nil {
 		if !errors.Is(err, os.ErrExist) {
 			panic(err)
 		}
 	}
+
+	gobValues := []interface{}{
+		&hotWords1,
+		&hotWords2,
+		&hotWords1Count,
+		&hotWords2Count,
+		&allHotSentences,
+		&hotWordsFreq,
+		&hotArticles, // TODO: 这好吗？这不好
+	}
+
+	gobFile, err := os.Open("precal/precal.gob")
+	if err == nil {
+		defer gobFile.Close()
+		decoder := gob.NewDecoder(gobFile)
+		for _, v := range gobValues {
+			if err := decoder.Decode(v); err != nil {
+				panic(err)
+			}
+		}
+		return
+	}
+	gobFile, err = os.Create("precal/precal.gob")
+	if err != nil {
+		panic(err)
+	}
+	defer gobFile.Close()
 
 	articles = []Article{}
 	hotArticles = []Article{}
@@ -525,7 +520,7 @@ func initDataset() {
 	}
 	for k, v := range hotWords2Count {
 		hotWords2List = append(hotWords2List, KVPair{
-			string(k.a) + string(k.b),
+			string(k.A) + string(k.B),
 			v,
 		})
 	}
@@ -603,8 +598,17 @@ func initDataset() {
 		fmt.Printf("%d 字：%d 句\n", i + ALL_HOT_LEN_MIN, len(c))
 	}
 
-	rand.Seed(1023)
+	furtherInit()
+
+	encoder := gob.NewEncoder(gobFile)
+	for _, v := range gobValues {
+		if err := encoder.Encode(v); err != nil {
+			panic(err)
+		}
+	}
 }
+
+// 对称删除纠错算法
 
 type HashType uint64
 type ArticleIdxType uint32
