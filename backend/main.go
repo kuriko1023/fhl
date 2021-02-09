@@ -22,6 +22,7 @@ var db *sql.DB
 func main() {
 	fmt.Println("Hello, world!")
 	initDataset()
+	initErrCorr()
 	var a, b int
 	a, b = lookupText([]string{"悠哉悠哉", "辗转反侧"})
 	fmt.Println(a, b)
