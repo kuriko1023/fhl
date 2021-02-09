@@ -458,6 +458,9 @@ func initDataset() {
 
 	i := 0
 	sc := bufio.NewScanner(file)
+	p := 0
+	q := 0
+	t := 0
 	for sc.Scan() {
 		// 随机抽取十分之一
 		i++
@@ -489,6 +492,13 @@ func initDataset() {
 		slice := []byte("/" + fields[4] + "/;")
 		allText = append(allText, slice...)
 
+		for _, s := range article.Content {
+			n := len([]rune(s))
+			p += 1
+			q += n
+			t += n*(n+1)/2 + 1
+		}
+
 		// 若不是重复篇目，则计入高频词
 		if fields[0] != " " {
 			for _, s := range article.Content {
@@ -507,6 +517,7 @@ func initDataset() {
 	}
 
 	fmt.Printf("dataset: %d articles\n", len(articles))
+	fmt.Printf("%d, %d, %d\n", p, q, t)
 
 	sfxArr = suffixarray.New(allText)
 	fmt.Printf("total length: %d bytes\n", len(allText))
@@ -599,6 +610,112 @@ func initDataset() {
 	rand.Seed(1023)
 }
 
+type HashType uint64
+
+const HASH_W = 8
+
+func hash(rs []rune) HashType {
+	h := HashType(0)
+	for _, r := range rs {
+		if r > 0 {
+			h = h*100003 + HashType(r)
+		}
+	}
+	return h
+}
+
+var errCorrFile *os.File
+var errCorrFileLen int64
+
+func openErrCorrFile() error {
+	file, err := os.Open("precal/errcorr.db")
+	if err != nil {
+		return err
+	}
+	errCorrFile = file
+	stat, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	errCorrFileLen = stat.Size()
+	return nil
+}
+
+func initErrCorr() {
+	if openErrCorrFile() == nil {
+		return
+	}
+
+	x := []HashType{}
+	for _, article := range articles {
+		for _, s := range article.Content {
+			rs := []rune(s)
+			x = append(x, hash(rs))
+			for i, r := range rs {
+				rs[i] = -1
+				x = append(x, hash(rs))
+				for j, r := range rs[:i] {
+					rs[j] = -1
+					x = append(x, hash(rs))
+					rs[j] = r
+				}
+				rs[i] = r
+			}
+		}
+	}
+	println(len(x))
+	sort.Slice(x, func(i, j int) bool {
+		return x[i] < x[j]
+	})
+
+	f, err := os.Create("precal/errcorr.db")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	w := bufio.NewWriter(f)
+
+	count := 0
+	for i, v := range x {
+		if i == 0 || v != x[i-1] {
+			count++
+			for j := 0; j < HASH_W; j++ {
+				w.WriteByte(byte(v >> (j * 8)))
+			}
+		}
+	}
+
+	w.Flush()
+	println(count)
+
+	if err := openErrCorrFile(); err != nil {
+		panic(err)
+	}
+}
+
+// 检查纠错数据库中是否存在某个 hash 值
+func lookupErrCorr(x HashType) bool {
+	lo := int64(-1)
+	hi := errCorrFileLen / HASH_W
+	buf := make([]byte, HASH_W)
+	for lo < hi-1 {
+		mid := (lo + hi) / 2
+		errCorrFile.ReadAt(buf, mid*HASH_W)
+		v := HashType(0)
+		for i, b := range buf {
+			v += (HashType(b) << (i * 8))
+		}
+		if v > x {
+			hi = mid
+		} else if v < x {
+			lo = mid
+		} else {
+			return true
+		}
+	}
+	return false
+}
+
 // 检查句子是否在诗词库中
 // 返回：(篇目编号, 句子下标)
 // 找不到时，返回的第一个值为 -2；若有接近，则为 -1
@@ -609,36 +726,31 @@ func lookupText(text []string) (int, int) {
 		return 0, 0
 	}
 
-	near := false
-/*
 	// 检查是否有接近
 	near := true
 nearLoop:
 	for _, s := range text {
-		runes := []rune(s)
-		hash := uint64(0)
-		for _, c := range runes {
-			hash += uint64(c) * (uint64(c) + 97)
-		}
-		if _, has := symDelFilter[hash]; has {
+		rs := []rune(s)
+		if lookupErrCorr(hash(rs)) {
 			continue nearLoop
 		}
-		for p, c := range runes {
-			pval := uint64(c) * (uint64(c) + 97)
-			for q := -1; q < p; q++ {
-				qval := uint64(0)
-				if q != -1 {
-					qval = uint64(runes[q]) * (uint64(runes[q]) + 97)
-				}
-				if _, has := symDelFilter[hash-pval-qval]; has {
+		for i, r := range rs {
+			rs[i] = -1
+			if lookupErrCorr(hash(rs)) {
+				continue nearLoop
+			}
+			for j, r := range rs[:i] {
+				rs[j] = -1
+				if lookupErrCorr(hash(rs)) {
 					continue nearLoop
 				}
+				rs[j] = r
 			}
+			rs[i] = r
 		}
 		near = false
 		break
 	}
-*/
 
 	if near {
 		return -1, -1
