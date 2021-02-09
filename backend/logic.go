@@ -611,8 +611,18 @@ func initDataset() {
 }
 
 type HashType uint64
+type ArticleIdxType uint32
+type ContentIdxType uint32
+type ErrCorrRecord struct {
+	Hash       HashType
+	ArticleIdx ArticleIdxType
+	ContentIdx ContentIdxType
+}
 
 const HASH_W = 8
+const ART_IDX_W = 4
+const CON_IDX_W = 4
+const RECORD_W = HASH_W + ART_IDX_W + CON_IDX_W
 
 func hash(rs []rune) HashType {
 	h := HashType(0)
@@ -625,7 +635,7 @@ func hash(rs []rune) HashType {
 }
 
 var errCorrFile *os.File
-var errCorrFileLen int64
+var errCorrNumRecords int64
 
 func openErrCorrFile() error {
 	file, err := os.Open("precal/errcorr.db")
@@ -637,8 +647,39 @@ func openErrCorrFile() error {
 	if err != nil {
 		return err
 	}
-	errCorrFileLen = stat.Size()
+	errCorrNumRecords = stat.Size() / RECORD_W
 	return nil
+}
+
+func readErrCorrRecord(index int64) ErrCorrRecord {
+	buf := [RECORD_W]byte{}
+	errCorrFile.ReadAt(buf[:], index*RECORD_W)
+	rec := ErrCorrRecord{0, 0, 0}
+	for i, b := range buf[0:HASH_W] {
+		rec.Hash += (HashType(b) << (i * 8))
+	}
+	for i, b := range buf[HASH_W:HASH_W+ART_IDX_W] {
+		rec.ArticleIdx += (ArticleIdxType(b) << (i * 8))
+	}
+	for i, b := range buf[HASH_W+ART_IDX_W:] {
+		rec.ContentIdx += (ContentIdxType(b) << (i * 8))
+	}
+	return rec
+}
+
+func writeErrCorrRecord(w *bufio.Writer, rec ErrCorrRecord) error {
+	buf := [RECORD_W]byte{}
+	for i := 0; i < HASH_W; i++ {
+		buf[i] = byte(rec.Hash >> (i * 8))
+	}
+	for i := 0; i < ART_IDX_W; i++ {
+		buf[HASH_W + i] = byte(rec.ArticleIdx >> (i * 8))
+	}
+	for i := 0; i < CON_IDX_W; i++ {
+		buf[HASH_W + ART_IDX_W + i] = byte(rec.ContentIdx >> (i * 8))
+	}
+	_, err := w.Write(buf[:])
+	return err
 }
 
 func initErrCorr() {
@@ -679,8 +720,9 @@ func initErrCorr() {
 	for i, v := range x {
 		if i == 0 || v != x[i-1] {
 			count++
-			for j := 0; j < HASH_W; j++ {
-				w.WriteByte(byte(v >> (j * 8)))
+			rec := ErrCorrRecord{v, 10, 23}
+			if err := writeErrCorrRecord(w, rec); err != nil {
+				panic(err)
 			}
 		}
 	}
@@ -694,26 +736,21 @@ func initErrCorr() {
 }
 
 // 检查纠错数据库中是否存在某个 hash 值
-func lookupErrCorr(x HashType) bool {
+func lookupErrCorr(x HashType) (bool, ErrCorrRecord) {
 	lo := int64(-1)
-	hi := errCorrFileLen / HASH_W
-	buf := make([]byte, HASH_W)
+	hi := errCorrNumRecords
 	for lo < hi-1 {
 		mid := (lo + hi) / 2
-		errCorrFile.ReadAt(buf, mid*HASH_W)
-		v := HashType(0)
-		for i, b := range buf {
-			v += (HashType(b) << (i * 8))
-		}
-		if v > x {
+		rec := readErrCorrRecord(mid)
+		if rec.Hash > x {
 			hi = mid
-		} else if v < x {
+		} else if rec.Hash < x {
 			lo = mid
 		} else {
-			return true
+			return true, rec
 		}
 	}
-	return false
+	return false, ErrCorrRecord{}
 }
 
 // 检查句子是否在诗词库中
@@ -731,17 +768,17 @@ func lookupText(text []string) (int, int) {
 nearLoop:
 	for _, s := range text {
 		rs := []rune(s)
-		if lookupErrCorr(hash(rs)) {
+		if b, _ := lookupErrCorr(hash(rs)); b {
 			continue nearLoop
 		}
 		for i, r := range rs {
 			rs[i] = -1
-			if lookupErrCorr(hash(rs)) {
+			if b, _ := lookupErrCorr(hash(rs)); b {
 				continue nearLoop
 			}
 			for j, r := range rs[:i] {
 				rs[j] = -1
-				if lookupErrCorr(hash(rs)) {
+				if b, _ := lookupErrCorr(hash(rs)); b {
 					continue nearLoop
 				}
 				rs[j] = r
