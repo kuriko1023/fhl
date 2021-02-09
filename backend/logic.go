@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"index/suffixarray"
 	"math/rand"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/agnivade/levenshtein"
 )
 
 // 一篇诗词
@@ -27,9 +28,6 @@ var articles []Article
 
 // 名篇的列表
 var hotArticles []Article
-
-// 词典，包含一个 hash 对应的所有句子位置 (文章编号, 句子下标)
-var sfxArr *suffixarray.Index
 
 // 所有高频词组成的列表，单字和双字分开，各自按频率降序排序
 var hotWords1 []string
@@ -518,8 +516,6 @@ func initDataset() {
 
 	fmt.Printf("dataset: %d articles\n", len(articles))
 	fmt.Printf("%d, %d, %d\n", p, q, t)
-
-	sfxArr = suffixarray.New(allText)
 	fmt.Printf("total length: %d bytes\n", len(allText))
 
 	hotWords1List := byValueDesc{}
@@ -658,7 +654,7 @@ func readErrCorrRecord(index int64) ErrCorrRecord {
 	for i, b := range buf[0:HASH_W] {
 		rec.Hash += (HashType(b) << (i * 8))
 	}
-	for i, b := range buf[HASH_W:HASH_W+ART_IDX_W] {
+	for i, b := range buf[HASH_W : HASH_W+ART_IDX_W] {
 		rec.ArticleIdx += (ArticleIdxType(b) << (i * 8))
 	}
 	for i, b := range buf[HASH_W+ART_IDX_W:] {
@@ -673,13 +669,34 @@ func writeErrCorrRecord(w *bufio.Writer, rec ErrCorrRecord) error {
 		buf[i] = byte(rec.Hash >> (i * 8))
 	}
 	for i := 0; i < ART_IDX_W; i++ {
-		buf[HASH_W + i] = byte(rec.ArticleIdx >> (i * 8))
+		buf[HASH_W+i] = byte(rec.ArticleIdx >> (i * 8))
 	}
 	for i := 0; i < CON_IDX_W; i++ {
-		buf[HASH_W + ART_IDX_W + i] = byte(rec.ContentIdx >> (i * 8))
+		buf[HASH_W+ART_IDX_W+i] = byte(rec.ContentIdx >> (i * 8))
 	}
 	_, err := w.Write(buf[:])
 	return err
+}
+
+func forEachPossibleErrHash(s string, fn func(h HashType) bool) {
+	rs := []rune(s)
+	if fn(hash(rs)) {
+		return
+	}
+	for i, r := range rs {
+		rs[i] = -1
+		if fn(hash(rs)) {
+			return
+		}
+		for j, r := range rs[:i] {
+			rs[j] = -1
+			if fn(hash(rs)) {
+				return
+			}
+			rs[j] = r
+		}
+		rs[i] = r
+	}
 }
 
 func initErrCorr() {
@@ -687,26 +704,22 @@ func initErrCorr() {
 		return
 	}
 
-	x := []HashType{}
-	for _, article := range articles {
-		for _, s := range article.Content {
-			rs := []rune(s)
-			x = append(x, hash(rs))
-			for i, r := range rs {
-				rs[i] = -1
-				x = append(x, hash(rs))
-				for j, r := range rs[:i] {
-					rs[j] = -1
-					x = append(x, hash(rs))
-					rs[j] = r
-				}
-				rs[i] = r
-			}
+	x := []ErrCorrRecord{}
+	for i, article := range articles {
+		for j, s := range article.Content {
+			forEachPossibleErrHash(s, func(h HashType) bool {
+				x = append(x, ErrCorrRecord{
+					Hash:       h,
+					ArticleIdx: ArticleIdxType(i),
+					ContentIdx: ContentIdxType(j),
+				})
+				return false
+			})
 		}
 	}
 	println(len(x))
 	sort.Slice(x, func(i, j int) bool {
-		return x[i] < x[j]
+		return x[i].Hash < x[j].Hash
 	})
 
 	f, err := os.Create("precal/errcorr.db")
@@ -717,10 +730,9 @@ func initErrCorr() {
 	w := bufio.NewWriter(f)
 
 	count := 0
-	for i, v := range x {
-		if i == 0 || v != x[i-1] {
+	for i, rec := range x {
+		if i == 0 || rec != x[i-1] {
 			count++
-			rec := ErrCorrRecord{v, 10, 23}
 			if err := writeErrCorrRecord(w, rec); err != nil {
 				panic(err)
 			}
@@ -735,63 +747,76 @@ func initErrCorr() {
 	}
 }
 
-// 检查纠错数据库中是否存在某个 hash 值
-func lookupErrCorr(x HashType) (bool, ErrCorrRecord) {
+// 在纠错数据库中查找某个 hash 值
+// 返回 >= 此 hash 的最小记录位置，即 lower_bound
+func lookupErrCorr(x HashType) int64 {
 	lo := int64(-1)
 	hi := errCorrNumRecords
 	for lo < hi-1 {
 		mid := (lo + hi) / 2
 		rec := readErrCorrRecord(mid)
-		if rec.Hash > x {
-			hi = mid
-		} else if rec.Hash < x {
+		if rec.Hash < x {
 			lo = mid
 		} else {
-			return true, rec
+			hi = mid
 		}
 	}
-	return false, ErrCorrRecord{}
+	return hi
 }
 
 // 检查句子是否在诗词库中
-// 返回：(篇目编号, 句子下标)
-// 找不到时，返回的第一个值为 -2；若有接近，则为 -1
-func lookupText(text []string) (int, int) {
-	pattern := []byte("/" + strings.Join(text, "/") + "/")
-	offs := sfxArr.Lookup(pattern, 1)
-	if offs != nil {
-		return 0, 0
+// 返回：(是否完全一致, 篇目编号, 句子下标)
+// 找不到时，返回的篇目编号与句子下标均为 -1
+func lookupText(text []string) (bool, int, int) {
+	// 找到第一个至少含四字的子句；若无则选择第一个
+	pivot := 0
+	for i, s := range text {
+		if len([]rune(s)) >= 4 {
+			pivot = i
+			break
+		}
 	}
 
-	// 检查是否有接近
-	near := true
-nearLoop:
-	for _, s := range text {
-		rs := []rune(s)
-		if b, _ := lookupErrCorr(hash(rs)); b {
-			continue nearLoop
-		}
-		for i, r := range rs {
-			rs[i] = -1
-			if b, _ := lookupErrCorr(hash(rs)); b {
-				continue nearLoop
+	// 是否有接近
+	bestDist := 3 // 最大允许的距离 + 1
+	bestArticle := -1
+	bestContent := -1
+
+	forEachPossibleErrHash(text[pivot], func(h HashType) bool {
+		index := lookupErrCorr(h)
+		for index < errCorrNumRecords {
+			rec := readErrCorrRecord(index)
+			if rec.Hash != h {
+				break
 			}
-			for j, r := range rs[:i] {
-				rs[j] = -1
-				if b, _ := lookupErrCorr(hash(rs)); b {
-					continue nearLoop
+
+			article := &articles[rec.ArticleIdx]
+			i := int(rec.ContentIdx) - pivot
+			if i >= 0 && i+len(text) <= len(article.Content) {
+				// 检查两段文字是否相同或接近
+				templ := article.Content[i : i+len(text)]
+				totalDist := 0
+				for j, s := range text {
+					dist := levenshtein.ComputeDistance(s, templ[j])
+					totalDist += dist
+					if totalDist >= bestDist {
+						break
+					}
 				}
-				rs[j] = r
+				if totalDist < bestDist {
+					bestDist = totalDist
+					bestArticle = int(rec.ArticleIdx)
+					bestContent = i
+					if totalDist == 0 {
+						return true
+					}
+				}
 			}
-			rs[i] = r
-		}
-		near = false
-		break
-	}
 
-	if near {
-		return -1, -1
-	} else {
-		return -2, -2
-	}
+			index++
+		}
+		return false
+	})
+
+	return (bestDist == 0), bestArticle, bestContent
 }
