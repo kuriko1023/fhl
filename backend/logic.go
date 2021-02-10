@@ -23,10 +23,14 @@ type Article struct {
 
 // 所有诗词的列表
 // 每一项的 Id 等于此列表中的下标
-var articles []Article
+// 后续建立了一个 LRU 缓存，某篇目不在缓存中时，对应项为 nil
+var articles []*Article
+
+// 每个篇目在文件中的偏移值
+var articleOffset []int64
 
 // 名篇的列表
-var hotArticles []Article
+var hotArticles []*Article
 
 // 所有高频词组成的列表，单字和双字分开，各自按频率降序排序
 var hotWords1 []string
@@ -394,7 +398,10 @@ func furtherInit() {
 	}
 }
 
+var datasetFile *os.File
+
 var gobValues = []interface{}{
+	&articleOffset,
 	&hotWords1,
 	&hotWords2,
 	&hotWords1Count,
@@ -422,6 +429,9 @@ func loadPrecal() error {
 			return err
 		}
 	}
+
+	// 创建空的 articles 数组
+	articles = make([]*Article, len(articleOffset))
 
 	// 纠错数据
 	offs, err := file.Seek(0, os.SEEK_CUR)
@@ -481,61 +491,70 @@ func savePrecalErrCorr(x []ErrCorrRecord) error {
 	return nil
 }
 
+func parseArticle(id int, s string) (*Article, string) {
+	fields := strings.SplitN(s, "\t", 5)
+	if len(fields) < 5 {
+		panic("Incorrect dataset format")
+	}
+
+	return &Article{
+		Id:      id,
+		Title:   fields[3],
+		Dynasty: fields[1],
+		Author:  fields[2],
+		Content: strings.Split(fields[4], "/"),
+	}, fields[0]
+}
+
 // 读入数据集，填充所有全局变量
 func initDataset() {
 	rand.Seed(1023)
-
-	articles = []Article{}
-	hotArticles = []Article{}
-	hotWords1 = []string{}
-	hotWords2 = []string{}
 
 	file, err := os.Open("dataset.txt")
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
+	datasetFile = file
 
-	allText := []byte{}
+	if loadPrecal() == nil {
+		return
+	}
+
+	articles = []*Article{}
+	articleOffset = []int64{}
+	hotArticles = []*Article{}
+	hotWords1 = []string{}
+	hotWords2 = []string{}
 
 	hotWords1Count = map[rune]int{}
 	hotWords2Count = map[RunePair]int{}
 
 	i := 0
 	sc := bufio.NewScanner(file)
+	offs := int64(0)
 	p := 0
 	q := 0
 	t := 0
 	for sc.Scan() {
+		prevOffs := offs
+		offs += int64(len(sc.Text())) + 1
+
 		// 随机抽取十分之一
 		i++
 		if sc.Text()[0] != '!' && i%10 != 0 {
 			continue
 		}
 
-		fields := strings.SplitN(sc.Text(), "\t", 5)
-		if len(fields) < 5 {
-			panic("Incorrect dataset format")
-		}
-
 		// 将篇目加入列表
-		article := Article{
-			Id:      len(articles),
-			Title:   fields[3],
-			Dynasty: fields[1],
-			Author:  fields[2],
-			Content: strings.Split(fields[4], "/"),
-		}
+		article, flag := parseArticle(len(articles), sc.Text())
+		articleOffset = append(articleOffset, prevOffs)
 		articles = append(articles, article)
 		weight := 1
-		if fields[0] == "!" {
+		if flag == "!" {
 			// 名篇
 			hotArticles = append(hotArticles, article)
 			weight = 10
 		}
-
-		slice := []byte("/" + fields[4] + "/;")
-		allText = append(allText, slice...)
 
 		for _, s := range article.Content {
 			n := len([]rune(s))
@@ -545,7 +564,7 @@ func initDataset() {
 		}
 
 		// 若不是重复篇目，则计入高频词
-		if fields[0] != " " {
+		if flag != " " {
 			for _, s := range article.Content {
 				s := []rune(s)
 				for i, c := range s {
@@ -563,12 +582,6 @@ func initDataset() {
 
 	fmt.Printf("dataset: %d articles\n", len(articles))
 	fmt.Printf("%d, %d, %d\n", p, q, t)
-	fmt.Printf("total length: %d bytes\n", len(allText))
-
-	// TODO: Article 缓存完成之后移动到最前面
-	if loadPrecal() == nil {
-		return
-	}
 
 	hotWords1List := byValueDesc{}
 	hotWords2List := byValueDesc{}
@@ -666,6 +679,27 @@ func initDataset() {
 	if err := loadPrecal(); err != nil {
 		panic(err)
 	}
+}
+
+// 篇目的 LRU cache
+
+var datasetFileReader = bufio.NewReaderSize(nil, 512)
+
+func getArticle(id int) *Article {
+	if a := articles[id]; a != nil {
+		return a
+	}
+	// 读入篇目
+	datasetFile.Seek(articleOffset[id], os.SEEK_SET)
+	datasetFileReader.Reset(datasetFile)
+	s, err := datasetFileReader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+	s = s[:len(s)-1] // 去掉换行符
+	article, _ := parseArticle(id, s)
+	articles[id] = article
+	return article
 }
 
 // 对称删除纠错算法
@@ -813,7 +847,7 @@ func lookupText(text []string) (bool, int, int) {
 				break
 			}
 
-			article := &articles[rec.ArticleIdx]
+			article := getArticle(int(rec.ArticleIdx))
 			i := int(rec.ContentIdx) - pivot
 			if i >= 0 && i+len(text) <= len(article.Content) {
 				// 检查两段文字是否相同或接近
