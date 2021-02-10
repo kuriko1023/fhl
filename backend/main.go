@@ -25,17 +25,17 @@ func main() {
 	var y bool
 	var a, b int
 	y, a, b = lookupText([]string{"悠哉悠哉", "辗转反侧"})
-	fmt.Println(y, articles[a].Content[b:])
+	fmt.Println(y, getArticle(a).Content[b:])
 	y, a, b = lookupText([]string{"悠哉游哉", "辗转反侧"})
-	fmt.Println(y, articles[a].Content[b:])
+	fmt.Println(y, getArticle(a).Content[b:])
 	y, a, b = lookupText([]string{"辗转反侧", "呜呜"})
 	fmt.Println(y, a, b)
 	y, a, b = lookupText([]string{"梳洗罢", "独倚望江楼"})
-	fmt.Println(y, articles[a].Content[b:])
+	fmt.Println(y, getArticle(a).Content[b:])
 	y, a, b = lookupText([]string{"梳洗黑", "独倚望江楼"})
-	fmt.Println(y, articles[a].Content[b:])
+	fmt.Println(y, getArticle(a).Content[b:])
 	y, a, b = lookupText([]string{"江南好"})
-	fmt.Println(y, articles[a].Content[b:])
+	fmt.Println(y, getArticle(a).Content[b:])
 
 	for i := 0; i < 10; i++ {
 		fmt.Println(generateA(5, 3))
