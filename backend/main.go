@@ -22,8 +22,6 @@ var db *sql.DB
 func main() {
 	fmt.Println("Hello, world!")
 	initDataset()
-	initErrCorr()
-/*
 	var y bool
 	var a, b int
 	y, a, b = lookupText([]string{"悠哉悠哉", "辗转反侧"})
@@ -38,8 +36,6 @@ func main() {
 	fmt.Println(y, articles[a].Content[b:])
 	y, a, b = lookupText([]string{"江南好"})
 	fmt.Println(y, articles[a].Content[b:])
-	return
-*/
 
 	for i := 0; i < 10; i++ {
 		fmt.Println(generateA(5, 3))

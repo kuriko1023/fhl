@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -395,43 +394,96 @@ func furtherInit() {
 	}
 }
 
+var gobValues = []interface{}{
+	&hotWords1,
+	&hotWords2,
+	&hotWords1Count,
+	&hotWords2Count,
+	&allHotSentences,
+	&hotWordsFreq,
+	&hotArticles, // TODO: 这好吗？这不好
+}
+
+var precalFile *os.File
+var errCorrOffset int64
+var errCorrNumRecords int64
+
+func loadPrecal() error {
+	file, err := os.Open("dataset_precal.bin")
+	if err != nil {
+		return err
+	}
+
+	// 解码 Gob
+	decoder := gob.NewDecoder(file)
+	for _, v := range gobValues {
+		if err := decoder.Decode(v); err != nil {
+			file.Close()
+			return err
+		}
+	}
+
+	// 纠错数据
+	offs, err := file.Seek(0, os.SEEK_CUR)
+	if err != nil {
+		file.Close()
+		return err
+	}
+	errCorrOffset = offs
+
+	stat, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return err
+	}
+	errCorrNumRecords = (stat.Size() - offs) / RECORD_W
+	println(errCorrOffset, errCorrNumRecords)
+
+	precalFile = file
+	return nil
+}
+
+func savePrecalGob() error {
+	file, err := os.Create("dataset_precal.bin")
+	if err != nil {
+		return err
+	}
+
+	// 保存 Gob
+	encoder := gob.NewEncoder(file)
+	for _, v := range gobValues {
+		if err := encoder.Encode(v); err != nil {
+			file.Close()
+			return err
+		}
+	}
+
+	// 纠错数据将在之后保存
+	precalFile = file
+	return nil
+}
+
+func savePrecalErrCorr(x []ErrCorrRecord) error {
+	w := bufio.NewWriter(precalFile)
+
+	count := 0
+	for i, rec := range x {
+		if i == 0 || rec != x[i-1] {
+			count++
+			if err := writeErrCorrRecord(w, rec); err != nil {
+				return err
+			}
+		}
+	}
+
+	w.Flush()
+	println(count)
+	return nil
+}
+
 // 读入数据集，填充所有全局变量
 func initDataset() {
 	rand.Seed(1023)
-
-	// 创建 precal/ 目录
-	if err := os.Mkdir("precal", os.ModeDir | 0755); err != nil {
-		if !errors.Is(err, os.ErrExist) {
-			panic(err)
-		}
-	}
-
-	gobValues := []interface{}{
-		&hotWords1,
-		&hotWords2,
-		&hotWords1Count,
-		&hotWords2Count,
-		&allHotSentences,
-		&hotWordsFreq,
-		&hotArticles, // TODO: 这好吗？这不好
-	}
-
-	gobFile, err := os.Open("precal/precal.gob")
-	if err == nil {
-		defer gobFile.Close()
-		decoder := gob.NewDecoder(gobFile)
-		for _, v := range gobValues {
-			if err := decoder.Decode(v); err != nil {
-				panic(err)
-			}
-		}
-		return
-	}
-	gobFile, err = os.Create("precal/precal.gob")
-	if err != nil {
-		panic(err)
-	}
-	defer gobFile.Close()
 
 	articles = []Article{}
 	hotArticles = []Article{}
@@ -512,6 +564,11 @@ func initDataset() {
 	fmt.Printf("dataset: %d articles\n", len(articles))
 	fmt.Printf("%d, %d, %d\n", p, q, t)
 	fmt.Printf("total length: %d bytes\n", len(allText))
+
+	// TODO: Article 缓存完成之后移动到最前面
+	if loadPrecal() == nil {
+		return
+	}
 
 	hotWords1List := byValueDesc{}
 	hotWords2List := byValueDesc{}
@@ -599,12 +656,15 @@ func initDataset() {
 	}
 
 	furtherInit()
+	if err := savePrecalGob(); err != nil {
+		panic(err)
+	}
 
-	encoder := gob.NewEncoder(gobFile)
-	for _, v := range gobValues {
-		if err := encoder.Encode(v); err != nil {
-			panic(err)
-		}
+	initErrCorr()
+
+	precalFile.Close()
+	if err := loadPrecal(); err != nil {
+		panic(err)
 	}
 }
 
@@ -619,9 +679,9 @@ type ErrCorrRecord struct {
 	ContentIdx ContentIdxType
 }
 
-const HASH_W = 8
-const ART_IDX_W = 4
-const CON_IDX_W = 4
+const HASH_W = 5
+const ART_IDX_W = 3
+const CON_IDX_W = 2
 const RECORD_W = HASH_W + ART_IDX_W + CON_IDX_W
 
 func hash(rs []rune) HashType {
@@ -631,29 +691,12 @@ func hash(rs []rune) HashType {
 			h = h*100003 + HashType(r)
 		}
 	}
-	return h
-}
-
-var errCorrFile *os.File
-var errCorrNumRecords int64
-
-func openErrCorrFile() error {
-	file, err := os.Open("precal/errcorr.db")
-	if err != nil {
-		return err
-	}
-	errCorrFile = file
-	stat, err := file.Stat()
-	if err != nil {
-		return err
-	}
-	errCorrNumRecords = stat.Size() / RECORD_W
-	return nil
+	return h % (1 << (HASH_W * 8))
 }
 
 func readErrCorrRecord(index int64) ErrCorrRecord {
 	buf := [RECORD_W]byte{}
-	errCorrFile.ReadAt(buf[:], index*RECORD_W)
+	precalFile.ReadAt(buf[:], errCorrOffset+index*RECORD_W)
 	rec := ErrCorrRecord{0, 0, 0}
 	for i, b := range buf[0:HASH_W] {
 		rec.Hash += (HashType(b) << (i * 8))
@@ -704,10 +747,6 @@ func forEachPossibleErrHash(s string, fn func(h HashType) bool) {
 }
 
 func initErrCorr() {
-	if openErrCorrFile() == nil {
-		return
-	}
-
 	x := []ErrCorrRecord{}
 	for i, article := range articles {
 		for j, s := range article.Content {
@@ -726,27 +765,7 @@ func initErrCorr() {
 		return x[i].Hash < x[j].Hash
 	})
 
-	f, err := os.Create("precal/errcorr.db")
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-	w := bufio.NewWriter(f)
-
-	count := 0
-	for i, rec := range x {
-		if i == 0 || rec != x[i-1] {
-			count++
-			if err := writeErrCorrRecord(w, rec); err != nil {
-				panic(err)
-			}
-		}
-	}
-
-	w.Flush()
-	println(count)
-
-	if err := openErrCorrFile(); err != nil {
+	if err := savePrecalErrCorr(x); err != nil {
 		panic(err)
 	}
 }
