@@ -15,12 +15,26 @@ var Config struct {
 	AppID     string `json:"appid"`
 	AppSecret string `json:"appsecret"`
 	Debug     bool   `json:"debug"`
+
+	ArticleCache int `json:"article_cache"`
 }
 
 var db *sql.DB
 
 func main() {
-	fmt.Println("Hello, world!")
+	// 读取配置
+	configPath := os.Getenv("CONFIG")
+	if configPath == "" {
+		configPath = "config.json"
+	}
+	content, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		panic(err)
+	}
+	if err = json.Unmarshal(content, &Config); err != nil {
+		panic(err)
+	}
+
 	initDataset()
 	var y bool
 	var a, b int
@@ -85,19 +99,6 @@ func main() {
 	fmt.Println(s.Dump())
 	os.Stdin.Read(make([]byte, 1))
 */
-
-	// 读取配置
-	configPath := os.Getenv("CONFIG")
-	if configPath == "" {
-		configPath = "config.json"
-	}
-	content, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		panic(err)
-	}
-	if err = json.Unmarshal(content, &Config); err != nil {
-		panic(err)
-	}
 
 	if db, err = SetUpDatabase(); err != nil {
 		panic(err)

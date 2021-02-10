@@ -689,8 +689,6 @@ func initDataset() {
 }
 
 // 篇目的 LRU cache
-const LRU_SIZE = 1000
-
 type CacheEntry struct {
 	Id int
 	Ts uint64
@@ -740,7 +738,7 @@ func getArticle(id int) *Article {
 
 	// 加入缓存
 	// 若缓存已满，则移除最久未使用的一个
-	if len(*articleCache) >= LRU_SIZE {
+	if len(*articleCache) >= Config.ArticleCache {
 		for {
 			elm := heap.Pop(articleCache).(CacheEntry)
 			ts := articleActualTimestamp[elm.Id]
