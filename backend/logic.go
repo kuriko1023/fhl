@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"container/heap"
 	"encoding/gob"
 	"fmt"
 	"math/rand"
@@ -517,6 +518,7 @@ func initDataset() {
 	datasetFile = file
 
 	if loadPrecal() == nil {
+		initArticleCache()
 		return
 	}
 
@@ -679,16 +681,53 @@ func initDataset() {
 	if err := loadPrecal(); err != nil {
 		panic(err)
 	}
+
+	for i, _ := range articles {
+		articles[i] = nil
+	}
+	initArticleCache()
 }
 
 // 篇目的 LRU cache
+const LRU_SIZE = 1000
+
+type CacheEntry struct {
+	Id int
+	Ts uint64
+}
+type CacheEntryHeap []CacheEntry
+
+func (h CacheEntryHeap) Len() int            { return len(h) }
+func (h CacheEntryHeap) Less(i, j int) bool  { return h[i].Ts < h[j].Ts }
+func (h CacheEntryHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
+func (h *CacheEntryHeap) Push(x interface{}) { *h = append(*h, x.(CacheEntry)) }
+func (h *CacheEntryHeap) Pop() interface{} {
+	x := (*h)[len(*h)-1]
+	*h = (*h)[0 : len(*h)-1]
+	return x
+}
+
+// 元素的 a: 篇目编号；b: 上次访问的时间戳
+var articleCache = &CacheEntryHeap{}
+var articleCacheTimestamp = uint64(0)
+var articleActualTimestamp []uint64
 
 var datasetFileReader = bufio.NewReaderSize(nil, 512)
 
+func initArticleCache() {
+	heap.Init(articleCache)
+	articleActualTimestamp = make([]uint64, len(articles))
+}
+
 func getArticle(id int) *Article {
+	articleCacheTimestamp++ // 应该不会溢出吧
+	articleActualTimestamp[id] = articleCacheTimestamp
+	// println("accessing", id)
+
 	if a := articles[id]; a != nil {
 		return a
 	}
+
 	// 读入篇目
 	datasetFile.Seek(articleOffset[id], os.SEEK_SET)
 	datasetFileReader.Reset(datasetFile)
@@ -698,7 +737,27 @@ func getArticle(id int) *Article {
 	}
 	s = s[:len(s)-1] // 去掉换行符
 	article, _ := parseArticle(id, s)
+
+	// 加入缓存
+	// 若缓存已满，则移除最久未使用的一个
+	if len(*articleCache) >= LRU_SIZE {
+		for {
+			elm := heap.Pop(articleCache).(CacheEntry)
+			ts := articleActualTimestamp[elm.Id]
+			if ts != elm.Ts {
+				// 向堆中加入正确的值
+				heap.Push(articleCache, CacheEntry{elm.Id, ts})
+				continue
+			}
+			// println("removing", elm.Id)
+			articles[elm.Id] = nil
+			break
+		}
+	}
+
+	heap.Push(articleCache, CacheEntry{id, articleCacheTimestamp})
 	articles[id] = article
+
 	return article
 }
 

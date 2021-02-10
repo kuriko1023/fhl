@@ -36,6 +36,10 @@ func main() {
 	fmt.Println(y, getArticle(a).Content[b:])
 	y, a, b = lookupText([]string{"江南好"})
 	fmt.Println(y, getArticle(a).Content[b:])
+	y, a, b = lookupText([]string{"赤壁沉埋水流", "徒留名载空舟"})
+	fmt.Println(y, getArticle(a).Content[b:])
+	y, a, b = lookupText([]string{"赤壁沉埋水流", "徒留名空舟"})
+	fmt.Println(y, a, b)
 
 	for i := 0; i < 10; i++ {
 		fmt.Println(generateA(5, 3))
