@@ -16,7 +16,8 @@ type Player struct {
 	// 当前所处的房间
 	InRoom *Room
 
-	// 传送消息的信道，往这里发送的消息会由 WebSocket 传至客户端
+	// 传送消息的信道
+	// 往这里发送的值会在 JSON 编码后经 WebSocket 连接传至客户端
 	Channel chan interface{}
 }
 

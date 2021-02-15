@@ -119,6 +119,7 @@ func playerSetReady(p *Player) bool {
 }
 
 // 处理玩家客户端发来的消息
+// NOTE: 大部分业务逻辑在此处实现
 func handlePlayerMessage(p *Player, object map[string]interface{}) {
 	switch object["type"] {
 	case "ready":
@@ -164,7 +165,7 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 写入连接状态
+	// 更新全局存储的连接状态
 	DataMutex.Lock()
 	if player.Channel != nil {
 		player.Channel <- nil
@@ -181,16 +182,19 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 	room.People = append(room.People, player)
 	DataMutex.Unlock()
 
-	// 建立连接
+	// 建立 WebSocket 连接
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
+	// inChannel: 客户端发来的消息，以 string 到 interface{} 的 map 表示
+	// outChannel: 要发送至客户端的消息，即 player.Channel
 	inChannel := make(chan map[string]interface{}, 3)
 	outChannel := player.Channel
 
+	// Goroutine，不断从 WebSocket 连接读入 JSON 并发送至 inChannel
 	go func(c *websocket.Conn, ch chan map[string]interface{}) {
 		var object map[string]interface{}
 		for {
@@ -236,7 +240,7 @@ messageLoop:
 
 	c.Close()
 
-	// 清除状态
+	// 清除全局存储的状态
 	DataMutex.Lock()
 	room.People = removeElement(room.People, player)
 	if player.Id == room.Host {

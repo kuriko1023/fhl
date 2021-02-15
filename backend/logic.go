@@ -39,11 +39,13 @@ var hotWords2 []string
 
 // 高频词的出现频数，单字和双字分开
 type RunePair struct{ A, B rune }
+
 var hotWords1Count map[rune]int
 var hotWords2Count map[RunePair]int
 
 // 全部都是高频字的句子
 var allHotSentences [][]string
+
 const ALL_HOT_LEN_MIN = 5
 const ALL_HOT_LEN_MAX = 9
 
@@ -66,7 +68,7 @@ func getHotWords(sentence string) ([]string, []string) {
 		if i < len(s)-1 {
 			if n, has := hotWords2Count[RunePair{c, s[i+1]}]; has {
 				count2 = append(count2, KVPair{
-					string(c) + string(s[i + 1]),
+					string(c) + string(s[i+1]),
 					n,
 				})
 			}
@@ -126,7 +128,7 @@ func generateA(count1, count2 int) []string {
 // 生成多字飞花题目，返回一句长度为 length 的句子
 // 需确保 ALL_HOT_LEN_MIN <= length <= ALL_HOT_LEN_MAX
 func generateB(length int) string {
-	collection := allHotSentences[length - ALL_HOT_LEN_MIN]
+	collection := allHotSentences[length-ALL_HOT_LEN_MIN]
 	return collection[rand.Intn(len(collection))]
 }
 
@@ -281,7 +283,7 @@ func generateD(n int) ([]string, []string) {
 		if k >= 4 && len(sHotWords) > 1 {
 			for i := 0; i < len(sHotWords); i++ {
 				for j := i + 1; j < len(sHotWords); j++ {
-					if freq, ok := hotWordsFreq[sHotWords[i] + sHotWords[j]]; ok{
+					if freq, ok := hotWordsFreq[sHotWords[i]+sHotWords[j]]; ok {
 						//高频词组合频次大于50方记入; 取最大值
 						if freq >= 50 && freq > freqMax {
 							s1 = i
@@ -295,14 +297,14 @@ func generateD(n int) ([]string, []string) {
 				hotWordsList1 = append(hotWordsList1, sHotWords[s1])
 				hotWordsList2 = append(hotWordsList2, sHotWords[s2])
 			}
-		} 
+		}
 		//有0.4的概率填入（若可行）单字词 + 双字词
 		if k < 4 && len(sHotWords) > 0 && len(dHotWords) > 0 {
 			for i := 0; i < len(sHotWords); i++ {
 				for j := 0; j < len(dHotWords); j++ {
 					//确保单字词不包含在双字词中
 					if !strings.Contains(dHotWords[j], sHotWords[i]) {
-						if freq, ok := hotWordsFreq[sHotWords[i] + dHotWords[j]]; ok{
+						if freq, ok := hotWordsFreq[sHotWords[i]+dHotWords[j]]; ok {
 							//高频词组合频次大于50方记入; 取最大值
 							if freq >= 50 && freq > freqMax {
 								s1 = i
@@ -318,11 +320,11 @@ func generateD(n int) ([]string, []string) {
 				hotWordsList2 = append(hotWordsList2, dHotWords[s2])
 			}
 		}
-			
+
 		if flag == 0 {
 			continue
 		}
-		
+
 		//计数加1
 		count++
 		fmt.Println(content[j])
@@ -357,31 +359,31 @@ func furtherInit() {
 	// 初始化高频词组合频次表，令其包括所有单字&单字、单字&双字、双字&双字的组合
 	for i := 0; i < len(hotWords1); i++ {
 		for j := i + 1; j < len(hotWords1); j++ {
-			hotWordsFreq[hotWords1[i] + hotWords1[j]] = 0
+			hotWordsFreq[hotWords1[i]+hotWords1[j]] = 0
 		}
 		for j := 0; j < len(hotWords2); j++ {
 			//若单字词为双字词的一部分,忽略
 			if !strings.Contains(hotWords2[j], hotWords1[i]) {
-				hotWordsFreq[hotWords1[i] + hotWords2[j]] = 0
+				hotWordsFreq[hotWords1[i]+hotWords2[j]] = 0
 			}
 		}
 	}
 
 	for _, article := range articles {
 		content := article.Content
-		for i := 0; i < len(content) - 1; i++ {
+		for i := 0; i < len(content)-1; i++ {
 			//拼接两句为一“联”
-			sentence := content[i] + content[i + 1]
+			sentence := content[i] + content[i+1]
 			sHotWords, dHotWords := getHotWords(sentence)
 
 			//根据每一“联”诗词中的高频词，更新高频词组合频次表
 			for k := 0; k < len(sHotWords); k++ {
 				for j := k + 1; j < len(sHotWords); j++ {
-					hotWordsFreq[sHotWords[k] + sHotWords[j]]++
+					hotWordsFreq[sHotWords[k]+sHotWords[j]]++
 				}
 				for j := 0; j < len(dHotWords); j++ {
 					if !strings.Contains(dHotWords[j], sHotWords[k]) {
-						hotWordsFreq[sHotWords[k] + dHotWords[j]]++
+						hotWordsFreq[sHotWords[k]+dHotWords[j]]++
 					}
 				}
 			}
@@ -627,7 +629,7 @@ func initDataset() {
 	}
 
 	// 找出仅由不重复的高频字组成的句子
-	allHotSentences = make([][]string, ALL_HOT_LEN_MAX - ALL_HOT_LEN_MIN + 1)
+	allHotSentences = make([][]string, ALL_HOT_LEN_MAX-ALL_HOT_LEN_MIN+1)
 	for i := range allHotSentences {
 		allHotSentences[i] = []string{}
 	}
@@ -639,7 +641,7 @@ func initDataset() {
 			}
 			// 确认每个字是否是高频字
 			minCount := hotWords1List[len(hotWords1)/2-1].int
-			if len(runes) >= ALL_HOT_LEN_MAX - 2 {
+			if len(runes) >= ALL_HOT_LEN_MAX-2 {
 				minCount = hotWords1List[len(hotWords1)-1].int
 			}
 			allHot := true
@@ -667,7 +669,7 @@ func initDataset() {
 	}
 	fmt.Println("仅由不重复的高频字组成的句子")
 	for i, c := range allHotSentences {
-		fmt.Printf("%d 字：%d 句\n", i + ALL_HOT_LEN_MIN, len(c))
+		fmt.Printf("%d 字：%d 句\n", i+ALL_HOT_LEN_MIN, len(c))
 	}
 
 	furtherInit()
