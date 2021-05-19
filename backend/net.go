@@ -127,6 +127,15 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			// TODO: 错误信息？
 			p.Channel <- struct{}{}
 		}
+	case "start_generate":
+		if p.InRoom == nil || p.InRoom.Host != p.Id || p.InRoom.Mode != "" {
+			p.Channel <- struct{}{}
+			return
+		}
+		p.InRoom.Mode = "gen"
+		Players[p.InRoom.Guest].Channel <- map[string]string{
+			"type": "start_generate",
+		}
 	default:
 		p.Channel <- struct{}{}
 	}
