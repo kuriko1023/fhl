@@ -36,7 +36,7 @@ func main() {
 	}
 
 	initDataset()
-	var y bool
+	/*var y bool
 	var a, b int
 	y, a, b = lookupText([]string{"悠哉悠哉", "辗转反侧"})
 	fmt.Println(y, getArticle(a).Content[b:])
@@ -70,8 +70,6 @@ func main() {
 	}
 	os.Stdin.Read(make([]byte, 1))
 	return
-/*
-	return
 
 	r := Room{Subject: &SubjectA{Word: "花"}}
 	fmt.Println(r.Subject)
@@ -97,8 +95,8 @@ func main() {
 	c, d = s.Answer("孤蓬万里征", SideHost)
 	fmt.Println(c, d)
 	fmt.Println(s.Dump())
-	os.Stdin.Read(make([]byte, 1))
-*/
+	os.Stdin.Read(make([]byte, 1))*/
+	fmt.Println("Server starting")
 
 	if db, err = SetUpDatabase(); err != nil {
 		panic(err)
