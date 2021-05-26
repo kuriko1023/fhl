@@ -118,26 +118,52 @@ func playerSetReady(p *Player) bool {
 	return true
 }
 
+func errorMsg(s string) map[string]string {
+	return map[string]string{"error": s}
+}
+
 // 处理玩家客户端发来的消息
 // NOTE: 大部分业务逻辑在此处实现
 func handlePlayerMessage(p *Player, object map[string]interface{}) {
+	defer func() {
+		if e := recover(); e != nil {
+			if s, ok := e.(string); ok {
+				p.Channel <- errorMsg(s)
+			}
+		}
+	}()
+
 	switch object["type"] {
 	case "ready":
 		if !playerSetReady(p) {
-			// TODO: 错误信息？
-			p.Channel <- struct{}{}
+			panic("Already occupied")
 		}
 	case "start_generate":
-		if p.InRoom == nil || p.InRoom.Host != p.Id || p.InRoom.Mode != "" {
-			p.Channel <- struct{}{}
-			return
+		if p.InRoom == nil || p.InRoom.Host != p.Id {
+			panic("Must be host")
+		}
+		if p.InRoom.Mode != "" || !p.InRoom.HostReady || p.InRoom.Guest == "" {
+			panic("Room should be idle with two ready players")
 		}
 		p.InRoom.Mode = "gen"
 		Players[p.InRoom.Guest].Channel <- map[string]string{
 			"type": "start_generate",
 		}
+	case "set_mode":
+		if p.InRoom == nil || p.InRoom.Host != p.Id {
+			panic("Must be host")
+		}
+		if p.InRoom.Mode != "gen" {
+			panic("Room should be in generation phase")
+		}
+		mode, ok1 := object["mode"].(string)
+		size, ok2 := object["size"].(string)
+		if !ok1 || !ok2 {
+			panic("Incorrect format")
+		}
+		println(mode, size)
 	default:
-		p.Channel <- struct{}{}
+		panic("Unknown type")
 	}
 }
 
