@@ -190,8 +190,32 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 				words := generateA(5, 3)
 				subject = &SubjectA{Word: strings.Join(words, " ")}
 			case "B":
+				if size < 5 || size > 9 {
+					panic("Incorrect size")
+				}
+				words := generateB(size)
+				subject = &SubjectB{Words: []rune(words), CurIndex: 0}
 			case "C":
+				if size != 1 && size != 3 {
+					panic("Incorrect size")
+				}
+				left, right := generateC(size, 10)
+				subject = &SubjectC{
+					WordsLeft:  left,
+					WordsRight: right,
+					UsedRight:  make([]bool, 10),
+				}
 			case "D":
+				if size < 5 || size > 10 {
+					panic("Incorrect size")
+				}
+				left, right := generateD(size)
+				subject = &SubjectD{
+					WordsLeft:  left,
+					WordsRight: right,
+					UsedLeft:   make([]bool, size),
+					UsedRight:  make([]bool, size),
+				}
 			}
 			subjectRepr = subject.Dump()
 		}
