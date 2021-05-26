@@ -58,6 +58,18 @@ type Room struct {
 	People []*Player // 建立了此房间的 WebSocket 连接的人
 }
 
+func (a CorrectAnswer) Dump() string {
+	b := strings.Builder{}
+	b.WriteString(a.string)
+	for _, k := range a.Keywords {
+		b.WriteRune('/')
+		b.WriteString(strconv.Itoa(k.a))
+		b.WriteRune(',')
+		b.WriteString(strconv.Itoa(k.b))
+	}
+	return b.String()
+}
+
 // 游戏题目与进度的接口，下面的 SubjectA/B/C/D 都会实现之。
 // 包含任意形式的数据结构，但是需要支持与字符串的互转，
 // 以及「尝试提交一个句子，若正确则更新状态」的操作。
