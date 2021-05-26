@@ -327,7 +327,7 @@ func generateD(n int) ([]string, []string) {
 
 		//计数加1
 		count++
-		fmt.Println(content[j])
+		// fmt.Println(content[j])
 	}
 
 	sort.Strings(hotWordsList1)
