@@ -20,6 +20,13 @@ window.addEventListener("load", function(evt) {
     var unprint = function() {
         output.lastElementChild.remove();
     };
+    var tryparse = function (text) {
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            return null;
+        }
+    };
     document.getElementById("open").onclick = function(evt) {
         if (ws) {
             return false;
@@ -40,6 +47,12 @@ window.addEventListener("load", function(evt) {
         ws.onmessage = function(evt) {
             print("RECEIVE", "#46f", true);
             print(evt.data, "#238");
+            var obj = tryparse(evt.data);
+            if (host.value === 'my' && obj.type === 'room_status' &&
+                obj.host_status === 'ready' && obj.guest !== null)
+            {
+                input.value = '{\n  "type": "start_generate"\n}';
+            }
         }
         ws.onerror = function(evt) {
             unprint();
@@ -55,6 +68,8 @@ window.addEventListener("load", function(evt) {
         print("SEND", "#f6a", true);
         print(input.value, "#835");
         ws.send(input.value);
+        if (tryparse(input.value).type === 'start_generate')
+            input.value = '{\n  "type": "set_mode",\n  "mode": "A",\n  "size": 3\n}';
         return false;
     };
     document.getElementById("close").onclick = function(evt) {

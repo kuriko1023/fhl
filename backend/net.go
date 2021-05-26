@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"strings"
 
@@ -122,6 +123,22 @@ func errorMsg(s string) map[string]string {
 	return map[string]string{"error": s}
 }
 
+func parseMode(x interface{}) string {
+	if x == "A" || x == "B" || x == "C" || x == "D" {
+		return x.(string)
+	} else {
+		return ""
+	}
+}
+
+func parseInt(x interface{}) int {
+	f, ok := x.(float64)
+	if !ok {
+		return -1
+	}
+	return int(math.Round(f))
+}
+
 // 处理玩家客户端发来的消息
 // NOTE: 大部分业务逻辑在此处实现
 func handlePlayerMessage(p *Player, object map[string]interface{}) {
@@ -142,10 +159,10 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		if p.InRoom == nil || p.InRoom.Host != p.Id {
 			panic("Must be host")
 		}
-		if p.InRoom.Mode != "" || !p.InRoom.HostReady || p.InRoom.Guest == "" {
+		if p.InRoom.State != "" || !p.InRoom.HostReady || p.InRoom.Guest == "" {
 			panic("Room should be idle with two ready players")
 		}
-		p.InRoom.Mode = "gen"
+		p.InRoom.State = "gen"
 		Players[p.InRoom.Guest].Channel <- map[string]string{
 			"type": "start_generate",
 		}
@@ -153,15 +170,20 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		if p.InRoom == nil || p.InRoom.Host != p.Id {
 			panic("Must be host")
 		}
-		if p.InRoom.Mode != "gen" {
+		if p.InRoom.State != "gen" {
 			panic("Room should be in generation phase")
 		}
-		mode, ok1 := object["mode"].(string)
-		size, ok2 := object["size"].(string)
-		if !ok1 || !ok2 {
+		mode := parseMode(object["mode"])
+		size := parseInt(object["size"])
+		if mode == "" || size == -1 {
 			panic("Incorrect format")
 		}
-		println(mode, size)
+		Players[p.InRoom.Guest].Channel <- map[string]interface{}{
+			"type":    "generated",
+			"mode":    mode,
+			"size":    size,
+			"subject": nil,
+		}
 	default:
 		panic("Unknown type")
 	}

@@ -42,7 +42,8 @@ type Room struct {
 	Host      string  // 房主 id
 	HostReady bool    // 房主是否坐下
 	Guest     string  // 已经坐下的客人 id
-	Mode      string  // 游戏模式，空字符串表示等待，"gen" 表示正在选题，"A" "B" "C" "D" 之一表示游戏玩法
+	State     string  // 游戏状态，空字符串表示等待，gen 表示正在选题，game 表示游戏中
+	Mode      string  // "A" "B" "C" "D" 之一表示游戏玩法。在 gen 状态下，后接空格与 size
 	Subject   Subject // 游戏题目与进度（详细见下）
 	// 之前提交的所有文本，偶数下标对应房主，奇数下标对应客人
 	// 若一次提交包含多句（以标点分隔的小段），则用斜杠“/”分隔
