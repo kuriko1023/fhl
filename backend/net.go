@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -119,6 +120,24 @@ func playerSetReady(p *Player) bool {
 	return true
 }
 
+// 向游戏中的两位玩家更新游戏状态
+func bicastGameStatus(room *Room) {
+	history := []string{}
+	for _, a := range room.History {
+		history = append(history, a.Dump())
+	}
+	object := map[string]interface{}{
+		"type":        "game_status",
+		"mode":        room.Mode,
+		"subject":     room.Subject.Dump(),
+		"history":     history,
+		"host_timer":  room.HostTimer,
+		"guest_timer": room.GuestTimer,
+	}
+	Players[room.Host].Channel <- object
+	Players[room.Guest].Channel <- object
+}
+
 func errorMsg(s string) map[string]string {
 	return map[string]string{"error": s}
 }
@@ -155,6 +174,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		if !playerSetReady(p) {
 			panic("Already occupied")
 		}
+
 	case "start_generate":
 		if p.InRoom == nil || p.InRoom.Host != p.Id {
 			panic("Must be host")
@@ -166,6 +186,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		Players[p.InRoom.Guest].Channel <- map[string]string{
 			"type": "start_generate",
 		}
+
 	case "set_mode":
 		fallthrough
 	case "generate":
@@ -217,6 +238,8 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 					UsedRight:  make([]bool, size),
 				}
 			}
+			p.InRoom.Mode = mode
+			p.InRoom.Subject = subject
 			subjectRepr = subject.Dump()
 		}
 
@@ -230,6 +253,33 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		if isGenerate {
 			p.Channel <- resp
 		}
+
+	case "start_game":
+		if p.InRoom == nil || p.InRoom.Host != p.Id {
+			panic("Must be host")
+		}
+		if p.InRoom.State != "gen" {
+			panic("Room should be in generation phase")
+		}
+		if p.InRoom.Subject == nil {
+			panic("No subject generated")
+		}
+		if p.InRoom.Mode == "A" {
+			index := parseInt(object["index"])
+			words := strings.Split(p.InRoom.Subject.(*SubjectA).Word, " ")
+			if index < 0 || index >= len(words) {
+				panic("Incorrect index")
+			}
+			p.InRoom.Subject = &SubjectA{Word: words[index]}
+		}
+
+		p.InRoom.LastMoveAt = time.Now().Unix()
+		p.InRoom.CurMoveSide = SideHost
+		p.InRoom.HostTimer = 60
+		p.InRoom.GuestTimer = 60
+
+		bicastGameStatus(p.InRoom)
+
 	default:
 		panic("Unknown type")
 	}
