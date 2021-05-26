@@ -167,6 +167,9 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			"type": "start_generate",
 		}
 	case "set_mode":
+		fallthrough
+	case "generate":
+		isGenerate := (object["type"] == "generate")
 		if p.InRoom == nil || p.InRoom.Host != p.Id {
 			panic("Must be host")
 		}
@@ -178,11 +181,30 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		if mode == "" || size == -1 {
 			panic("Incorrect format")
 		}
-		Players[p.InRoom.Guest].Channel <- map[string]interface{}{
+
+		subjectRepr := interface{}(nil)
+		if isGenerate {
+			var subject Subject
+			switch mode {
+			case "A":
+				words := generateA(5, 3)
+				subject = &SubjectA{Word: strings.Join(words, " ")}
+			case "B":
+			case "C":
+			case "D":
+			}
+			subjectRepr = subject.Dump()
+		}
+
+		resp := map[string]interface{}{
 			"type":    "generated",
 			"mode":    mode,
 			"size":    size,
-			"subject": nil,
+			"subject": subjectRepr,
+		}
+		Players[p.InRoom.Guest].Channel <- resp
+		if isGenerate {
+			p.Channel <- resp
 		}
 	default:
 		panic("Unknown type")

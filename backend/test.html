@@ -69,7 +69,7 @@ window.addEventListener("load", function(evt) {
         print(input.value, "#835");
         ws.send(input.value);
         if (tryparse(input.value).type === 'start_generate')
-            input.value = '{\n  "type": "set_mode",\n  "mode": "A",\n  "size": 3\n}';
+            input.value = '{\n  "type": "set_mode",\n  "mode": "A",\n  "size": 0\n}';
         return false;
     };
     document.getElementById("close").onclick = function(evt) {
