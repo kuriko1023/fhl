@@ -138,6 +138,18 @@ func bicastGameStatus(room *Room) {
 	Players[room.Guest].Channel <- object
 }
 
+func bicastGameDelta(room *Room, text string, change interface{}) {
+	object := map[string]interface{}{
+		"type":        "game_update",
+		"text":        text,
+		"update":      change,
+		"host_timer":  room.HostTimer,
+		"guest_timer": room.GuestTimer,
+	}
+	Players[room.Host].Channel <- object
+	Players[room.Guest].Channel <- object
+}
+
 func errorMsg(s string) map[string]string {
 	return map[string]string{"error": s}
 }
@@ -273,12 +285,89 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			p.InRoom.Subject = &SubjectA{Word: words[index]}
 		}
 
+		p.InRoom.State = "game"
+		p.InRoom.History = []CorrectAnswer{}
+		p.InRoom.HistorySet = map[string]struct{}{}
 		p.InRoom.LastMoveAt = time.Now().Unix()
 		p.InRoom.CurMoveSide = SideHost
 		p.InRoom.HostTimer = 60
 		p.InRoom.GuestTimer = 60
 
 		bicastGameStatus(p.InRoom)
+
+	case "answer":
+		if p.InRoom.State != "game" {
+			panic("Room should be in generation phase")
+		}
+		playerSide := SideGuest
+		if p.Id == p.InRoom.Host {
+			playerSide = SideHost
+		}
+		if p.InRoom.CurMoveSide != playerSide {
+			panic("Not your move")
+		}
+		text, ok := object["text"].(string)
+		if !ok {
+			panic("Incorrect format")
+		}
+
+		incorrectReason := ""
+
+		texts := strings.Split(text, "/")
+		correct, articleIdx, sentenceIdx := lookupText(texts)
+		if !correct {
+			if articleIdx != -1 {
+				incorrectReason = "没背熟"
+			} else {
+				incorrectReason = "大文豪"
+			}
+			println(articleIdx, sentenceIdx)
+		}
+
+		if incorrectReason == "" {
+			for _, s := range texts {
+				if _, ok := p.InRoom.HistorySet[s]; ok {
+					incorrectReason = "复读机"
+					break
+				}
+			}
+		}
+
+		var kws []IntPair
+		var change interface{}
+		if incorrectReason == "" {
+			kws, change = p.InRoom.Subject.Answer(text, playerSide)
+			if kws == nil {
+				incorrectReason = "不审题"
+			}
+		}
+
+		if incorrectReason != "" {
+			p.Channel <- map[string]string{
+				"type":   "invalid_answer",
+				"reason": incorrectReason,
+			}
+			break
+		}
+
+		p.InRoom.History = append(p.InRoom.History, CorrectAnswer{text, kws})
+		for _, s := range texts {
+			p.InRoom.HistorySet[s] = struct{}{}
+		}
+
+		timeNow := time.Now().Unix()
+		timeUsed := int(timeNow - p.InRoom.LastMoveAt)
+		if p.InRoom.CurMoveSide == SideHost {
+			p.InRoom.HostTimer -= timeUsed
+		} else {
+			p.InRoom.GuestTimer -= timeUsed
+		}
+
+		p.InRoom.LastMoveAt = timeNow
+		p.InRoom.CurMoveSide = 1 - p.InRoom.CurMoveSide
+
+		// bicastGameStatus(p.InRoom)
+		bicastGameDelta(p.InRoom, text, change)
 
 	default:
 		panic("Unknown type")

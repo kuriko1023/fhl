@@ -70,6 +70,12 @@ window.addEventListener("load", function(evt) {
         ws.send(input.value);
         if (tryparse(input.value).type === 'start_generate')
             input.value = '{\n  "type": "set_mode",\n  "mode": "A",\n  "size": 0\n}';
+        else if (tryparse(input.value).type === 'set_mode')
+            input.value = '{\n  "type": "generate",\n  "mode": "A",\n  "size": 0\n}';
+        else if (tryparse(input.value).type === 'generate')
+            input.value = '{\n  "type": "start_game",\n  "index": 0\n}';
+        else if (tryparse(input.value).type === 'start_game')
+            input.value = '{\n  "type": "answer",\n  "text": ""\n}';
         return false;
     };
     document.getElementById("close").onclick = function(evt) {
