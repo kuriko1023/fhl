@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -366,8 +368,10 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		p.InRoom.LastMoveAt = timeNow
 		p.InRoom.CurMoveSide = 1 - p.InRoom.CurMoveSide
 
-		// bicastGameStatus(p.InRoom)
-		bicastGameDelta(p.InRoom, text, change)
+		bicastGameStatus(p.InRoom)
+		if false {
+			bicastGameDelta(p.InRoom, text, change)
+		}
 
 	default:
 		panic("Unknown type")
@@ -441,14 +445,15 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		var object map[string]interface{}
 		for {
 			if err := c.ReadJSON(&object); err != nil {
-				// NOTE: Go 1.16 起使用 net.ErrorClosed
-				// https://github.com/golang/go/issues/4373
 				if !websocket.IsCloseError(err,
 					websocket.CloseNormalClosure,
 					websocket.CloseGoingAway,
 					websocket.CloseNoStatusReceived,
-				) && !strings.Contains(err.Error(), "use of closed network connection") {
+				) && !errors.Is(err, net.ErrClosed) {
 					log.Println(err)
+				}
+				if _, ok := err.(*json.SyntaxError); ok {
+					continue
 				}
 				break
 			}
