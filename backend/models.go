@@ -27,6 +27,7 @@ type Side int
 const (
 	SideHost  Side = 0
 	SideGuest Side = 1
+	SideNone  Side = -1
 )
 
 type IntPair struct {
@@ -82,6 +83,7 @@ type Subject interface {
 	// 第一个返回值是关键词的下标集合，若答案不合法则为 nil
 	// 第二个返回值是一个自定义结构，表示变化量
 	Answer(string, Side) ([]IntPair, interface{})
+	End() bool // 游戏是否结束
 }
 
 // 普通飞花 题目与进度
@@ -103,6 +105,9 @@ func (s *SubjectA) Answer(str string, from Side) ([]IntPair, interface{}) {
 	} else {
 		return nil, nil
 	}
+}
+func (s *SubjectA) End() bool {
+	return false
 }
 
 // 多字飞花 题目与进度
@@ -134,6 +139,9 @@ func (s *SubjectB) Answer(str string, from Side) ([]IntPair, interface{}) {
 	} else {
 		return nil, nil
 	}
+}
+func (s *SubjectB) End() bool {
+	return (s.CurIndex == -1)
 }
 
 // 超级飞花 题目与进度
@@ -191,6 +199,14 @@ func (s *SubjectC) Answer(str string, from Side) ([]IntPair, interface{}) {
 	}
 	s.UsedRight[indexRight] = true
 	return ps, indexRight
+}
+func (s *SubjectC) End() bool {
+	for _, u := range s.UsedRight {
+		if !u {
+			return false
+		}
+	}
+	return true
 }
 
 // 谜之飞花 题目与进度
@@ -262,6 +278,19 @@ func (s *SubjectD) Answer(str string, from Side) ([]IntPair, interface{}) {
 	s.UsedLeft[indexLeft] = true
 	s.UsedRight[indexRight] = true
 	return ps, [2]int{indexLeft, indexRight}
+}
+func (s *SubjectD) End() bool {
+	for _, u := range s.UsedLeft {
+		if !u {
+			return false
+		}
+	}
+	for _, u := range s.UsedRight {
+		if !u {
+			return false
+		}
+	}
+	return true
 }
 
 // 计算一个字符串中的 Unicode 字符数
