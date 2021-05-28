@@ -122,17 +122,21 @@ func playerSetReady(p *Player) bool {
 	return true
 }
 
-// 向游戏中的两位玩家更新游戏状态
-func bicastGameStatus(room *Room) {
+func roomHistoryStrings(room *Room) []string {
 	history := []string{}
 	for _, a := range room.History {
 		history = append(history, a.Dump())
 	}
+	return history
+}
+
+// 向游戏中的两位玩家更新游戏状态
+func bicastGameStatus(room *Room) {
 	object := map[string]interface{}{
 		"type":        "game_status",
 		"mode":        room.Mode,
 		"subject":     room.Subject.Dump(),
-		"history":     history,
+		"history":     roomHistoryStrings(room),
 		"host_timer":  room.HostTimer,
 		"guest_timer": room.GuestTimer,
 	}
@@ -147,6 +151,27 @@ func bicastGameDelta(room *Room, text string, change interface{}) {
 		"update":      change,
 		"host_timer":  room.HostTimer,
 		"guest_timer": room.GuestTimer,
+	}
+	Players[room.Host].Channel <- object
+	Players[room.Guest].Channel <- object
+}
+
+func bicastGameEnd(room *Room, winner Side) {
+	var winnerStr string
+	switch winner {
+	case SideHost:
+		winnerStr = "host"
+	case SideGuest:
+		winnerStr = "guest"
+	case SideNone:
+		winnerStr = "tie"
+	}
+	object := map[string]interface{}{
+		"type":    "end_status",
+		"winner":  winnerStr,
+		"mode":    room.Mode,
+		"subject": room.Subject.Dump(),
+		"history": roomHistoryStrings(room),
 	}
 	Players[room.Host].Channel <- object
 	Players[room.Guest].Channel <- object
@@ -299,7 +324,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 
 	case "answer":
 		if p.InRoom.State != "game" {
-			panic("Room should be in generation phase")
+			panic("Room should be in game phase")
 		}
 		playerSide := SideGuest
 		if p.Id == p.InRoom.Host {
@@ -335,6 +360,11 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			}
 		}
 
+		// 调试模式下叹号开头的可以免受语料库与历史限制
+		if Config.Debug && strings.HasPrefix(text, "!") {
+			incorrectReason = ""
+		}
+
 		var kws []IntPair
 		var change interface{}
 		if incorrectReason == "" {
@@ -368,7 +398,15 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		p.InRoom.LastMoveAt = timeNow
 		p.InRoom.CurMoveSide = 1 - p.InRoom.CurMoveSide
 
-		bicastGameStatus(p.InRoom)
+		// 游戏是否已经完成（用完所有的字词）
+		if p.InRoom.Subject.End() {
+			bicastGameEnd(p.InRoom, SideNone)
+			p.InRoom.State = ""
+			p.InRoom.HostReady = false
+			p.InRoom.Guest = ""
+		} else {
+			bicastGameStatus(p.InRoom)
+		}
 		if false {
 			bicastGameDelta(p.InRoom, text, change)
 		}
