@@ -1,7 +1,7 @@
 <template>
   <view>
     <view>
-      <subject-block :data="subject" mode="C"/>
+      <subject-block :data="subject" :mode="mode"/>
     </view>
     <view>
       <history-block :data="history"/>
@@ -21,17 +21,39 @@ name: "EndPage",
   },
   data() {
     return{
-      subject: {
-        "subject1": ["雁", "古", "梦"],
-        "subject2": "长 舟 送 寄 事 神 不 生 西风 多少",
-      },
+      mode: "C",
+      subject: "古 梦 雁/长 舟 送 寄 事 神 不 生 西风 多少",
       history: [
-        {
-          "value": "长风万里送秋雁"
-        },
-        {
-          "value": "千古兴亡多少事"
-        }
+        [
+          {
+            'value':'长',
+            'highlight': 1,
+          },
+          {
+            'value': '风',
+            'highlight': 0,
+          },
+          {
+            'value': '万',
+            'highlight': 0,
+          },
+          {
+            'value': '里',
+            'highlight': 0,
+          },
+          {
+            'value': '送',
+            'highlight': 0,
+          },
+          {
+            'value': '秋',
+            'highlight': 0,
+          },
+          {
+            'value': '雁',
+            'highlight': 1,
+          },
+        ]
       ]
     }
   },
