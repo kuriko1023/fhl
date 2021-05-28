@@ -57,6 +57,8 @@ type Room struct {
 	GuestTimer  int   // 客人的剩余时间
 
 	People []*Player // 建立了此房间的 WebSocket 连接的人
+
+	TimerStopSignal chan struct{}
 }
 
 func (a CorrectAnswer) Dump() string {
