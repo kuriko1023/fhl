@@ -1,5 +1,7 @@
 {
   "port": 2310,
   "appid": "<id>",
-  "appsecret": "<secret>"
+  "appsecret": "<secret>",
+  "debug": false,
+  "article_cache": 50000
 }

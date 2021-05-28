@@ -3,17 +3,21 @@ package main
 import (
 	"strconv"
 	"strings"
+	"sync"
 
 	"database/sql"
 )
 
 type Player struct {
 	Id       string
-	InRoom   string
 	Nickname string
 	Avatar   string
 
-	// 传送消息的信道，往这里发送的消息会由 WebSocket 传至客户端
+	// 当前所处的房间
+	InRoom *Room
+
+	// 传送消息的信道
+	// 往这里发送的值会在 JSON 编码后经 WebSocket 连接传至客户端
 	Channel chan interface{}
 }
 
@@ -23,6 +27,7 @@ type Side int
 const (
 	SideHost  Side = 0
 	SideGuest Side = 1
+	SideNone  Side = -1
 )
 
 type IntPair struct {
@@ -35,20 +40,38 @@ type CorrectAnswer struct {
 }
 
 type Room struct {
-	Host       string  // 房主 id
-	Guest      string  // 客人 id
-	HostReady  bool    // 房主是否准备
-	GuestReady bool    // 客人是否准备
-	Mode       string  // 游戏模式，空字符串或 "A" "B" "C" "D" 之一
-	Subject    Subject // 游戏题目与进度（详细见下）
+	Host      string  // 房主 id
+	HostReady bool    // 房主是否坐下
+	Guest     string  // 已经坐下的客人 id
+	State     string  // 游戏状态，空字符串表示等待，gen 表示正在选题，game 表示游戏中
+	Mode      string  // "A" "B" "C" "D" 之一表示游戏玩法。在 gen 状态下，后接空格与 size
+	Subject   Subject // 游戏题目与进度（详细见下）
 	// 之前提交的所有文本，偶数下标对应房主，奇数下标对应客人
 	// 若一次提交包含多句（以标点分隔的小段），则用斜杠“/”分隔
 	History []CorrectAnswer
 	// 之前提交的所有文本中以标点分隔的小段集合
-	HistorySet map[string]struct{}
-	CurMove    Side // 当前正答题的一方
-	HostTimer  int  // 房主的剩余时间
-	GuestTimer int  // 客人的剩余时间
+	HistorySet  map[string]struct{}
+	LastMoveAt  int64 // 上一次提交答案的时间戳
+	CurMoveSide Side  // 当前正答题的一方
+	HostTimer   int   // 房主的剩余时间
+	GuestTimer  int   // 客人的剩余时间
+
+	People []*Player // 建立了此房间的 WebSocket 连接的人
+
+	TimerStopSignal chan struct{}
+	Mutex           *sync.Mutex
+}
+
+func (a CorrectAnswer) Dump() string {
+	b := strings.Builder{}
+	b.WriteString(a.string)
+	for _, k := range a.Keywords {
+		b.WriteRune('/')
+		b.WriteString(strconv.Itoa(k.a))
+		b.WriteRune(',')
+		b.WriteString(strconv.Itoa(k.b))
+	}
+	return b.String()
 }
 
 // 游戏题目与进度的接口，下面的 SubjectA/B/C/D 都会实现之。
@@ -63,6 +86,7 @@ type Subject interface {
 	// 第一个返回值是关键词的下标集合，若答案不合法则为 nil
 	// 第二个返回值是一个自定义结构，表示变化量
 	Answer(string, Side) ([]IntPair, interface{})
+	End() bool // 游戏是否结束
 }
 
 // 普通飞花 题目与进度
@@ -84,6 +108,9 @@ func (s *SubjectA) Answer(str string, from Side) ([]IntPair, interface{}) {
 	} else {
 		return nil, nil
 	}
+}
+func (s *SubjectA) End() bool {
+	return false
 }
 
 // 多字飞花 题目与进度
@@ -115,6 +142,9 @@ func (s *SubjectB) Answer(str string, from Side) ([]IntPair, interface{}) {
 	} else {
 		return nil, nil
 	}
+}
+func (s *SubjectB) End() bool {
+	return (s.CurIndex == -1)
 }
 
 // 超级飞花 题目与进度
@@ -172,6 +202,14 @@ func (s *SubjectC) Answer(str string, from Side) ([]IntPair, interface{}) {
 	}
 	s.UsedRight[indexRight] = true
 	return ps, indexRight
+}
+func (s *SubjectC) End() bool {
+	for _, u := range s.UsedRight {
+		if !u {
+			return false
+		}
+	}
+	return true
 }
 
 // 谜之飞花 题目与进度
@@ -244,11 +282,35 @@ func (s *SubjectD) Answer(str string, from Side) ([]IntPair, interface{}) {
 	s.UsedRight[indexRight] = true
 	return ps, [2]int{indexLeft, indexRight}
 }
+func (s *SubjectD) End() bool {
+	for _, u := range s.UsedLeft {
+		if !u {
+			return false
+		}
+	}
+	for _, u := range s.UsedRight {
+		if !u {
+			return false
+		}
+	}
+	return true
+}
 
 // 计算一个字符串中的 Unicode 字符数
 func runes(s string) int {
 	return len([]rune(s))
 }
+
+// 数据库
+
+// 访问两个全局 map 的互斥锁
+var DataMutex = &sync.Mutex{}
+
+// 所有玩家，键为玩家 ID
+var Players map[string]*Player
+
+// 所有房间，键为房主 ID
+var Rooms map[string]*Room
 
 // 与数据库交互的逻辑
 
@@ -257,5 +319,61 @@ func SetUpDatabase() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// 创建表
+	cmd := "CREATE TABLE IF NOT EXISTS players" +
+		"(id TEXT UNIQUE PRIMARY KEY, nickname TEXT, avatar TEXT)"
+	if _, err := db.Exec(cmd); err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	// 清空全局数据
+	Players = map[string]*Player{}
+	Rooms = map[string]*Room{}
+
+	// 读取玩家信息
+	rows, err := db.Query("SELECT * FROM players")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		p := Player{}
+		err := rows.Scan(&p.Id, &p.Nickname, &p.Avatar)
+		if err != nil {
+			return nil, err
+		}
+		Players[p.Id] = &p
+		Rooms[p.Id] = &Room{Host: p.Id, Mutex: &sync.Mutex{}}
+	}
+
 	return db, nil
+}
+
+func (p *Player) Save() error {
+	Players[p.Id] = p
+	if Rooms[p.Id] == nil {
+		Rooms[p.Id] = &Room{Host: p.Id, Mutex: &sync.Mutex{}}
+	}
+	_, err := db.Exec("INSERT INTO players(id, nickname, avatar) "+
+		"VALUES($1, $2, $3) "+
+		"ON CONFLICT(id) DO UPDATE SET "+
+		"nickname = excluded.nickname, "+
+		"avatar = excluded.avatar",
+		p.Id, p.Nickname, p.Avatar)
+	return err
+}
+
+func GetPlayer(id string) *Player {
+	if p := Players[id]; p != nil {
+		return p
+	}
+	p := &Player{
+		Id:       id,
+		Nickname: "猫猫" + id,
+		Avatar:   "https://kawa.moe/favicon.ico",
+	}
+	p.Save()
+	return p
 }
