@@ -210,6 +210,12 @@ func parseInt(x interface{}) int {
 // 处理玩家客户端发来的消息
 // NOTE: 大部分业务逻辑在此处实现
 func handlePlayerMessage(p *Player, object map[string]interface{}) {
+	if p.InRoom != nil {
+		m := p.InRoom.Mutex
+		m.Lock()
+		defer m.Unlock()
+	}
+
 	defer func() {
 		if e := recover(); e != nil {
 			if s, ok := e.(string); ok {
@@ -334,13 +340,14 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 
 		p.InRoom.TimerStopSignal = make(chan struct{})
 		go func(room *Room) {
+			m := room.Mutex
 			ch := room.TimerStopSignal
-		loop:
 			for {
 				select {
 				case <-ch:
-					break loop
+					return
 				case <-time.After(time.Second / 2):
+					m.Lock()
 					var turnTimer int
 					var oppTimer int
 					if room.CurMoveSide == SideHost {
@@ -354,17 +361,22 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 						// 小概率事件，对方上次提交答案时已经超时
 						bicastGameEnd(room, room.CurMoveSide)
 						resetRoomState(room)
-						break loop
+						room.TimerStopSignal = nil
+						m.Unlock()
+						close(ch)
+						return
 					}
 					if turnTimer < int(nowMilliseconds()-room.LastMoveAt) {
 						bicastGameEnd(room, 1-room.CurMoveSide)
 						resetRoomState(room)
-						break loop
+						room.TimerStopSignal = nil
+						m.Unlock()
+						close(ch)
+						return
 					}
+					m.Unlock()
 				}
 			}
-			room.TimerStopSignal = nil
-			close(ch)
 		}(p.InRoom)
 
 	case "answer":
@@ -445,12 +457,9 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 
 		// 游戏是否已经完成（用完所有的字词）
 		if p.InRoom.Subject.End() {
-			ch := p.InRoom.TimerStopSignal
-			if ch != nil {
-				ch <- struct{}{}
-				bicastGameEnd(p.InRoom, SideNone)
-				resetRoomState(p.InRoom)
-			}
+			p.InRoom.TimerStopSignal <- struct{}{}
+			bicastGameEnd(p.InRoom, SideNone)
+			resetRoomState(p.InRoom)
 		} else {
 			bicastGameStatus(p.InRoom)
 		}
