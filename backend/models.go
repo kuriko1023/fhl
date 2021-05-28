@@ -59,6 +59,7 @@ type Room struct {
 	People []*Player // 建立了此房间的 WebSocket 连接的人
 
 	TimerStopSignal chan struct{}
+	Mutex           *sync.Mutex
 }
 
 func (a CorrectAnswer) Dump() string {
@@ -344,7 +345,7 @@ func SetUpDatabase() (*sql.DB, error) {
 			return nil, err
 		}
 		Players[p.Id] = &p
-		Rooms[p.Id] = &Room{Host: p.Id}
+		Rooms[p.Id] = &Room{Host: p.Id, Mutex: &sync.Mutex{}}
 	}
 
 	return db, nil
@@ -353,7 +354,7 @@ func SetUpDatabase() (*sql.DB, error) {
 func (p *Player) Save() error {
 	Players[p.Id] = p
 	if Rooms[p.Id] == nil {
-		Rooms[p.Id] = &Room{Host: p.Id}
+		Rooms[p.Id] = &Room{Host: p.Id, Mutex: &sync.Mutex{}}
 	}
 	_, err := db.Exec("INSERT INTO players(id, nickname, avatar) "+
 		"VALUES($1, $2, $3) "+
