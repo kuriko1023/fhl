@@ -9,6 +9,9 @@
 <script>
 export default {
 name: "RoomPage",
+  onReady: function() {
+
+  },
   methods: {
     sitDown(){
 
