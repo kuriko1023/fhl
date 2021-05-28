@@ -2,11 +2,15 @@ package main
 
 import (
 	"bufio"
+	"container/heap"
+	"encoding/gob"
 	"fmt"
 	"math/rand"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/agnivade/levenshtein"
 )
 
 // 一篇诗词
@@ -20,22 +24,28 @@ type Article struct {
 
 // 所有诗词的列表
 // 每一项的 Id 等于此列表中的下标
-var articles []Article
+// 后续建立了一个 LRU 缓存，某篇目不在缓存中时，对应项为 nil
+var articles []*Article
+
+// 每个篇目在文件中的偏移值
+var articleOffset []int64
 
 // 名篇的列表
-var hotArticles []Article
+var hotArticles []*Article
 
 // 所有高频词组成的列表，单字和双字分开，各自按频率降序排序
 var hotWords1 []string
 var hotWords2 []string
 
 // 高频词的出现频数，单字和双字分开
-type RunePair struct{ a, b rune }
+type RunePair struct{ A, B rune }
+
 var hotWords1Count map[rune]int
 var hotWords2Count map[RunePair]int
 
 // 全部都是高频字的句子
 var allHotSentences [][]string
+
 const ALL_HOT_LEN_MIN = 5
 const ALL_HOT_LEN_MAX = 9
 
@@ -58,7 +68,7 @@ func getHotWords(sentence string) ([]string, []string) {
 		if i < len(s)-1 {
 			if n, has := hotWords2Count[RunePair{c, s[i+1]}]; has {
 				count2 = append(count2, KVPair{
-					string(c) + string(s[i + 1]),
+					string(c) + string(s[i+1]),
 					n,
 				})
 			}
@@ -118,7 +128,7 @@ func generateA(count1, count2 int) []string {
 // 生成多字飞花题目，返回一句长度为 length 的句子
 // 需确保 ALL_HOT_LEN_MIN <= length <= ALL_HOT_LEN_MAX
 func generateB(length int) string {
-	collection := allHotSentences[length - ALL_HOT_LEN_MIN]
+	collection := allHotSentences[length-ALL_HOT_LEN_MIN]
 	return collection[rand.Intn(len(collection))]
 }
 
@@ -273,7 +283,7 @@ func generateD(n int) ([]string, []string) {
 		if k >= 4 && len(sHotWords) > 1 {
 			for i := 0; i < len(sHotWords); i++ {
 				for j := i + 1; j < len(sHotWords); j++ {
-					if freq, ok := hotWordsFreq[sHotWords[i] + sHotWords[j]]; ok{
+					if freq, ok := hotWordsFreq[sHotWords[i]+sHotWords[j]]; ok {
 						//高频词组合频次大于50方记入; 取最大值
 						if freq >= 50 && freq > freqMax {
 							s1 = i
@@ -287,14 +297,14 @@ func generateD(n int) ([]string, []string) {
 				hotWordsList1 = append(hotWordsList1, sHotWords[s1])
 				hotWordsList2 = append(hotWordsList2, sHotWords[s2])
 			}
-		} 
+		}
 		//有0.4的概率填入（若可行）单字词 + 双字词
 		if k < 4 && len(sHotWords) > 0 && len(dHotWords) > 0 {
 			for i := 0; i < len(sHotWords); i++ {
 				for j := 0; j < len(dHotWords); j++ {
 					//确保单字词不包含在双字词中
 					if !strings.Contains(dHotWords[j], sHotWords[i]) {
-						if freq, ok := hotWordsFreq[sHotWords[i] + dHotWords[j]]; ok{
+						if freq, ok := hotWordsFreq[sHotWords[i]+dHotWords[j]]; ok {
 							//高频词组合频次大于50方记入; 取最大值
 							if freq >= 50 && freq > freqMax {
 								s1 = i
@@ -310,14 +320,14 @@ func generateD(n int) ([]string, []string) {
 				hotWordsList2 = append(hotWordsList2, dHotWords[s2])
 			}
 		}
-			
+
 		if flag == 0 {
 			continue
 		}
-		
+
 		//计数加1
 		count++
-		fmt.Println(content[j])
+		// fmt.Println(content[j])
 	}
 
 	sort.Strings(hotWordsList1)
@@ -349,31 +359,31 @@ func furtherInit() {
 	// 初始化高频词组合频次表，令其包括所有单字&单字、单字&双字、双字&双字的组合
 	for i := 0; i < len(hotWords1); i++ {
 		for j := i + 1; j < len(hotWords1); j++ {
-			hotWordsFreq[hotWords1[i] + hotWords1[j]] = 0
+			hotWordsFreq[hotWords1[i]+hotWords1[j]] = 0
 		}
 		for j := 0; j < len(hotWords2); j++ {
 			//若单字词为双字词的一部分,忽略
 			if !strings.Contains(hotWords2[j], hotWords1[i]) {
-				hotWordsFreq[hotWords1[i] + hotWords2[j]] = 0
+				hotWordsFreq[hotWords1[i]+hotWords2[j]] = 0
 			}
 		}
 	}
 
 	for _, article := range articles {
 		content := article.Content
-		for i := 0; i < len(content) - 1; i++ {
+		for i := 0; i < len(content)-1; i++ {
 			//拼接两句为一“联”
-			sentence := content[i] + content[i + 1]
+			sentence := content[i] + content[i+1]
 			sHotWords, dHotWords := getHotWords(sentence)
 
 			//根据每一“联”诗词中的高频词，更新高频词组合频次表
 			for k := 0; k < len(sHotWords); k++ {
 				for j := k + 1; j < len(sHotWords); j++ {
-					hotWordsFreq[sHotWords[k] + sHotWords[j]]++
+					hotWordsFreq[sHotWords[k]+sHotWords[j]]++
 				}
 				for j := 0; j < len(dHotWords); j++ {
 					if !strings.Contains(dHotWords[j], sHotWords[k]) {
-						hotWordsFreq[sHotWords[k] + dHotWords[j]]++
+						hotWordsFreq[sHotWords[k]+dHotWords[j]]++
 					}
 				}
 			}
@@ -383,56 +393,182 @@ func furtherInit() {
 	// 	fmt.Println(k,v)
 	// }
 	// fmt.Println("finish")
+
+	for k, v := range hotWordsFreq {
+		if v < 50 {
+			delete(hotWordsFreq, k)
+		}
+	}
+}
+
+var datasetFile *os.File
+
+var gobValues = []interface{}{
+	&articleOffset,
+	&hotWords1,
+	&hotWords2,
+	&hotWords1Count,
+	&hotWords2Count,
+	&allHotSentences,
+	&hotWordsFreq,
+	&hotArticles, // TODO: 这好吗？这不好
+}
+
+var precalFile *os.File
+var errCorrOffset int64
+var errCorrNumRecords int64
+
+func loadPrecal() error {
+	file, err := os.Open("dataset_precal.bin")
+	if err != nil {
+		return err
+	}
+
+	// 解码 Gob
+	decoder := gob.NewDecoder(file)
+	for _, v := range gobValues {
+		if err := decoder.Decode(v); err != nil {
+			file.Close()
+			return err
+		}
+	}
+
+	// 创建空的 articles 数组
+	articles = make([]*Article, len(articleOffset))
+
+	// 纠错数据
+	offs, err := file.Seek(0, os.SEEK_CUR)
+	if err != nil {
+		file.Close()
+		return err
+	}
+	errCorrOffset = offs
+
+	stat, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return err
+	}
+	errCorrNumRecords = (stat.Size() - offs) / RECORD_W
+	println(errCorrOffset, errCorrNumRecords)
+
+	precalFile = file
+	return nil
+}
+
+func savePrecalGob() error {
+	file, err := os.Create("dataset_precal.bin")
+	if err != nil {
+		return err
+	}
+
+	// 保存 Gob
+	encoder := gob.NewEncoder(file)
+	for _, v := range gobValues {
+		if err := encoder.Encode(v); err != nil {
+			file.Close()
+			return err
+		}
+	}
+
+	// 纠错数据将在之后保存
+	precalFile = file
+	return nil
+}
+
+func savePrecalErrCorr(x []ErrCorrRecord) error {
+	w := bufio.NewWriter(precalFile)
+
+	count := 0
+	for i, rec := range x {
+		if i == 0 || rec != x[i-1] {
+			count++
+			if err := writeErrCorrRecord(w, rec); err != nil {
+				return err
+			}
+		}
+	}
+
+	w.Flush()
+	println(count)
+	return nil
+}
+
+func parseArticle(id int, s string) (*Article, string) {
+	fields := strings.SplitN(s, "\t", 5)
+	if len(fields) < 5 {
+		panic("Incorrect dataset format")
+	}
+
+	return &Article{
+		Id:      id,
+		Title:   fields[3],
+		Dynasty: fields[1],
+		Author:  fields[2],
+		Content: strings.Split(fields[4], "/"),
+	}, fields[0]
 }
 
 // 读入数据集，填充所有全局变量
 func initDataset() {
-	articles = []Article{}
-	hotArticles = []Article{}
-	hotWords1 = []string{}
-	hotWords2 = []string{}
+	rand.Seed(1023)
 
 	file, err := os.Open("dataset.txt")
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
+	datasetFile = file
+
+	if loadPrecal() == nil {
+		initArticleCache()
+		return
+	}
+
+	articles = []*Article{}
+	articleOffset = []int64{}
+	hotArticles = []*Article{}
+	hotWords1 = []string{}
+	hotWords2 = []string{}
 
 	hotWords1Count = map[rune]int{}
 	hotWords2Count = map[RunePair]int{}
 
 	i := 0
 	sc := bufio.NewScanner(file)
+	offs := int64(0)
+	p := 0
+	q := 0
+	t := 0
 	for sc.Scan() {
+		prevOffs := offs
+		offs += int64(len(sc.Text())) + 1
+
 		// 随机抽取十分之一
 		i++
 		if sc.Text()[0] != '!' && i%10 != 0 {
 			continue
 		}
 
-		fields := strings.SplitN(sc.Text(), "\t", 5)
-		if len(fields) < 5 {
-			panic("Incorrect dataset format")
-		}
-
 		// 将篇目加入列表
-		article := Article{
-			Id:      len(articles),
-			Title:   fields[3],
-			Dynasty: fields[1],
-			Author:  fields[2],
-			Content: strings.Split(fields[4], "/"),
-		}
+		article, flag := parseArticle(len(articles), sc.Text())
+		articleOffset = append(articleOffset, prevOffs)
 		articles = append(articles, article)
 		weight := 1
-		if fields[0] == "!" {
+		if flag == "!" {
 			// 名篇
 			hotArticles = append(hotArticles, article)
 			weight = 10
 		}
 
+		for _, s := range article.Content {
+			n := len([]rune(s))
+			p += 1
+			q += n
+			t += n*(n+1)/2 + 1
+		}
+
 		// 若不是重复篇目，则计入高频词
-		if fields[0] != " " {
+		if flag != " " {
 			for _, s := range article.Content {
 				s := []rune(s)
 				for i, c := range s {
@@ -449,6 +585,7 @@ func initDataset() {
 	}
 
 	fmt.Printf("dataset: %d articles\n", len(articles))
+	fmt.Printf("%d, %d, %d\n", p, q, t)
 
 	hotWords1List := byValueDesc{}
 	hotWords2List := byValueDesc{}
@@ -457,7 +594,7 @@ func initDataset() {
 	}
 	for k, v := range hotWords2Count {
 		hotWords2List = append(hotWords2List, KVPair{
-			string(k.a) + string(k.b),
+			string(k.A) + string(k.B),
 			v,
 		})
 	}
@@ -492,7 +629,7 @@ func initDataset() {
 	}
 
 	// 找出仅由不重复的高频字组成的句子
-	allHotSentences = make([][]string, ALL_HOT_LEN_MAX - ALL_HOT_LEN_MIN + 1)
+	allHotSentences = make([][]string, ALL_HOT_LEN_MAX-ALL_HOT_LEN_MIN+1)
 	for i := range allHotSentences {
 		allHotSentences[i] = []string{}
 	}
@@ -504,7 +641,7 @@ func initDataset() {
 			}
 			// 确认每个字是否是高频字
 			minCount := hotWords1List[len(hotWords1)/2-1].int
-			if len(runes) >= ALL_HOT_LEN_MAX - 2 {
+			if len(runes) >= ALL_HOT_LEN_MAX-2 {
 				minCount = hotWords1List[len(hotWords1)-1].int
 			}
 			allHot := true
@@ -532,8 +669,270 @@ func initDataset() {
 	}
 	fmt.Println("仅由不重复的高频字组成的句子")
 	for i, c := range allHotSentences {
-		fmt.Printf("%d 字：%d 句\n", i + ALL_HOT_LEN_MIN, len(c))
+		fmt.Printf("%d 字：%d 句\n", i+ALL_HOT_LEN_MIN, len(c))
 	}
 
-	rand.Seed(1023)
+	furtherInit()
+	if err := savePrecalGob(); err != nil {
+		panic(err)
+	}
+
+	initErrCorr()
+
+	precalFile.Close()
+	if err := loadPrecal(); err != nil {
+		panic(err)
+	}
+
+	for i, _ := range articles {
+		articles[i] = nil
+	}
+	initArticleCache()
+}
+
+// 篇目的 LRU cache
+type CacheEntry struct {
+	Id int
+	Ts uint64
+}
+type CacheEntryHeap []CacheEntry
+
+func (h CacheEntryHeap) Len() int            { return len(h) }
+func (h CacheEntryHeap) Less(i, j int) bool  { return h[i].Ts < h[j].Ts }
+func (h CacheEntryHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
+func (h *CacheEntryHeap) Push(x interface{}) { *h = append(*h, x.(CacheEntry)) }
+func (h *CacheEntryHeap) Pop() interface{} {
+	x := (*h)[len(*h)-1]
+	*h = (*h)[0 : len(*h)-1]
+	return x
+}
+
+// 元素的 a: 篇目编号；b: 上次访问的时间戳
+var articleCache = &CacheEntryHeap{}
+var articleCacheTimestamp = uint64(0)
+var articleActualTimestamp []uint64
+
+var datasetFileReader = bufio.NewReaderSize(nil, 512)
+
+func initArticleCache() {
+	heap.Init(articleCache)
+	articleActualTimestamp = make([]uint64, len(articles))
+}
+
+func getArticle(id int) *Article {
+	articleCacheTimestamp++ // 应该不会溢出吧
+	articleActualTimestamp[id] = articleCacheTimestamp
+	// println("accessing", id)
+
+	if a := articles[id]; a != nil {
+		return a
+	}
+
+	// 读入篇目
+	datasetFile.Seek(articleOffset[id], os.SEEK_SET)
+	datasetFileReader.Reset(datasetFile)
+	s, err := datasetFileReader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+	s = s[:len(s)-1] // 去掉换行符
+	article, _ := parseArticle(id, s)
+
+	// 加入缓存
+	// 若缓存已满，则移除最久未使用的一个
+	if len(*articleCache) >= Config.ArticleCache {
+		for {
+			elm := heap.Pop(articleCache).(CacheEntry)
+			ts := articleActualTimestamp[elm.Id]
+			if ts != elm.Ts {
+				// 向堆中加入正确的值
+				heap.Push(articleCache, CacheEntry{elm.Id, ts})
+				continue
+			}
+			// println("removing", elm.Id)
+			articles[elm.Id] = nil
+			break
+		}
+	}
+
+	heap.Push(articleCache, CacheEntry{id, articleCacheTimestamp})
+	articles[id] = article
+
+	return article
+}
+
+// 对称删除纠错算法
+
+type HashType uint64
+type ArticleIdxType uint32
+type ContentIdxType uint32
+type ErrCorrRecord struct {
+	Hash       HashType
+	ArticleIdx ArticleIdxType
+	ContentIdx ContentIdxType
+}
+
+const HASH_W = 5
+const ART_IDX_W = 3
+const CON_IDX_W = 2
+const RECORD_W = HASH_W + ART_IDX_W + CON_IDX_W
+
+func hash(rs []rune) HashType {
+	h := HashType(0)
+	for _, r := range rs {
+		if r > 0 {
+			h = h*100003 + HashType(r)
+		}
+	}
+	return h % (1 << (HASH_W * 8))
+}
+
+func readErrCorrRecord(index int64) ErrCorrRecord {
+	buf := [RECORD_W]byte{}
+	precalFile.ReadAt(buf[:], errCorrOffset+index*RECORD_W)
+	rec := ErrCorrRecord{0, 0, 0}
+	for i, b := range buf[0:HASH_W] {
+		rec.Hash += (HashType(b) << (i * 8))
+	}
+	for i, b := range buf[HASH_W : HASH_W+ART_IDX_W] {
+		rec.ArticleIdx += (ArticleIdxType(b) << (i * 8))
+	}
+	for i, b := range buf[HASH_W+ART_IDX_W:] {
+		rec.ContentIdx += (ContentIdxType(b) << (i * 8))
+	}
+	return rec
+}
+
+func writeErrCorrRecord(w *bufio.Writer, rec ErrCorrRecord) error {
+	buf := [RECORD_W]byte{}
+	for i := 0; i < HASH_W; i++ {
+		buf[i] = byte(rec.Hash >> (i * 8))
+	}
+	for i := 0; i < ART_IDX_W; i++ {
+		buf[HASH_W+i] = byte(rec.ArticleIdx >> (i * 8))
+	}
+	for i := 0; i < CON_IDX_W; i++ {
+		buf[HASH_W+ART_IDX_W+i] = byte(rec.ContentIdx >> (i * 8))
+	}
+	_, err := w.Write(buf[:])
+	return err
+}
+
+func forEachPossibleErrHash(s string, fn func(h HashType) bool) {
+	rs := []rune(s)
+	if fn(hash(rs)) {
+		return
+	}
+	for i, r := range rs {
+		rs[i] = -1
+		if fn(hash(rs)) {
+			return
+		}
+		for j, r := range rs[:i] {
+			rs[j] = -1
+			if fn(hash(rs)) {
+				return
+			}
+			rs[j] = r
+		}
+		rs[i] = r
+	}
+}
+
+func initErrCorr() {
+	x := []ErrCorrRecord{}
+	for i, article := range articles {
+		for j, s := range article.Content {
+			forEachPossibleErrHash(s, func(h HashType) bool {
+				x = append(x, ErrCorrRecord{
+					Hash:       h,
+					ArticleIdx: ArticleIdxType(i),
+					ContentIdx: ContentIdxType(j),
+				})
+				return false
+			})
+		}
+	}
+	println(len(x))
+	sort.Slice(x, func(i, j int) bool {
+		return x[i].Hash < x[j].Hash
+	})
+
+	if err := savePrecalErrCorr(x); err != nil {
+		panic(err)
+	}
+}
+
+// 在纠错数据库中查找某个 hash 值
+// 返回 >= 此 hash 的最小记录位置，即 lower_bound
+func lookupErrCorr(x HashType) int64 {
+	lo := int64(-1)
+	hi := errCorrNumRecords
+	for lo < hi-1 {
+		mid := (lo + hi) / 2
+		rec := readErrCorrRecord(mid)
+		if rec.Hash < x {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+	return hi
+}
+
+// 检查句子是否在诗词库中
+// 返回：(是否完全一致, 篇目编号, 句子下标)
+// 找不到时，返回的篇目编号与句子下标均为 -1
+func lookupText(text []string) (bool, int, int) {
+	// 找到第一个至少含四字的子句；若无则选择第一个
+	pivot := 0
+	for i, s := range text {
+		if len([]rune(s)) >= 4 {
+			pivot = i
+			break
+		}
+	}
+
+	// 是否有接近
+	bestDist := 3 // 最大允许的距离 + 1
+	bestArticle := -1
+	bestContent := -1
+
+	forEachPossibleErrHash(text[pivot], func(h HashType) bool {
+		index := lookupErrCorr(h)
+		for index < errCorrNumRecords {
+			rec := readErrCorrRecord(index)
+			if rec.Hash != h {
+				break
+			}
+
+			article := getArticle(int(rec.ArticleIdx))
+			i := int(rec.ContentIdx) - pivot
+			if i >= 0 && i+len(text) <= len(article.Content) {
+				// 检查两段文字是否相同或接近
+				templ := article.Content[i : i+len(text)]
+				totalDist := 0
+				for j, s := range text {
+					dist := levenshtein.ComputeDistance(s, templ[j])
+					totalDist += dist
+					if totalDist >= bestDist {
+						break
+					}
+				}
+				if totalDist < bestDist {
+					bestDist = totalDist
+					bestArticle = int(rec.ArticleIdx)
+					bestContent = i
+					if totalDist == 0 {
+						return true
+					}
+				}
+			}
+
+			index++
+		}
+		return false
+	})
+
+	return (bestDist == 0), bestArticle, bestContent
 }

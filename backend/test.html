@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script>  
+window.addEventListener("load", function(evt) {
+    var host = document.getElementById("host");
+    var me = document.getElementById("me");
+    var output = document.getElementById("output");
+    var input = document.getElementById("input");
+    var ws;
+    var print = function(message, chroma, bold) {
+        var d = document.createElement("div");
+        if (chroma) d.style.color = chroma;
+        if (bold) d.style.fontWeight = 'bold';
+        d.textContent = message;
+        output.appendChild(d);
+        d.scrollIntoView();
+    };
+    var unprint = function() {
+        output.lastElementChild.remove();
+    };
+    var tryparse = function (text) {
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            return null;
+        }
+    };
+    document.getElementById("open").onclick = function(evt) {
+        if (ws) {
+            return false;
+        }
+        ws = new WebSocket(
+            (location.protocol === 'https:' ? 'wss:' : 'ws:') +
+            '//' + location.host + '/channel/' + host.value +
+            '/!' + me.value);
+        print("CONNECTING", "#aaa", true);
+        ws.onopen = function(evt) {
+            unprint();
+            print("OPEN", "#4b6", true);
+        }
+        ws.onclose = function(evt) {
+            print("CLOSE", "#888", true);
+            ws = null;
+        }
+        ws.onmessage = function(evt) {
+            print("RECEIVE", "#46f", true);
+            print(evt.data, "#238");
+            var obj = tryparse(evt.data);
+            if (host.value === 'my' && obj.type === 'room_status' &&
+                obj.host_status === 'ready' && obj.guest !== null)
+            {
+                input.value = '{\n  "type": "start_generate"\n}';
+            }
+            if (obj.type === 'game_status')
+                input.value = '{\n  "type": "answer",\n  "text": "!"\n}';
+        }
+        ws.onerror = function(evt) {
+            unprint();
+            print("ERROR: see console", "#f64", true);
+            console.log(evt);
+        }
+        return false;
+    };
+    document.getElementById("send").onclick = function(evt) {
+        if (!ws) {
+            return false;
+        }
+        print("SEND", "#f6a", true);
+        print(input.value, "#835");
+        ws.send(input.value);
+        var obj = tryparse(input.value);
+        if (obj.type === 'start_generate')
+            input.value = '{\n  "type": "set_mode",\n  "mode": "A",\n  "size": 0\n}';
+        else if (obj.type === 'set_mode') {
+            input.value = '{\n  "type": "generate",\n' +
+                '  "mode": ' + JSON.stringify(obj.mode) + ',\n' +
+                '  "size": ' + JSON.stringify(obj.size) + '\n' +
+                '}';
+        } else if (obj.type === 'generate')
+            input.value = '{\n  "type": "start_game",\n  "index": 0\n}';
+        else if (obj.type === 'start_game')
+            input.value = '{\n  "type": "answer",\n  "text": "!"\n}';
+        return false;
+    };
+    document.getElementById("close").onclick = function(evt) {
+        if (!ws) {
+            return false;
+        }
+        ws.close();
+        return false;
+    };
+});
+</script>
+</head>
+<body>
+<table style="padding: 12px; width: 100%">
+<tr><td valign="top" width="30%">
+<p>
+房主
+<input id="host" type="text" value="~ host ~">
+<p>
+　我
+<input id="me" type="text" value="~ me ~">
+<p>
+<button id="open">Open</button>
+<button id="close">Close</button>
+<p>
+<textarea id="input" rows="7">
+{
+  "type": "ready"
+}
+</textarea>
+<p>
+<button id="send">Send</button>
+</td><td valign="top" width="70%">
+<div id="output" style="max-height: 500px; overflow: scroll"></div>
+</td></tr></table>
+</body>
+</html>
