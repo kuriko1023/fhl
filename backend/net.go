@@ -290,10 +290,10 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		p.InRoom.State = "game"
 		p.InRoom.History = []CorrectAnswer{}
 		p.InRoom.HistorySet = map[string]struct{}{}
-		p.InRoom.LastMoveAt = time.Now().Unix()
+		p.InRoom.LastMoveAt = time.Now().UnixNano() / int64(time.Millisecond/time.Nanosecond)
 		p.InRoom.CurMoveSide = SideHost
-		p.InRoom.HostTimer = 60
-		p.InRoom.GuestTimer = 60
+		p.InRoom.HostTimer = 60000
+		p.InRoom.GuestTimer = 60000
 
 		bicastGameStatus(p.InRoom)
 
@@ -357,7 +357,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			p.InRoom.HistorySet[s] = struct{}{}
 		}
 
-		timeNow := time.Now().Unix()
+		timeNow := time.Now().UnixNano() / int64(time.Millisecond/time.Nanosecond)
 		timeUsed := int(timeNow - p.InRoom.LastMoveAt)
 		if p.InRoom.CurMoveSide == SideHost {
 			p.InRoom.HostTimer -= timeUsed
