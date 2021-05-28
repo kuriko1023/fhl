@@ -177,6 +177,16 @@ func bicastGameEnd(room *Room, winner Side) {
 	Players[room.Guest].Channel <- object
 }
 
+func nowMilliseconds() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond/time.Nanosecond)
+}
+
+func resetRoomState(room *Room) {
+	room.State = ""
+	room.HostReady = false
+	room.Guest = ""
+}
+
 func errorMsg(s string) map[string]string {
 	return map[string]string{"error": s}
 }
@@ -315,12 +325,47 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		p.InRoom.State = "game"
 		p.InRoom.History = []CorrectAnswer{}
 		p.InRoom.HistorySet = map[string]struct{}{}
-		p.InRoom.LastMoveAt = time.Now().UnixNano() / int64(time.Millisecond/time.Nanosecond)
+		p.InRoom.LastMoveAt = nowMilliseconds()
 		p.InRoom.CurMoveSide = SideHost
 		p.InRoom.HostTimer = 60000
 		p.InRoom.GuestTimer = 60000
 
 		bicastGameStatus(p.InRoom)
+
+		p.InRoom.TimerStopSignal = make(chan struct{})
+		go func(room *Room) {
+			ch := room.TimerStopSignal
+		loop:
+			for {
+				select {
+				case <-ch:
+					break loop
+				case <-time.After(time.Second / 2):
+					var turnTimer int
+					var oppTimer int
+					if room.CurMoveSide == SideHost {
+						turnTimer = room.HostTimer
+						oppTimer = room.GuestTimer
+					} else {
+						turnTimer = room.GuestTimer
+						oppTimer = room.HostTimer
+					}
+					if oppTimer < 0 {
+						// 小概率事件，对方上次提交答案时已经超时
+						bicastGameEnd(room, room.CurMoveSide)
+						resetRoomState(room)
+						break loop
+					}
+					if turnTimer < int(nowMilliseconds()-room.LastMoveAt) {
+						bicastGameEnd(room, 1-room.CurMoveSide)
+						resetRoomState(room)
+						break loop
+					}
+				}
+			}
+			room.TimerStopSignal = nil
+			close(ch)
+		}(p.InRoom)
 
 	case "answer":
 		if p.InRoom.State != "game" {
@@ -387,7 +432,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			p.InRoom.HistorySet[s] = struct{}{}
 		}
 
-		timeNow := time.Now().UnixNano() / int64(time.Millisecond/time.Nanosecond)
+		timeNow := nowMilliseconds()
 		timeUsed := int(timeNow - p.InRoom.LastMoveAt)
 		if p.InRoom.CurMoveSide == SideHost {
 			p.InRoom.HostTimer -= timeUsed
@@ -400,10 +445,12 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 
 		// 游戏是否已经完成（用完所有的字词）
 		if p.InRoom.Subject.End() {
-			bicastGameEnd(p.InRoom, SideNone)
-			p.InRoom.State = ""
-			p.InRoom.HostReady = false
-			p.InRoom.Guest = ""
+			ch := p.InRoom.TimerStopSignal
+			if ch != nil {
+				ch <- struct{}{}
+				bicastGameEnd(p.InRoom, SideNone)
+				resetRoomState(p.InRoom)
+			}
 		} else {
 			bicastGameStatus(p.InRoom)
 		}
