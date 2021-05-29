@@ -458,6 +458,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		// 游戏是否已经完成（用完所有的字词）
 		if p.InRoom.Subject.End() {
 			p.InRoom.TimerStopSignal <- struct{}{}
+			p.InRoom.TimerStopSignal = nil
 			bicastGameEnd(p.InRoom, SideNone)
 			resetRoomState(p.InRoom)
 		} else {
@@ -627,10 +628,23 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(s))
 }
 
+func resetHandler(w http.ResponseWriter, r *http.Request) {
+	DataMutex.Lock()
+	for _, room := range Rooms {
+		if room.TimerStopSignal != nil {
+			room.TimerStopSignal <- struct{}{}
+			room.TimerStopSignal = nil
+		}
+		resetRoomState(room)
+	}
+	DataMutex.Unlock()
+}
+
 func SetUpHttp() {
 	http.HandleFunc("/channel/", channelHandler)
 	if Config.Debug {
 		http.HandleFunc("/test", testHandler)
+		http.HandleFunc("/reset", resetHandler)
 	}
 
 	port := Config.Port
