@@ -90,8 +90,12 @@ export default {
           tmpObject.value = tmpArray[i]
           if(parse[2] !== undefined) {
             tmpObject.show = parseInt(parse[2][i])
+            console.log("gamePage")
           }
-          else tmpObject.show = 1
+          else {
+            tmpObject.show = 1
+            console.log("endPage")
+          }
           this.subject.subject2.push(tmpObject)
         }
         break
