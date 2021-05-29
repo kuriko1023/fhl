@@ -29,16 +29,21 @@
     </view>
 <!--    临时测试用-->
     <button @click="onEnd"> end </button>
-<!--    <button @click="pop">test</button>-->
-<!--    <uni-pop-up ref="popup" type="message">-->
-<!--      <uni-pop-up-message type="warning" :message="popMessage"/>-->
-<!--    </uni-pop-up>-->
+    <button @click="pop">test</button>
+    <uni-popup ref="popup" type="message">
+      <uni-popup-message type="warn" :message="popMessage"/>
+<!--      <view id="popup">-->
+<!--        test-->
+<!--      </view>-->
+    </uni-popup>
   </view>
 </template>
 
 <script>
-import uniPopUp from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
-import uniPopUpMessage from '@dcloudio/uni-ui/lib/uni-popup-message/uni-popup-message.vue';
+// import uniPopUp from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
+import uniPopupMessage from '@dcloudio/uni-ui/lib/uni-popup-message/uni-popup-message.vue';
+import {uniPopup} from '@dcloudio/uni-ui'
+// import {uniPopupMessage} from '@dcloudio/uni-ui'
 import Subject from "@/components/Subject";
 import History from "@/components/History";
 import CountDown from "@/components/CountDown";
@@ -56,8 +61,8 @@ export default {
     "subject-block": Subject,
     "history-block": History,
     "count-down": CountDown,
-    // uniPopUp,
-    // uniPopUpMessage,
+    uniPopup,
+    uniPopupMessage,
   },
   data() {
     return {
@@ -76,11 +81,11 @@ export default {
       active2: false,
       current1: 0,
       current2: 0,
-      side: 0,
-      myExtraTime: 30,
-      sideExtraTime: 30,
+      side: 0,  // 0 -- 我方  1 -- 对方
+      myExtraTime: 29.99,
+      sideExtraTime: 29.99,
       info: 'counting...',
-      popMessage: 'warning',
+      popMessage: '无效的答案',
       mode: "C",
       // subject: {
       //   "subject1": ["雁", "古", "梦"],
@@ -174,9 +179,9 @@ export default {
     }
   },
   methods:{
-    // pop(){
-    //   this.$refs.popup.open()
-    // },
+    pop(){
+      this.$refs.popup.open()
+    },
     onFinish(){
       this.info = 'finish'
       // this.$refs.countdown1.active = false
@@ -196,12 +201,16 @@ export default {
       console.log(this.current1)
       this.current1 = 10
       if(this.side) {
+        console.log("side the other" + this.side)
         this.side = 0
         this.current2 = this.myExtraTime
+        console.log("myExtraTime" + this.myExtraTime)
       }
       else {
+        console.log("side my" + this.side)
         this.side = 1
         this.current2 = this.sideExtraTime
+        console.log("sideExtraTime" + this.sideExtraTime)
       }
       this.active1 = true
     },
@@ -219,9 +228,11 @@ export default {
     onCountStop(val){
       console.log('countStop')
       if(this.side) {
+        console.log(val)
         this.sideExtraTime = val
       }
       else{
+        console.log(val)
         this.myExtraTime = val
       }
     },
@@ -297,5 +308,9 @@ export default {
 <style scoped>
   .circle {
     width: 20%;
+  }
+  #popup {
+    background: white;
+    padding: 20px;
   }
 </style>

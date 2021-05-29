@@ -31,20 +31,20 @@ name: "CountDown",
   },
   watch: {
     active: function(val){
-      console.log('active')
+      //console.log('active')
       if(val){
         this.int = setInterval(this.intervalFunction, this.time)
       }
       else{
         clearInterval(this.int)
-        console.log('a')
+       // console.log('a')
         this.$emit('stop', (100 - this.cur) * this.time / 100)
-        console.log('b')
+       // console.log('b')
       }
     },
     current: function(val){
       if(val !== 0) {
-        console.log('current')
+       // console.log('current')
         this.cur = 100 - (val / this.time) * 100
       }
     }

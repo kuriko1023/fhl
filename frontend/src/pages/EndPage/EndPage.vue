@@ -1,7 +1,7 @@
 <template>
   <view>
     <view>
-      <subject-block :data="subject" :mode="mode"/>
+      <subject-block :text="subject" :mode="mode"/>
     </view>
     <view>
       <history-block :data="history"/>
@@ -23,6 +23,8 @@ name: "EndPage",
     return{
       mode: "C",
       subject: "古 梦 雁/长 舟 送 寄 事 神 不 生 西风 多少",
+      // mode: "B",
+      // subject: "春花秋月何时了/2",
       history: [
         [
           {

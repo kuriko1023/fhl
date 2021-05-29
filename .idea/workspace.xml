@@ -20,15 +20,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="070584a4-d4fb-4a73-88f2-25bb365fc07e" name="默认的" comment="">
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/History.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/Subject.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/pages/ChoosePage/ChoosePage.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/pages/EndPage/EndPage.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/pages/GamePage/GamePage.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/pages/RoomPage/RoomPage.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/pages/StartPage/StartPage.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/components/CountDown.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/components/PopupMessage.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/App.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/History.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/History.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/components/Subject.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/Subject.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/pages.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/ChoosePage/ChoosePage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/ChoosePage/ChoosePage.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/EndPage/EndPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/EndPage/EndPage.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/GamePage/GamePage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/GamePage/GamePage.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/RoomPage/RoomPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/RoomPage/RoomPage.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/StartPage/StartPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/StartPage/StartPage.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -77,7 +83,13 @@
       <option name="presentableId" value="Default" />
       <updated>1612447621467</updated>
       <workItem from="1612447622829" duration="7218000" />
-      <workItem from="1612497638733" duration="4980000" />
+      <workItem from="1612497638733" duration="16366000" />
+      <workItem from="1612544937534" duration="2686000" />
+      <workItem from="1612584287446" duration="18674000" />
+      <workItem from="1612691006875" duration="10928000" />
+      <workItem from="1612768301629" duration="9532000" />
+      <workItem from="1613110153488" duration="4361000" />
+      <workItem from="1613277887086" duration="2860000" />
     </task>
     <servers />
   </component>
@@ -101,5 +113,9 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="425" y="187" key="run.anything.popup/0.0.1536.824@0.0.1536.824" timestamp="1612499402490" />
+    <state x="431" y="145" width="672" height="678" key="search.everywhere.popup" timestamp="1612775392366">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="431" y="145" width="672" height="678" key="search.everywhere.popup/0.0.1536.824@0.0.1536.824" timestamp="1612775392366" />
   </component>
 </project>
