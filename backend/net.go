@@ -7,12 +7,18 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"math/rand"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	cumulativeTimer = 20000
+	turnTimer       = 6000
 )
 
 var upgrader = websocket.Upgrader{
@@ -144,10 +150,10 @@ func bicastGameStatus(room *Room) {
 	Players[room.Guest].Channel <- object
 }
 
-func bicastGameDelta(room *Room, text string, change interface{}) {
+func bicastGameDelta(room *Room, change interface{}) {
 	object := map[string]interface{}{
 		"type":        "game_update",
-		"text":        text,
+		"text":        room.History[len(room.History)-1].Dump(),
 		"update":      change,
 		"host_timer":  room.HostTimer,
 		"guest_timer": room.GuestTimer,
@@ -263,8 +269,13 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			var subject Subject
 			switch mode {
 			case "A":
-				words := generateA(5, 3)
-				subject = &SubjectA{Word: strings.Join(words, " ")}
+				var word string
+				if rand.Intn(4) == 0 {
+					word = generateA(0, 1)[0]
+				} else {
+					word = generateA(1, 0)[0]
+				}
+				subject = &SubjectA{Word: word}
 			case "B":
 				if size < 5 || size > 9 {
 					panic("Incorrect size")
@@ -319,22 +330,14 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		if p.InRoom.Subject == nil {
 			panic("No subject generated")
 		}
-		if p.InRoom.Mode == "A" {
-			index := parseInt(object["index"])
-			words := strings.Split(p.InRoom.Subject.(*SubjectA).Word, " ")
-			if index < 0 || index >= len(words) {
-				panic("Incorrect index")
-			}
-			p.InRoom.Subject = &SubjectA{Word: words[index]}
-		}
 
 		p.InRoom.State = "game"
 		p.InRoom.History = []CorrectAnswer{}
 		p.InRoom.HistorySet = map[string]struct{}{}
 		p.InRoom.LastMoveAt = nowMilliseconds()
 		p.InRoom.CurMoveSide = SideHost
-		p.InRoom.HostTimer = 60000
-		p.InRoom.GuestTimer = 60000
+		p.InRoom.HostTimer = cumulativeTimer
+		p.InRoom.GuestTimer = cumulativeTimer
 
 		bicastGameStatus(p.InRoom)
 
@@ -366,7 +369,11 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 						close(ch)
 						return
 					}
-					if turnTimer < int(nowMilliseconds()-room.LastMoveAt) {
+					timeUsed := int(nowMilliseconds()-room.LastMoveAt) - turnTimer
+					if timeUsed < 0 {
+						timeUsed = 0
+					}
+					if turnTimer < timeUsed {
 						bicastGameEnd(room, 1-room.CurMoveSide)
 						resetRoomState(room)
 						room.TimerStopSignal = nil
@@ -445,7 +452,10 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		}
 
 		timeNow := nowMilliseconds()
-		timeUsed := int(timeNow - p.InRoom.LastMoveAt)
+		timeUsed := int(timeNow-p.InRoom.LastMoveAt) - turnTimer
+		if timeUsed < 0 {
+			timeUsed = 0
+		}
 		if p.InRoom.CurMoveSide == SideHost {
 			p.InRoom.HostTimer -= timeUsed
 		} else {
@@ -462,10 +472,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			bicastGameEnd(p.InRoom, SideNone)
 			resetRoomState(p.InRoom)
 		} else {
-			bicastGameStatus(p.InRoom)
-		}
-		if false {
-			bicastGameDelta(p.InRoom, text, change)
+			bicastGameDelta(p.InRoom, change)
 		}
 
 	default:
@@ -530,6 +537,14 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 设置读限制
+	c.SetReadLimit(4096)
+	c.SetReadDeadline(time.Now().Add(10 * time.Second))
+	c.SetPongHandler(func(string) error {
+		c.SetReadDeadline(time.Now().Add(10 * time.Second))
+		return nil
+	})
+
 	// inChannel: 客户端发来的消息，以 string 到 interface{} 的 map 表示
 	// outChannel: 要发送至客户端的消息，即 player.Channel
 	inChannel := make(chan map[string]interface{}, 3)
@@ -559,6 +574,9 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 
 	broadcastRoomStatus(room)
 
+	pingTicker := time.NewTicker(5 * time.Second)
+	defer pingTicker.Stop()
+
 messageLoop:
 	for inChannel != nil && outChannel != nil {
 		select {
@@ -574,6 +592,12 @@ messageLoop:
 				break messageLoop
 			}
 			if err := c.WriteJSON(object); err != nil {
+				log.Println(err)
+				break messageLoop
+			}
+
+		case <-pingTicker.C:
+			if err := c.WriteMessage(websocket.PingMessage, nil); err != nil {
 				log.Println(err)
 				break messageLoop
 			}

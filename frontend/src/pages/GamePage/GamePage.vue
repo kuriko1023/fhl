@@ -59,14 +59,6 @@ import History from "@/components/History";
 import CountDown from "@/components/CountDown";
 export default {
   name: "GamePage",
-  // onReady: function(){
-  //   uni.onSocketMessage( (res)=>{
-  //         let message = JSON.parse(res.data)
-  //
-  //       }
-  //
-  //   )
-  // },
   components: {
     "subject-block": Subject,
     "history-block": History,

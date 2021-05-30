@@ -67,7 +67,11 @@ export default {
       subject: {}
     }
   },
-  mounted() {
+  watch: {
+    text: function () { this.refresh() },
+    mode: function () { this.refresh() },
+  },
+  methods: { refresh() {
     console.log(this.text)
     this.subject = {}
     switch (this.mode) {
@@ -138,7 +142,7 @@ export default {
         break
       }
     }
-  }
+  } },
 }
 </script>
 
