@@ -1,35 +1,45 @@
 <template>
   <view>
-    <view id="subject">
+    <image class="background" src="/static/game_background.png" ></image>
+    <view style="padding: 15px">
+    <view id="subject" style="margin-bottom: 20px">
       <subject-block :mode="mode" :text="subject">
       </subject-block>
     </view>
-    <view id="answering">
+    <view id="answering" style="display: flex; margin: 0 15px">
       <image class="circle" src="/static/picture.png" mode="widthFix"></image>
-      <view style="display: flex">
+      <view style="display: flex;">
         <view v-for="word in answer" :key="word.value">
-          <text :style="{color: answerColor[word.highlight]}">{{word.value}}</text>
+          <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.value}}</text>
         </view>
       </view>
+    </view>
 <!--      <progress percent="80" stroke-width="3"/>-->
 <!--      <progress percent="100" stroke-width="3"/>-->
+      <view class="count_down">
       <count-down :active="active1" :color="playerColor[side]" :time="10" :current="current1" @finish="onFinish" ref="countdown1"></count-down>
       <count-down :active="active2" color="#65d4e5" :time="30" :current="current2" @finish="onExtraFinish" @stop="onCountStop"></count-down>
-      <button @click="onStop">stop</button>
-      <button @click="onStop2">stop2</button>
+      </view>
+        <!--      <button @click="onStop">stop</button>-->
+<!--      <button @click="onStop2">stop2</button>-->
     </view>
+    <image src="/static/history_background.png" class="history_background"></image>
     <view id="answerHistory">
       <history-block :data="history"/>
     </view>
     <view id="submit">
       <form @submit="onSubmitAnswer">
-          <input name="myAnswer" adjust-position="false" maxlength="20"/>
-        <button form-type="submit" >发送</button>
+        <view style="display: flex">
+          <input placeholder="输入答案" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="20"/>
+
+<!--            TODO: 是否有效-->
+        <view form-type="submit" class="btn">发送</view>
+        </view>
       </form>
     </view>
 <!--    临时测试用-->
-    <button @click="onEnd"> end </button>
-    <button @click="pop">test</button>
+<!--    <button @click="onEnd"> end </button>-->
+<!--    <button @click="pop">test</button>-->
     <uni-popup ref="popup" type="message">
       <uni-popup-message type="warn" :message="popMessage"/>
 <!--      <view id="popup">-->
@@ -113,7 +123,7 @@ export default {
       //     },
       //   ],
       // },
-      subject: "春花秋月何时了/2",
+      subject: "古 梦 雁/长 舟 送 寄 事 神 不 生 西风 多少/1000010011",
       answer:  [
         {
           'value':'长',
@@ -307,10 +317,67 @@ export default {
 
 <style scoped>
   .circle {
-    width: 20%;
+    width: 10%;
+    border-radius: 20%;
+    margin-right: 5px;
   }
   #popup {
     background: white;
     padding: 20px;
+  }
+  .background{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    z-index: -1;
+  }
+  #answerHistory{
+    position: absolute;
+    height: 30%;
+    width: 80%;
+    margin: 10px 10% 10px 10%;
+    overflow: scroll;
+  }
+  .history_background{
+    position: absolute;
+    height: 30%;
+    width: 80%;
+    margin: 10px 10% 10px 10%;
+  }
+  .input {
+    border: 1px solid #bac3ab;
+    border-radius: 7px;
+    background: white;
+    padding: 3px;
+    width: 70%;
+    margin: 0 5%;
+  }
+  #submit{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    margin-bottom: 5%;
+  }
+  .kati {
+    font-family: "楷体","楷体_GB2312";
+    font-size: 21px;
+    padding: 0 1px;
+  }
+
+  .btn{
+    background-color: #366440;
+    font-family: "楷体","楷体_GB2312";
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    padding: 6px 10px;
+    width: 10%;
+    text-align: center;
+    vertical-align: center;
+    margin-right: 5%;
+  }
+  .count_down{
+    margin: 10px 5px;
   }
 </style>

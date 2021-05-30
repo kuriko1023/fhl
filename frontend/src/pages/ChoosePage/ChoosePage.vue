@@ -17,9 +17,9 @@
 
 <!--        </uni-col>-->
 <!--          <uni-col :span="6">-->
-          <view v-if="mode==='B'||mode==='C'||mode==='D'">
+          <view v-if="mode==='B'||mode==='C'||mode==='D'" class="picker">
             <uni-row>
-              <uni-col :span="6">
+              <uni-col :span="8">
                 <span class="tip" >选择题型：</span>
               </uni-col>
               <uni-col :span="12">
@@ -36,14 +36,18 @@
 <!--        </uni-col>-->
 <!--      </uni-row>-->
       <view >
-        <view v-if="isSubject">
+        <template v-if="isSubject" class="rule">
+          <text class="tip" style="margin: 8px 10px 0 10px">题目内容</text>
           <subject-block :mode="mode" :text="subject"></subject-block>
-        </view>
-        <view v-else class="content_background">
-          <text>
-            {{rule[mode]}}
-          </text>
-        </view>
+        </template>
+        <template v-else >
+          <text class="tip" style="margin: 8px 10px 0 10px">题目规则</text>
+          <view class="content_background">
+            <text>
+              {{rule[mode]}}
+            </text>
+          </view>
+        </template>
       </view>
       <view class="bottom">
         <uni-row>
@@ -76,15 +80,15 @@ name: "ChoosePage",
     return{
       mode: 'A',
       picker: 0,
-      range1: ['5', '6', '7', '8', '9'],
+      range1: ['五字', '六字', '七字', '八字', '九字'],
       range: {
-        'B': ['5', '6', '7', '8', '9'],
-        'C': ['1-10', '3-16'],
-        'D': ['5', '6', '7', '8', '9', '10']
+        'B': ['五字', '六字', '七字', '八字', '九字'],
+        'C': ['三词-十词', '三词-十六词'],
+        'D': ['五词', '六词', '七词', '八词', '九词', '十词']
       },
       size: 0,
       isSubject: false,
-      subject: '古 梦 雁/长 舟 送 寄 事 神 不 生 西风 多少/1000010011',
+      subject: '春',
       rule: {
         'A': "不会吧不会吧不会有人不会玩单字飞花令吧（xxx",
         'B': "不会吧不会吧不会有人不会玩多字飞花令吧（xxx",
@@ -172,11 +176,13 @@ name: "ChoosePage",
     color: #444444
   }
   .modeChoose{
-    width: 50%;
+    /*width: 50%;*/
+    margin: 0 10px 0 10px;
   }
   .picker_btn {
     background-color: white;
     padding: 3px 0 3px 10px;
+    font-size: 13px !important;
   }
   .btn2{
     background-color: #366440;
@@ -199,14 +205,19 @@ name: "ChoosePage",
     color: #366440;
     font-weight: bold;
   }
+  .content {
+    margin: 20px;
+  }
   .content_background {
     background-color: #fdf8ed;
     border: 1.3px solid #975f5b;
     border-radius: 10px;
     padding: 10px;
     horiz-align: center;
-    margin-left: 7%;
-    margin-right: 7%;
+    position: absolute;
+    min-height: 100px;
+    margin: 5px 10px;
+    font-size: 14px;
   }
   .bottom {
     position: fixed;
@@ -215,4 +226,8 @@ name: "ChoosePage",
     width: 100%;
     margin-bottom: 5%;
   }
+  .picker {
+    margin: 10px;
+  }
 </style>
+

@@ -72,9 +72,13 @@ name: "CountDown",
 
 <style scoped>
   .out{
-    height: 10px;
+    height: 7px;
+    border-radius: 2px;
+    margin: 3px 0;
   }
   .in{
-    height: 10px;
+    height: 7px;
+    border-radius: 2px;
+    margin: 3px 0;
   }
 </style>
