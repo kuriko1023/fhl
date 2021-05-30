@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"math/rand"
 	"net"
 	"net/http"
 	"strings"
@@ -263,8 +264,13 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			var subject Subject
 			switch mode {
 			case "A":
-				words := generateA(5, 3)
-				subject = &SubjectA{Word: strings.Join(words, " ")}
+				var word string
+				if rand.Intn(4) == 0 {
+					word = generateA(0, 1)[0]
+				} else {
+					word = generateA(1, 0)[0]
+				}
+				subject = &SubjectA{Word: word}
 			case "B":
 				if size < 5 || size > 9 {
 					panic("Incorrect size")
@@ -318,14 +324,6 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		}
 		if p.InRoom.Subject == nil {
 			panic("No subject generated")
-		}
-		if p.InRoom.Mode == "A" {
-			index := parseInt(object["index"])
-			words := strings.Split(p.InRoom.Subject.(*SubjectA).Word, " ")
-			if index < 0 || index >= len(words) {
-				panic("Incorrect index")
-			}
-			p.InRoom.Subject = &SubjectA{Word: words[index]}
 		}
 
 		p.InRoom.State = "game"
@@ -533,7 +531,7 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 	// 设置读限制
 	c.SetReadLimit(4096)
 	c.SetReadDeadline(time.Now().Add(10 * time.Second))
-	c.SetPongHandler(func (string) error {
+	c.SetPongHandler(func(string) error {
 		c.SetReadDeadline(time.Now().Add(10 * time.Second))
 		return nil
 	})
