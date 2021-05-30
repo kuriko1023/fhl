@@ -3,11 +3,50 @@ import App from './App'
 
 Vue.config.productionTip = false
 
-Vue.prototype.sendMessage = function (msg) {
-  uni.sendSocketMessage({
-        data: msg
-      })
-}
+let messageListener = null;
+const messageQueue = [];
+
+Vue.prototype.registerSocketMessageListener = function () {
+  messageListener = this;
+  if (messageQueue.length > 0)
+    messageListener.onSocketMessage();
+};
+
+Vue.prototype.sendSocketMessage =
+  (msg) => uni.sendSocketMessage({data: JSON.stringify(msg)});
+
+Vue.prototype.peekSocketMessage = () => messageQueue[0];
+Vue.prototype.tryPopSocketMessage = (type) =>
+  (type === undefined || messageQueue[0].type === type) ?
+  messageQueue.shift() : {_none: true};
+Vue.prototype.popSocketMessage = (types) => {
+  if (typeof types === 'string') types = [types];
+  while (messageQueue.length > 0) {
+    const msg = messageQueue.shift();
+    if (types === undefined || types.indexOf(msg.type) !== -1) return msg;
+  }
+  return {_none: true};
+};
+
+uni.onSocketClose(() => {
+  console.log('socket closed!');
+});
+
+uni.onSocketMessage((res) => {
+  let payload = res.data;
+  if (typeof payload !== 'string') return;
+  try {
+    payload = JSON.parse(payload);
+  } catch (e) {
+    return;
+  }
+
+  if (payload.error || true) console.log(payload);
+  messageQueue.push(payload);
+
+  if (messageListener !== null)
+    messageListener.onSocketMessage();
+});
 
 Vue.prototype.historySentenceParse = function(str) {
     let sentence = []

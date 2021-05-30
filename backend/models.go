@@ -67,9 +67,9 @@ func (a CorrectAnswer) Dump() string {
 	b.WriteString(a.string)
 	for _, k := range a.Keywords {
 		b.WriteRune('/')
-		b.WriteString(strconv.Itoa(k.a))
-		b.WriteRune(',')
-		b.WriteString(strconv.Itoa(k.b))
+		for i := 0; i < k.b; i++ {
+			b.WriteString(strconv.FormatInt(int64(k.a+i), 36))
+		}
 	}
 	return b.String()
 }
@@ -84,8 +84,8 @@ type Subject interface {
 	// 第一个参数是提交的文本内容，包含多句时用斜杠分隔
 	// 第二个参数为当前答题的一方
 	// 第一个返回值是关键词的下标集合，若答案不合法则为 nil
-	// 第二个返回值是一个自定义结构，表示变化量
-	Answer(string, Side) ([]IntPair, interface{})
+	// 第二个返回值是一个字符串，表示变化量
+	Answer(string, Side) ([]IntPair, string)
 	End() bool // 游戏是否结束
 }
 
@@ -100,13 +100,13 @@ func (s *SubjectA) Parse(str string) {
 func (s *SubjectA) Dump() string {
 	return s.Word
 }
-func (s *SubjectA) Answer(str string, from Side) ([]IntPair, interface{}) {
-	// 第二个返回值：nil
+func (s *SubjectA) Answer(str string, from Side) ([]IntPair, string) {
+	// 第二个返回值：""
 	p := strings.Index(str, s.Word)
 	if p != -1 {
-		return []IntPair{IntPair{runes(str[:p]), runes(s.Word)}}, nil
+		return []IntPair{IntPair{runes(str[:p]), runes(s.Word)}}, ""
 	} else {
-		return nil, nil
+		return nil, ""
 	}
 }
 func (s *SubjectA) End() bool {
@@ -128,7 +128,7 @@ func (s *SubjectB) Parse(str string) {
 func (s *SubjectB) Dump() string {
 	return string(s.Words) + "/" + strconv.Itoa(s.CurIndex)
 }
-func (s *SubjectB) Answer(str string, from Side) ([]IntPair, interface{}) {
+func (s *SubjectB) Answer(str string, from Side) ([]IntPair, string) {
 	// 第二个返回值：下一位轮到的玩家要飞的字的下标，若游戏结束则为 -1
 	p := strings.IndexRune(str, s.Words[s.CurIndex])
 	if p != -1 {
@@ -138,9 +138,9 @@ func (s *SubjectB) Answer(str string, from Side) ([]IntPair, interface{}) {
 				s.CurIndex = -1
 			}
 		}
-		return []IntPair{IntPair{runes(str[:p]), 1}}, s.CurIndex
+		return []IntPair{IntPair{runes(str[:p]), 1}}, strconv.Itoa(s.CurIndex)
 	} else {
-		return nil, nil
+		return nil, ""
 	}
 }
 func (s *SubjectB) End() bool {
@@ -177,7 +177,7 @@ func (s *SubjectC) Dump() string {
 		strings.Join(s.WordsRight, " ") + "/" +
 		string(used)
 }
-func (s *SubjectC) Answer(str string, from Side) ([]IntPair, interface{}) {
+func (s *SubjectC) Answer(str string, from Side) ([]IntPair, string) {
 	// 第二个返回值：右侧被匹配的关键词下标
 	indexLeft, indexRight := -1, -1
 	ps := make([]IntPair, 2)
@@ -198,10 +198,10 @@ func (s *SubjectC) Answer(str string, from Side) ([]IntPair, interface{}) {
 		}
 	}
 	if indexLeft == -1 || indexRight == -1 {
-		return nil, nil
+		return nil, ""
 	}
 	s.UsedRight[indexRight] = true
-	return ps, indexRight
+	return ps, strconv.Itoa(indexRight)
 }
 func (s *SubjectC) End() bool {
 	for _, u := range s.UsedRight {
@@ -255,8 +255,8 @@ func (s *SubjectD) Dump() string {
 		strings.Join(s.WordsRight, " ") + "/" +
 		string(used)
 }
-func (s *SubjectD) Answer(str string, from Side) ([]IntPair, interface{}) {
-	// 第二个返回值：[2]int，左右侧被匹配的关键词下标
+func (s *SubjectD) Answer(str string, from Side) ([]IntPair, string) {
+	// 第二个返回值："a,b"，左右侧被匹配的关键词下标
 	indexLeft, indexRight := -1, -1
 	ps := make([]IntPair, 2)
 	for i, w := range s.WordsLeft {
@@ -276,11 +276,11 @@ func (s *SubjectD) Answer(str string, from Side) ([]IntPair, interface{}) {
 		}
 	}
 	if indexLeft == -1 || indexRight == -1 {
-		return nil, nil
+		return nil, ""
 	}
 	s.UsedLeft[indexLeft] = true
 	s.UsedRight[indexRight] = true
-	return ps, [2]int{indexLeft, indexRight}
+	return ps, strconv.Itoa(indexLeft) + "," + strconv.Itoa(indexRight)
 }
 func (s *SubjectD) End() bool {
 	for _, u := range s.UsedLeft {

@@ -39,6 +39,7 @@ window.addEventListener("load", function(evt) {
         ws.onopen = function(evt) {
             unprint();
             print("OPEN", "#4b6", true);
+            input.value = '{\n  "type": "ready"\n}';
         }
         ws.onclose = function(evt) {
             print("CLOSE", "#888", true);
@@ -79,7 +80,7 @@ window.addEventListener("load", function(evt) {
                 '  "size": ' + JSON.stringify(obj.size) + '\n' +
                 '}';
         } else if (obj.type === 'generate')
-            input.value = '{\n  "type": "start_game",\n  "index": 0\n}';
+            input.value = '{\n  "type": "start_game"\n}';
         else if (obj.type === 'start_game')
             input.value = '{\n  "type": "answer",\n  "text": "!"\n}';
         return false;
@@ -108,9 +109,6 @@ window.addEventListener("load", function(evt) {
 <button id="close">Close</button>
 <p>
 <textarea id="input" rows="7">
-{
-  "type": "ready"
-}
 </textarea>
 <p>
 <button id="send">Send</button>

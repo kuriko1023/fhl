@@ -80,11 +80,15 @@ name: "ChoosePage",
     return{
       mode: 'A',
       picker: 0,
-      range1: ['五字', '六字', '七字', '八字', '九字'],
       range: {
         'B': ['五字', '六字', '七字', '八字', '九字'],
-        'C': ['三词-十词', '三词-十六词'],
+        'C': ['一词-十词', '三词-十六词'],
         'D': ['五词', '六词', '七词', '八词', '九词', '十词']
+      },
+      rangeValue: {
+        'B': [5, 6, 7, 8, 9],
+        'C': [1, 3],
+        'D': [5, 6, 7, 8, 9, 10],
       },
       size: 0,
       isSubject: false,
@@ -97,12 +101,15 @@ name: "ChoosePage",
       }
     }
   },
+  onLoad() {
+    this.registerSocketMessageListener();
+  },
   methods:{
     sendChoice(){
-      this.sendMessage({
+      this.sendSocketMessage({
         'type': 'set_mode',
         'mode': this.mode,
-        'size': (this.size)[0],
+        'size': (this.mode === 'A' ? 0 : this.rangeValue[this.mode][this.picker]),
       })
     },
     onModeChange(e){
@@ -130,29 +137,31 @@ name: "ChoosePage",
       if(!this.isSubject){
         this.isSubject = true
       }
-      this.sendMessage({
+      this.sendSocketMessage({
         'type': 'generate',
         'mode': this.mode,
-        'size': (this.size)[0],
+        'size': (this.mode === 'A' ? 0 : this.rangeValue[this.mode][this.picker]),
       })
     },
-    onMessage(msg){
-      //TODO:更新题目，与选择器绑定
-      if(msg.type === 'generated'){
-        this.mode = msg.mode
-        this.size = msg.size
+    onSocketMessage() {
+      const msg = this.popSocketMessage('generated');
+      if (msg._none) return;
+      //更新题目，与选择器绑定
+      this.mode = msg.mode
+      if(this.mode !== 'A') {
         for(let i = 0; i < this.range[this.mode].length; i++){
-          if(this.range[this.mode][i] == this.size){
+          if(this.range[this.mode][i] == msg.size){
             this.picker = i
           }
         }
-        if(msg.subject !== null){
-          this.subject = msg.subject
-        }
-        //显示题目
-        if(!this.isSubject){
-          this.isSubject = true
-        }
+        this.size = this.range[this.mode][this.picker]
+      }
+      if(msg.subject !== null){
+        this.subject = msg.subject
+      }
+      //显示题目
+      if(!this.isSubject){
+        this.isSubject = true
       }
     }
   }

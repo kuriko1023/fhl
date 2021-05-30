@@ -109,18 +109,22 @@ func generateA(count1, count2 int) []string {
 	ret := []string{}
 
 	// 单字
-	n := len(hotWords1) / 2
-	for _, i := range randomSample(n, count1-1) {
-		ret = append(ret, hotWords1[i])
+	if count1 > 0 {
+		n := len(hotWords1) / 2
+		for _, i := range randomSample(n, count1-1) {
+			ret = append(ret, hotWords1[i])
+		}
+		ret = append(ret, hotWords1[rand.Intn(n)+n])
 	}
-	ret = append(ret, hotWords1[rand.Intn(n)+n])
 
 	// 双字
-	n = len(hotWords2) / 2
-	for _, i := range randomSample(n, count2-1) {
-		ret = append(ret, hotWords2[i])
+	if count2 > 0 {
+		n := len(hotWords2) / 2
+		for _, i := range randomSample(n, count2-1) {
+			ret = append(ret, hotWords2[i])
+		}
+		ret = append(ret, hotWords2[rand.Intn(n)+n])
 	}
-	ret = append(ret, hotWords2[rand.Intn(n)+n])
 
 	return ret
 }
