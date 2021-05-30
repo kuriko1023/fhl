@@ -97,7 +97,16 @@ name: "ChoosePage",
       }
     }
   },
+  onLoad() {
+    this.registerSocketMessageListener();
+  },
   methods:{
+    onSocketMessage() {
+      console.log('on message!');
+      console.log('peeked message ', this.peekSocketMessage());
+      console.log('popped message ', this.popSocketMessage('error'));
+      console.log('popped message ', this.popSocketMessage('room_status'));
+    },
     sendChoice(){
       this.sendMessage({
         'type': 'set_mode',

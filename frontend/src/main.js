@@ -5,9 +5,42 @@ Vue.config.productionTip = false
 
 Vue.prototype.sendMessage = function (msg) {
   uni.sendSocketMessage({
-        data: msg
-      })
+    data: msg
+  })
 }
+
+let messageListener = null;
+const messageQueue = [];
+
+Vue.prototype.registerSocketMessageListener = function () {
+  messageListener = this;
+  if (messageQueue.length > 0)
+    messageListener.onSocketMessage();
+};
+
+Vue.prototype.peekSocketMessage = () => messageQueue[0];
+Vue.prototype.popSocketMessage = (type) =>
+  (type === undefined || messageQueue[0].type === type) ?
+  messageQueue.shift() : undefined;
+
+uni.onSocketClose(() => {
+  console.log('socket closed!');
+});
+
+uni.onSocketMessage((res) => {
+  let payload = res.data;
+  if (typeof payload !== 'string') return;
+  try {
+    payload = JSON.parse(payload);
+  } catch (e) {
+    return;
+  }
+
+  messageQueue.push(payload);
+
+  if (messageListener !== null)
+    messageListener.onSocketMessage();
+});
 
 Vue.prototype.historySentenceParse = function(str) {
     let sentence = []
