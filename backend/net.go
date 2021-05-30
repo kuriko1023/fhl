@@ -530,6 +530,14 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 设置读限制
+	c.SetReadLimit(4096)
+	c.SetReadDeadline(time.Now().Add(10 * time.Second))
+	c.SetPongHandler(func (string) error {
+		c.SetReadDeadline(time.Now().Add(10 * time.Second))
+		return nil
+	})
+
 	// inChannel: 客户端发来的消息，以 string 到 interface{} 的 map 表示
 	// outChannel: 要发送至客户端的消息，即 player.Channel
 	inChannel := make(chan map[string]interface{}, 3)
@@ -559,6 +567,9 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 
 	broadcastRoomStatus(room)
 
+	pingTicker := time.NewTicker(5 * time.Second)
+	defer pingTicker.Stop()
+
 messageLoop:
 	for inChannel != nil && outChannel != nil {
 		select {
@@ -574,6 +585,12 @@ messageLoop:
 				break messageLoop
 			}
 			if err := c.WriteJSON(object); err != nil {
+				log.Println(err)
+				break messageLoop
+			}
+
+		case <-pingTicker.C:
+			if err := c.WriteMessage(websocket.PingMessage, nil); err != nil {
 				log.Println(err)
 				break messageLoop
 			}
