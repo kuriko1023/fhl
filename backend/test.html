@@ -79,7 +79,7 @@ window.addEventListener("load", function(evt) {
                 '  "size": ' + JSON.stringify(obj.size) + '\n' +
                 '}';
         } else if (obj.type === 'generate')
-            input.value = '{\n  "type": "start_game",\n  "index": 0\n}';
+            input.value = '{\n  "type": "start_game"\n}';
         else if (obj.type === 'start_game')
             input.value = '{\n  "type": "answer",\n  "text": "!"\n}';
         return false;
