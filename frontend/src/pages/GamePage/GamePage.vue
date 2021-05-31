@@ -203,6 +203,13 @@ export default {
     },
 
     onSocketMessage() {
+      if (this.peekSocketMessage().type === 'end_status') {
+        uni.navigateTo({
+          url: '/pages/EndPage/EndPage'
+        });
+        return;
+      }
+
       const msg = this.popSocketMessage(['game_status', 'game_update']);
       switch (msg.type){
         case 'game_status': {
