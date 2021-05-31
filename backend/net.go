@@ -151,7 +151,7 @@ func bicastGameStatus(room *Room) {
 	if Players[room.Host].Channel != nil {
 		Players[room.Host].Channel <- object
 	}
-	if Players[room.Guest].Channel != nil {
+	if room.Guest != "" && Players[room.Guest].Channel != nil {
 		Players[room.Guest].Channel <- object
 	}
 }
@@ -167,7 +167,7 @@ func bicastGameDelta(room *Room, change interface{}) {
 	if Players[room.Host].Channel != nil {
 		Players[room.Host].Channel <- object
 	}
-	if Players[room.Guest].Channel != nil {
+	if room.Guest != "" && Players[room.Guest].Channel != nil {
 		Players[room.Guest].Channel <- object
 	}
 }
@@ -192,7 +192,7 @@ func bicastGameEnd(room *Room, winner Side) {
 	if Players[room.Host].Channel != nil {
 		Players[room.Host].Channel <- object
 	}
-	if Players[room.Guest].Channel != nil {
+	if room.Guest != "" && Players[room.Guest].Channel != nil {
 		Players[room.Guest].Channel <- object
 	}
 }
@@ -239,7 +239,9 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 	defer func() {
 		if e := recover(); e != nil {
 			if s, ok := e.(string); ok {
-				p.Channel <- errorMsg(s)
+				if p.Channel != nil {
+					p.Channel <- errorMsg(s)
+				}
 			}
 		}
 	}()
@@ -258,7 +260,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			panic("Room should be idle with two ready players")
 		}
 		p.InRoom.State = "gen"
-		if Players[p.InRoom.Guest].Channel != nil {
+		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
 			Players[p.InRoom.Guest].Channel <- map[string]string{
 				"type": "start_generate",
 			}
@@ -302,7 +304,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 				if size != 1 && size != 3 {
 					panic("Incorrect size")
 				}
-				left, right := generateC(size, 7 + 3 * size)
+				left, right := generateC(size, 7+3*size)
 				subject = &SubjectC{
 					WordsLeft:  left,
 					WordsRight: right,
@@ -331,7 +333,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			"size":    size,
 			"subject": subjectRepr,
 		}
-		if Players[p.InRoom.Guest].Channel != nil {
+		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
 			Players[p.InRoom.Guest].Channel <- resp
 		}
 		if isGenerate {
@@ -457,9 +459,11 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		}
 
 		if incorrectReason != "" {
-			p.Channel <- map[string]string{
-				"type":   "invalid_answer",
-				"reason": incorrectReason,
+			if p.Channel != nil {
+				p.Channel <- map[string]string{
+					"type":   "invalid_answer",
+					"reason": incorrectReason,
+				}
 			}
 			break
 		}
