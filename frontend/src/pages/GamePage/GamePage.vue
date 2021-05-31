@@ -3,7 +3,7 @@
     <image class="background" src="/static/game_background.png" ></image>
     <view style="padding: 15px">
     <view id="subject" style="margin-bottom: 20px">
-      <subject-block :mode="mode" :text="subject">
+      <subject-block :mode="mode" :subject="subject">
       </subject-block>
     </view>
     <view id="answering" style="display: flex; margin: 0 15px">
@@ -117,7 +117,7 @@ export default {
       //     },
       //   ],
       // },
-      subject: "古 梦 雁/长 舟 送 寄 事 神 不 生 西风 多少/1000010011",
+      subject: {},
       answer:  [],
       history: [],
       inputAnswer: '',
@@ -208,7 +208,7 @@ export default {
         case 'game_status': {
           console.log('game_status', msg);
           this.mode = msg.mode
-          this.subject = msg.subject
+          this.subject = this.parseSubject(msg.mode, msg.subject)
           this.history = []
           for(let i = 0; i < msg.history.length; i++){
             let sentence = this.historySentenceParse(msg.history[i])
@@ -219,28 +219,32 @@ export default {
         case 'game_update':{
           console.log('game_update', msg);
           this.answer = this.historySentenceParse(msg.text)
-          switch (this.mode){
-            case 'B': {
-              let index = parseInt(msg.update)
-              this.subject.subject1[index].show = 2
-              break
-            }
-            case 'C': {
-              let index = parseInt(msg.update)
-              this.subject.subject2[index].show = 0
-              break
-            }
-            case 'D': {
-              let index = msg.update.split(',')
-              this.subject.subject1[parseInt(index[0])].show = 0
-              this.subject.subject2[parseInt(index[1])].show = 0
-              break
-            }
-          }
           //TODO: 计时器重置
           this.active1 = false
           this.current1 = 0
-          setTimeout(this.changeSide, 2000)
+          setTimeout(() => {
+            switch (this.mode){
+              case 'B': {
+                let index = parseInt(msg.update)
+                for (let i = 0; i < this.subject.subject1.length; i++)
+                  this.subject.subject1[i].show =
+                    (i < index ? 2 : (i === index ? 1 : 0));
+                break
+              }
+              case 'C': {
+                let index = parseInt(msg.update)
+                this.subject.subject2[index].show = 0
+                break
+              }
+              case 'D': {
+                let index = msg.update.split(',')
+                this.subject.subject1[parseInt(index[0])].show = 0
+                this.subject.subject2[parseInt(index[1])].show = 0
+                break
+              }
+            }
+            this.changeSide()
+          }, 2000);
           break
         }
         case 'game_end':{
