@@ -133,10 +133,6 @@ name: "ChoosePage",
       });
     },
     generate(){
-      //测试用
-      if(!this.isSubject){
-        this.isSubject = true
-      }
       this.sendSocketMessage({
         'type': 'generate',
         'mode': this.mode,
@@ -165,6 +161,8 @@ name: "ChoosePage",
       }
       if(msg.subject !== null){
         this.subject = this.parseSubject(msg.mode, msg.subject)
+        if (this.mode === 'B')
+          this.subject.subject1[0].show = 0;
       }
       //显示题目
       if(!this.isSubject){
