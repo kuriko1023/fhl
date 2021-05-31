@@ -77,8 +77,8 @@ export default {
         0: '#535353',
         1: '#fcecbb',
       },
-      TURN_TIMER_MAX: 6,
-      CUMULATIVE_TIMER_MAX: 20,
+      TURN_TIMER_MAX: 60,
+      CUMULATIVE_TIMER_MAX: 60,
       //shot countDown
       active1: true,
       //long countDown

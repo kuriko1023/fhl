@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	cumulativeTimer = 20000
-	turnTimer       = 6000
+	cumulativeTimer = 60000
+	turnTimer       = 60000
 )
 
 var upgrader = websocket.Upgrader{
