@@ -22,27 +22,37 @@ name: "CountDown",
     current: {
       type: Number
     },
+    update: {
+      type: Number
+    },
   },
   data(){
   return{
     cur: 0,
-    int: 0,
+    int: -1,
   }
   },
   watch: {
     active: function(val){
       //console.log('active')
+      console.log('active', val);
       if(val){
-        this.int = setInterval(this.intervalFunction, this.time)
+        if (this.int === -1)
+          this.int = setInterval(this.intervalFunction, this.time)
       }
       else{
-        clearInterval(this.int)
+        if (this.int !== -1) {
+          clearInterval(this.int)
+          this.int = -1
+        }
        // console.log('a')
         this.$emit('stop', (100 - this.cur) * this.time / 100)
        // console.log('b')
       }
     },
-    current: function(val){
+    update: function () {
+      const val = this.current;
+      console.log('current', val);
       if(val !== 0) {
        // console.log('current')
         this.cur = 100 - (val / this.time) * 100
@@ -57,6 +67,7 @@ name: "CountDown",
         this.cur = this.cur + 0.1
         if(this.cur >= 100){
           clearInterval(this.int)
+          this.int = -1;
           this.$emit('finish')
           this.cur = 100
         }
@@ -66,7 +77,10 @@ name: "CountDown",
     if (this.active) {
       this.int = setInterval(this.intervalFunction, this.time)
     }
-  }
+  },
+  unmounted() {
+    if (this.int !== -1) clearInterval(this.int)
+  },
 }
 </script>
 

@@ -17,8 +17,8 @@
 <!--      <progress percent="80" stroke-width="3"/>-->
 <!--      <progress percent="100" stroke-width="3"/>-->
       <view class="count_down">
-      <count-down :active="active1" :color="playerColor[side]" :time="TURN_TIMER_MAX" :current="current1" @finish="onFinish" ref="countdown1"></count-down>
-      <count-down :active="active2" color="#65d4e5" :time="CUMULATIVE_TIMER_MAX" :current="current2" @finish="onExtraFinish" @stop="onCountStop"></count-down>
+      <count-down :active="active1" :color="playerColor[side]" :update="timerUpdate" :time="TURN_TIMER_MAX" :current="current1" @finish="onFinish" ref="countdown1"></count-down>
+      <count-down :active="active2" color="#65d4e5" :update="timerUpdate" :time="CUMULATIVE_TIMER_MAX" :current="current2" @finish="onExtraFinish" @stop="onCountStop"></count-down>
       </view>
         <!--      <button @click="onStop">stop</button>-->
 <!--      <button @click="onStop2">stop2</button>-->
@@ -33,7 +33,7 @@
           <input placeholder="输入答案" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="20" v-model='inputAnswer' />
 
 <!--            TODO: 是否有效-->
-        <view form-type="submit" class="btn" @click='onSubmitAnswer'>发送</view>
+        <view v-if='side === 0' form-type="submit" :class="'btn' + (sendingAnswer ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
         </view>
       </form>
     </view>
@@ -85,6 +85,7 @@ export default {
       active2: false,
       current1: 0,
       current2: 0,
+      timerUpdate: 0,
       side: 0,  // 0 -- 我方  1 -- 对方
       myExtraTime: 29.99,
       sideExtraTime: 29.99,
@@ -121,6 +122,7 @@ export default {
       answer:  [],
       history: [],
       inputAnswer: '',
+      sendingAnswer: false,
     }
   },
   onLoad() {
@@ -149,7 +151,6 @@ export default {
       this.history.push(this.answer)
       this.answer = []
 
-      console.log(this.current1)
       this.current1 = this.TURN_TIMER_MAX
       if(this.side) {
         console.log("side the other" + this.side)
@@ -164,6 +165,8 @@ export default {
         console.log("sideExtraTime" + this.sideExtraTime)
       }
       this.active1 = true
+      this.active2 = false
+      this.timerUpdate = 1 - this.timerUpdate
     },
     onStop(){
       this.active1 = false
@@ -177,6 +180,7 @@ export default {
       setTimeout(this.changeSide, 2000)
     },
     onCountStop(val){
+      /*
       console.log('countStop')
       if(this.side) {
         console.log(val)
@@ -186,6 +190,7 @@ export default {
         console.log(val)
         this.myExtraTime = val
       }
+      */
     },
     onEnd(){
       uni.redirectTo({
@@ -193,13 +198,12 @@ export default {
       })
     },
     onSubmitAnswer(e){
+      if (this.sendingAnswer) return;
+      this.sendingAnswer = true
       this.sendSocketMessage({
         'type': 'answer',
         'text': this.inputAnswer,
       })
-      //计时器停止
-      this.active1 = false
-      this.active2 = false
     },
 
     onSocketMessage() {
@@ -226,10 +230,10 @@ export default {
         case 'game_update':{
           console.log('game_update', msg);
           this.answer = this.historySentenceParse(msg.text)
-          //TODO: 计时器重置
-          this.active1 = false
-          this.current1 = 0
+          this.active1 = this.active2 = false
+          this.inputAnswer = ''
           setTimeout(() => {
+            this.sendingAnswer = false
             switch (this.mode){
               case 'B': {
                 let index = parseInt(msg.update)
@@ -250,6 +254,16 @@ export default {
                 break
               }
             }
+            const guestTimer = msg.guest_timer / 1000;
+            const hostTimer = msg.host_timer / 1000;
+            if (getApp().globalData.isHost) {
+              this.myExtraTime = hostTimer;
+              this.sideExtraTime = guestTimer;
+            } else {
+              this.myExtraTime = guestTimer;
+              this.sideExtraTime = hostTimer;
+            }
+            console.log(this.myExtraTime, this.sideExtraTime);
             this.changeSide()
           }, 2000);
           break
@@ -331,6 +345,11 @@ export default {
     vertical-align: center;
     margin-right: 5%;
   }
+
+  .btn.disabled {
+    background-color: #aaccbb;
+  }
+
   .count_down{
     margin: 10px 5px;
   }
