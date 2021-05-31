@@ -7,6 +7,7 @@
       </template>
       <view v-else class="center">
         <view style="margin: 10px 0">
+        {{ room }}<br><br>
         <view style="display: inline-block">
           <view style="float: left; width: 100px; text-align: center;">
             <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
@@ -52,6 +53,8 @@ export default {
       connected: false,
       status: '- 状态 -',
 
+      room: '自己的房间',
+
       host: '',
       hostStatus: '',
       guest: '',
@@ -61,6 +64,14 @@ export default {
     uni.showShareMenu({
       path: '/ABCDEFG',
     });
+
+    const firstLoad = getApp().globalData.firstLoad;
+    if (!firstLoad) {
+      getApp().globalData.firstLoad = true;
+      const room = uni.getEnterOptionsSync().query.room;
+      this.room = room;
+    }
+
     uni.connectSocket({
       url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
       success: () => {
@@ -73,6 +84,13 @@ export default {
       },
     });
     getApp().globalData.isHost = true;
+  },
+  onShareAppMessage (res) {
+    return {
+      title: '分享标题',
+      path: '/pages/RoomPage/RoomPage?room=别人的房间',
+      imageUrl: 'https://flyhana.starrah.cn/static/tianzige.png',
+    };
   },
   methods: {
     onSocketMessage() {
