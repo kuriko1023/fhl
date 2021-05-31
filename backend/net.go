@@ -108,7 +108,9 @@ func broadcastRoomStatus(room *Room) {
 	}
 	// 向所有玩家的连接发送消息
 	for _, p := range room.People {
-		p.Channel <- object
+		if p.Channel != nil {
+			p.Channel <- object
+		}
 	}
 }
 
@@ -146,8 +148,12 @@ func bicastGameStatus(room *Room) {
 		"host_timer":  room.HostTimer,
 		"guest_timer": room.GuestTimer,
 	}
-	Players[room.Host].Channel <- object
-	Players[room.Guest].Channel <- object
+	if Players[room.Host].Channel != nil {
+		Players[room.Host].Channel <- object
+	}
+	if Players[room.Guest].Channel != nil {
+		Players[room.Guest].Channel <- object
+	}
 }
 
 func bicastGameDelta(room *Room, change interface{}) {
@@ -158,8 +164,12 @@ func bicastGameDelta(room *Room, change interface{}) {
 		"host_timer":  room.HostTimer,
 		"guest_timer": room.GuestTimer,
 	}
-	Players[room.Host].Channel <- object
-	Players[room.Guest].Channel <- object
+	if Players[room.Host].Channel != nil {
+		Players[room.Host].Channel <- object
+	}
+	if Players[room.Guest].Channel != nil {
+		Players[room.Guest].Channel <- object
+	}
 }
 
 func bicastGameEnd(room *Room, winner Side) {
@@ -179,8 +189,12 @@ func bicastGameEnd(room *Room, winner Side) {
 		"subject": room.Subject.Dump(),
 		"history": roomHistoryStrings(room),
 	}
-	Players[room.Host].Channel <- object
-	Players[room.Guest].Channel <- object
+	if Players[room.Host].Channel != nil {
+		Players[room.Host].Channel <- object
+	}
+	if Players[room.Guest].Channel != nil {
+		Players[room.Guest].Channel <- object
+	}
 }
 
 func nowMilliseconds() int64 {
@@ -244,8 +258,10 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			panic("Room should be idle with two ready players")
 		}
 		p.InRoom.State = "gen"
-		Players[p.InRoom.Guest].Channel <- map[string]string{
-			"type": "start_generate",
+		if Players[p.InRoom.Guest].Channel != nil {
+			Players[p.InRoom.Guest].Channel <- map[string]string{
+				"type": "start_generate",
+			}
 		}
 
 	case "set_mode":
@@ -315,7 +331,9 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			"size":    size,
 			"subject": subjectRepr,
 		}
-		Players[p.InRoom.Guest].Channel <- resp
+		if Players[p.InRoom.Guest].Channel != nil {
+			Players[p.InRoom.Guest].Channel <- resp
+		}
 		if isGenerate {
 			p.Channel <- resp
 		}
