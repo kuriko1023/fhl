@@ -210,6 +210,7 @@ func resetRoomState(room *Room) {
 	room.State = ""
 	room.HostReady = false
 	room.Guest = ""
+	room.Subject = nil
 }
 
 func errorMsg(s string) map[string]string {
