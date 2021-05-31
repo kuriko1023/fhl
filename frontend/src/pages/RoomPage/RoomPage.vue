@@ -18,8 +18,8 @@
         <view>
         <view style="display: inline-block">
           <view style="float: left; width: 100px; text-align: center;">
-            <image class="circle" src="https://flyhana.starrah.cn/static/picture1.jpg" mode="widthFix"></image>
-            <p style="font-size: 12px; color: #666666">{{ guest }}</p>
+            <image class="circle" :src="'https://flyhana.starrah.cn/static/' + (guest !== '' ? 'picture1.jpg' : 'grey_avatar_132.jpg')" mode="widthFix"></image>
+            <p style="font-size: 12px; color: #666666">{{ guest !== '' ? guest : '客人' }}</p>
           </view>
           <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ guest !== '' ? '已准备' : '未进入' }}</p>
         </view>
@@ -52,12 +52,15 @@ export default {
       connected: false,
       status: '- 状态 -',
 
-      host: 'kuriko',
-      hostStatus: '已准备',
-      guest: 'pisces',
+      host: '',
+      hostStatus: '',
+      guest: '',
     };
   },
   onLoad() {
+    uni.showShareMenu({
+      path: '/ABCDEFG',
+    });
     uni.connectSocket({
       url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
       success: () => {
@@ -113,7 +116,6 @@ export default {
 .circle {
   width: 45px;
   border-radius: 50%;
-  margin-right: 12px;
 }
 .center {
   /*position: absolute;*/
