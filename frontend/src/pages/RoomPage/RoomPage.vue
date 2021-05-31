@@ -8,20 +8,20 @@
       <view v-else class="center">
         <view style="margin: 10px 0">
         <view style="display: inline-block">
-          <view style="float:left">
+          <view style="float: left; width: 100px; text-align: center;">
             <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666">{{ host }}</p>
           </view>
-          <p style="float:left; margin-top: 15px;" class="status">{{ hostStatus }}</p>
+          <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ hostStatus === 'ready' ? '已准备' : hostStatus === 'present' ? '在线' : '离线' }}</p>
         </view>
         </view>
         <view>
         <view style="display: inline-block">
-          <view style="float:left">
+          <view style="float: left; width: 100px; text-align: center;">
             <image class="circle" src="https://flyhana.starrah.cn/static/picture1.jpg" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666">{{ guest }}</p>
           </view>
-          <p style="float:left; margin-top: 15px;" class="status">{{ guestStatus }}</p>
+          <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ guest !== '' ? '已准备' : '未进入' }}</p>
         </view>
         </view>
 <!--        <p>客人：{{ guest }}</p>-->
@@ -35,7 +35,7 @@
           </uni-col>
           <uni-col :span="12">
             <view>
-              <button @click="startGame" :disabled='hostStatus === "ready" && guest !== ""' class="btn2">开始游戏</button>
+              <button @click="startGame" :disabled='!(hostStatus === "ready" && guest !== "")' class="btn2">开始游戏</button>
             </view>
           </uni-col>
         </uni-row>
@@ -54,7 +54,6 @@ export default {
 
       host: 'kuriko',
       hostStatus: '已准备',
-      guestStatus: "已准备",
       guest: 'pisces',
     };
   },
