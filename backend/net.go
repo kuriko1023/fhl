@@ -698,6 +698,8 @@ func SetUpHttp() {
 		http.HandleFunc("/test", testHandler)
 		http.HandleFunc("/reset", resetHandler)
 	}
+	http.Handle("/static/", http.StripPrefix("/static/",
+		http.FileServer(http.Dir("../frontend/src/static"))))
 
 	port := Config.Port
 	log.Printf("Listening on http://localhost:%d/\n", port)
