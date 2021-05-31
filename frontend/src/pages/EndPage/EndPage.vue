@@ -52,7 +52,7 @@ name: "EndPage",
       this.mode = msg.mode;
       this.subject = this.parseSubject(msg.mode, msg.subject);
       this.history = msg.history.map((item) => this.historySentenceParse(item));
-      this.win = msg.win;
+      this.win = msg.winner;
     },
   }
 }
