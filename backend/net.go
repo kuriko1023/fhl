@@ -173,27 +173,32 @@ func bicastGameDelta(room *Room, change interface{}) {
 }
 
 func bicastGameEnd(room *Room, winner Side) {
-	var winnerStr string
+	var winnerVal int
 	switch winner {
 	case SideHost:
-		winnerStr = "host"
+		winnerVal = 1
 	case SideGuest:
-		winnerStr = "guest"
+		winnerVal = -1
 	case SideNone:
-		winnerStr = "tie"
-	}
-	object := map[string]interface{}{
-		"type":    "end_status",
-		"winner":  winnerStr,
-		"mode":    room.Mode,
-		"subject": room.Subject.Dump(),
-		"history": roomHistoryStrings(room),
+		winnerVal = 0
 	}
 	if Players[room.Host].Channel != nil {
-		Players[room.Host].Channel <- object
+		Players[room.Host].Channel <- map[string]interface{}{
+			"type":    "end_status",
+			"winner":  winnerVal,
+			"mode":    room.Mode,
+			"subject": room.Subject.Dump(),
+			"history": roomHistoryStrings(room),
+		}
 	}
 	if room.Guest != "" && Players[room.Guest].Channel != nil {
-		Players[room.Guest].Channel <- object
+		Players[room.Guest].Channel <- map[string]interface{}{
+			"type":    "end_status",
+			"winner":  -winnerVal,
+			"mode":    room.Mode,
+			"subject": room.Subject.Dump(),
+			"history": roomHistoryStrings(room),
+		}
 	}
 }
 
