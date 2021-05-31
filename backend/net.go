@@ -16,6 +16,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	cumulativeTimer = 20000
+	turnTimer       = 6000
+)
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -145,10 +150,10 @@ func bicastGameStatus(room *Room) {
 	Players[room.Guest].Channel <- object
 }
 
-func bicastGameDelta(room *Room, text string, change interface{}) {
+func bicastGameDelta(room *Room, change interface{}) {
 	object := map[string]interface{}{
 		"type":        "game_update",
-		"text":        text,
+		"text":        room.History[len(room.History)-1].Dump(),
 		"update":      change,
 		"host_timer":  room.HostTimer,
 		"guest_timer": room.GuestTimer,
@@ -331,8 +336,8 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		p.InRoom.HistorySet = map[string]struct{}{}
 		p.InRoom.LastMoveAt = nowMilliseconds()
 		p.InRoom.CurMoveSide = SideHost
-		p.InRoom.HostTimer = 60000
-		p.InRoom.GuestTimer = 60000
+		p.InRoom.HostTimer = cumulativeTimer
+		p.InRoom.GuestTimer = cumulativeTimer
 
 		bicastGameStatus(p.InRoom)
 
@@ -364,7 +369,11 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 						close(ch)
 						return
 					}
-					if turnTimer < int(nowMilliseconds()-room.LastMoveAt) {
+					timeUsed := int(nowMilliseconds()-room.LastMoveAt) - turnTimer
+					if timeUsed < 0 {
+						timeUsed = 0
+					}
+					if turnTimer < timeUsed {
 						bicastGameEnd(room, 1-room.CurMoveSide)
 						resetRoomState(room)
 						room.TimerStopSignal = nil
@@ -443,7 +452,10 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		}
 
 		timeNow := nowMilliseconds()
-		timeUsed := int(timeNow - p.InRoom.LastMoveAt)
+		timeUsed := int(timeNow-p.InRoom.LastMoveAt) - turnTimer
+		if timeUsed < 0 {
+			timeUsed = 0
+		}
 		if p.InRoom.CurMoveSide == SideHost {
 			p.InRoom.HostTimer -= timeUsed
 		} else {
@@ -460,10 +472,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			bicastGameEnd(p.InRoom, SideNone)
 			resetRoomState(p.InRoom)
 		} else {
-			bicastGameStatus(p.InRoom)
-		}
-		if false {
-			bicastGameDelta(p.InRoom, text, change)
+			bicastGameDelta(p.InRoom, change)
 		}
 
 	default:
