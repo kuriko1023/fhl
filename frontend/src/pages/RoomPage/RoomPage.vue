@@ -1,17 +1,46 @@
 <template>
   <view>
-    <template v-if='!connected'>
-      {{ status }}
-    </template>
-    <template v-else>
-      <p>房主：{{ host }}</p>
-      <p>房主状态：{{ hostStatus }}</p>
-      <p>客人：{{ guest }}</p>
-      <button @click="sitDown">坐下</button>
-      <template v-if='hostStatus === "ready" && guest !== ""'>
-        <button @click="startGame">开始游戏</button>
+    <image src="/static/room.png" class="background"></image>
+    <view style="width: 100%; height: 100%; padding-top: 20%">
+      <template v-if='!connected'>
+        {{ status }}
       </template>
-    </template>
+      <view v-else class="center">
+        <view>
+        <view style="display: inline-block">
+          <view style="float:left">
+            <image class="circle" src="/static/picture.png" mode="widthFix"></image>
+            <p style="font-size: 12px; color: #666666">{{ host }}</p>
+          </view>
+          <p style="float:left; margin-top: 10px;" class="status">{{ hostStatus }}</p>
+        </view>
+        </view>
+        <view>
+        <view style="display: inline-block">
+          <view style="float:left">
+            <image class="circle" src="/static/picture1.jpg" mode="widthFix"></image>
+            <p style="font-size: 12px; color: #666666">{{ guest }}</p>
+          </view>
+          <p style="float:left; margin-top: 10px;" class="status">{{ guestStatus }}</p>
+        </view>
+        </view>
+<!--        <p>客人：{{ guest }}</p>-->
+      </view>
+      <view class="bottom">
+        <uni-row>
+          <uni-col :span="12">
+            <view>
+              <button @click="sitDown" class="btn1">坐下</button>
+            </view>
+          </uni-col>
+          <uni-col :span="12">
+            <view>
+              <button @click="startGame" :disabled='hostStatus === "ready" && guest !== ""' class="btn2">开始游戏</button>
+            </view>
+          </uni-col>
+        </uni-row>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -23,9 +52,10 @@ export default {
       connected: false,
       status: '- 状态 -',
 
-      host: '',
-      hostStatus: '',
-      guest: '',
+      host: 'kuriko',
+      hostStatus: '已准备',
+      guestStatus: "已准备",
+      guest: 'pisces',
     };
   },
   onLoad() {
@@ -68,5 +98,52 @@ export default {
 </script>
 
 <style scoped>
+.background{
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: -1;
+}
+.status{
+  font-size: 22px;
+  font-family: 华文行楷;
+  font-weight: bold;
+  color: #49443d;
+}
+.circle {
+  width: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+.center {
+  /*position: absolute;*/
+  width: fit-content;
+  /*left: 20%;*/
+  margin: auto;
+}
 
+.bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  margin-bottom: 5%;
+}
+
+.btn2{
+  background-color: #84765e;
+  color: white;
+  border-radius: 10px;
+  margin-left: 10%;
+  margin-right:18%;
+  font-size: 14px;
+}
+.btn1{
+  background-color: #a49b8c;
+  color: white;
+  border-radius: 10px;
+  margin-left: 18%;
+  margin-right:10%;
+  font-size: 14px;
+}
 </style>

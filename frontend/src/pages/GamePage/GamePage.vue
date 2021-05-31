@@ -310,7 +310,7 @@ export default {
 <style scoped>
   .circle {
     width: 10%;
-    border-radius: 20%;
+    border-radius: 50%;
     margin-right: 5px;
   }
   #popup {
