@@ -54,11 +54,11 @@ Vue.prototype.historySentenceParse = function(str) {
     for(let j = 0; j < parse[0].length; j++){
         let tmpObject = {}
         tmpObject.word = parse[0][j]
-        let index = j + ''
+        let index = j.toString(36)
         if(parse[1].indexOf(index) !== -1){
             tmpObject.highlight = 1
         }
-        if(parse.length > 2 && parse[2].indexOf(index) !== -1){
+        else if(parse.length > 2 && parse[2].indexOf(index) !== -1){
             tmpObject.highlight = 2
         }
         else{
