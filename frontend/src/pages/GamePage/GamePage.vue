@@ -214,7 +214,7 @@ export default {
         return;
       }
 
-      const msg = this.popSocketMessage(['game_status', 'game_update']);
+      const msg = this.popSocketMessage(['game_status', 'game_update', 'invalid_answer']);
       switch (msg.type){
         case 'game_status': {
           console.log('game_status', msg);
@@ -275,7 +275,16 @@ export default {
           break
         }
         case 'invalid_answer':{
-
+          this.sendingAnswer = false
+          let popupText = '【' + msg.reason + '】　'
+          switch (msg.reason) {
+            case '不审题': popupText += '不匹配剩余的关键词'; break;
+            case '复读机': popupText += '与此前的答案重复'; break;
+            case '没背熟': popupText += '存在相似但不一致的诗句'; break;
+            case '大文豪': popupText += '没有找到相似的诗句'; break;
+          }
+          this.popMessage = popupText
+          this.pop()
         }
       }
     }
