@@ -38,7 +38,7 @@
       <view >
         <template v-if="isSubject" class="rule">
           <text class="tip" style="margin: 8px 10px 0 10px">题目内容</text>
-          <subject-block :mode="mode" :text="subject"></subject-block>
+          <subject-block :mode="mode" :subject="subject"></subject-block>
         </template>
         <template v-else >
           <text class="tip" style="margin: 8px 10px 0 10px">题目规则</text>
@@ -92,7 +92,7 @@ name: "ChoosePage",
       },
       size: 0,
       isSubject: false,
-      subject: '春',
+      subject: {},
       rule: {
         'A': "不会吧不会吧不会有人不会玩单字飞花令吧（xxx",
         'B': "不会吧不会吧不会有人不会玩多字飞花令吧（xxx",
@@ -164,7 +164,7 @@ name: "ChoosePage",
         this.size = this.range[this.mode][this.picker]
       }
       if(msg.subject !== null){
-        this.subject = msg.subject
+        this.subject = this.parseSubject(msg.mode, msg.subject)
       }
       //显示题目
       if(!this.isSubject){
