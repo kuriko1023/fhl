@@ -128,9 +128,9 @@ name: "ChoosePage",
       this.sendChoice()
     },
     onConfirm(){
-      uni.navigateTo({
-        'url': '/pages/GamePage/GamePage'
-      })
+      this.sendSocketMessage({
+        type: 'start_game',
+      });
     },
     generate(){
       //测试用
@@ -144,6 +144,13 @@ name: "ChoosePage",
       })
     },
     onSocketMessage() {
+      if (this.peekSocketMessage().type === 'game_status') {
+        uni.navigateTo({
+          url: '/pages/GamePage/GamePage'
+        });
+        return;
+      }
+
       const msg = this.popSocketMessage('generated');
       if (msg._none) return;
       //更新题目，与选择器绑定

@@ -9,16 +9,16 @@
     <view id="answering" style="display: flex; margin: 0 15px">
       <image class="circle" src="/static/picture.png" mode="widthFix"></image>
       <view style="display: flex;">
-        <view v-for="word in answer" :key="word.value">
-          <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.value}}</text>
+        <view v-for="word in answer" :key="word.word">
+          <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</text>
         </view>
       </view>
     </view>
 <!--      <progress percent="80" stroke-width="3"/>-->
 <!--      <progress percent="100" stroke-width="3"/>-->
       <view class="count_down">
-      <count-down :active="active1" :color="playerColor[side]" :time="10" :current="current1" @finish="onFinish" ref="countdown1"></count-down>
-      <count-down :active="active2" color="#65d4e5" :time="30" :current="current2" @finish="onExtraFinish" @stop="onCountStop"></count-down>
+      <count-down :active="active1" :color="playerColor[side]" :time="TURN_TIMER_MAX" :current="current1" @finish="onFinish" ref="countdown1"></count-down>
+      <count-down :active="active2" color="#65d4e5" :time="CUMULATIVE_TIMER_MAX" :current="current2" @finish="onExtraFinish" @stop="onCountStop"></count-down>
       </view>
         <!--      <button @click="onStop">stop</button>-->
 <!--      <button @click="onStop2">stop2</button>-->
@@ -28,12 +28,12 @@
       <history-block :data="history"/>
     </view>
     <view id="submit">
-      <form @submit="onSubmitAnswer">
+      <form>
         <view style="display: flex">
-          <input placeholder="输入答案" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="20"/>
+          <input placeholder="输入答案" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="20" v-model='inputAnswer' />
 
 <!--            TODO: 是否有效-->
-        <view form-type="submit" class="btn">发送</view>
+        <view form-type="submit" class="btn" @click='onSubmitAnswer'>发送</view>
         </view>
       </form>
     </view>
@@ -77,6 +77,8 @@ export default {
         0: '#535353',
         1: '#fcecbb',
       },
+      TURN_TIMER_MAX: 6,
+      CUMULATIVE_TIMER_MAX: 20,
       //shot countDown
       active1: true,
       //long countDown
@@ -116,69 +118,13 @@ export default {
       //   ],
       // },
       subject: "古 梦 雁/长 舟 送 寄 事 神 不 生 西风 多少/1000010011",
-      answer:  [
-        {
-          'value':'长',
-          'highlight': 1,
-        },
-        {
-          'value': '风',
-          'highlight': 0,
-        },
-        {
-          'value': '万',
-          'highlight': 0,
-        },
-        {
-          'value': '里',
-          'highlight': 0,
-        },
-        {
-          'value': '送',
-          'highlight': 0,
-        },
-        {
-          'value': '秋',
-          'highlight': 0,
-        },
-        {
-          'value': '雁',
-          'highlight': 2,
-        },
-      ],
-      history: [
-      [
-            {
-              'value':'长',
-              'highlight': 1,
-            },
-            {
-              'value': '风',
-              'highlight': 0,
-            },
-            {
-              'value': '万',
-              'highlight': 0,
-            },
-            {
-              'value': '里',
-              'highlight': 0,
-            },
-            {
-              'value': '送',
-              'highlight': 0,
-            },
-            {
-              'value': '秋',
-              'highlight': 0,
-            },
-            {
-              'value': '雁',
-              'highlight': 1,
-            },
-          ]
-      ]
+      answer:  [],
+      history: [],
+      inputAnswer: '',
     }
+  },
+  onLoad() {
+    this.registerSocketMessageListener();
   },
   methods:{
     pop(){
@@ -194,14 +140,17 @@ export default {
     onExtraFinish(){
       this.active2 = false
       console.log('timeout')
-      this.sendMessage({
+      /*this.sendMessage({
         'type': 'timeout'
-      })
+      })*/
     },
     //change count down side
     changeSide(){
+      this.history.push(this.answer)
+      this.answer = []
+
       console.log(this.current1)
-      this.current1 = 10
+      this.current1 = this.TURN_TIMER_MAX
       if(this.side) {
         console.log("side the other" + this.side)
         this.side = 0
@@ -244,19 +193,20 @@ export default {
       })
     },
     onSubmitAnswer(e){
-      this.sendMessage({
-            'type': 'answer',
-            'text': e.detail.value.myAnswer
-          }
-      )
+      this.sendSocketMessage({
+        'type': 'answer',
+        'text': this.inputAnswer,
+      })
       //计时器停止
       this.active1 = false
       this.active2 = false
     },
 
-    onMessage(msg){
+    onSocketMessage() {
+      const msg = this.popSocketMessage(['game_status', 'game_update']);
       switch (msg.type){
         case 'game_status': {
+          console.log('game_status', msg);
           this.mode = msg.mode
           this.subject = msg.subject
           this.history = []
@@ -267,6 +217,7 @@ export default {
           break
         }
         case 'game_update':{
+          console.log('game_update', msg);
           this.answer = this.historySentenceParse(msg.text)
           switch (this.mode){
             case 'B': {
