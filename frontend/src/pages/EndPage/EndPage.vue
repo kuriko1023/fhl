@@ -3,12 +3,12 @@
     <image class="background" src="/static/game_background.png" ></image>
     <view>
       <view style="text-align: center;">
-      <text class="result">胜利</text>
+      <text class="result">{{ win === 1 ? '胜利' : win === 0 ? '平局' : '失败' }}</text>
       </view>
       <image src="/static/history_background.png" class="history_background"></image>
     <view  class="info">
     <view>
-      <subject-block :text="subject" :mode="mode"/>
+      <subject-block :mode="mode" :subject="subject" />
     </view>
     <view>
       <history-block :data="history"/>
@@ -30,50 +30,30 @@ name: "EndPage",
   },
   data() {
     return{
-      mode: "C",
-      subject: "古 梦 雁/长 舟 送 寄 事 神 不 生 西风 多少",
-      // mode: "B",
-      // subject: "春花秋月何时了/2",
-      history: [
-        [
-          {
-            'value':'长',
-            'highlight': 1,
-          },
-          {
-            'value': '风',
-            'highlight': 0,
-          },
-          {
-            'value': '万',
-            'highlight': 0,
-          },
-          {
-            'value': '里',
-            'highlight': 0,
-          },
-          {
-            'value': '送',
-            'highlight': 0,
-          },
-          {
-            'value': '秋',
-            'highlight': 0,
-          },
-          {
-            'value': '雁',
-            'highlight': 1,
-          },
-        ]
-      ]
+      mode: '',
+      subject: {},
+      history: [],
+      win: 0,
     }
+  },
+  onLoad() {
+    this.registerSocketMessageListener();
   },
   methods:{
     onBack(){
       uni.redirectTo({
         'url': '/pages/RoomPage/RoomPage'
       })
-    }
+    },
+    onSocketMessage() {
+      const msg = this.popSocketMessage('end_status');
+      if (msg._none) return;
+
+      this.mode = msg.mode;
+      this.subject = this.parseSubject(msg.mode, msg.subject);
+      this.history = msg.history.map((item) => this.historySentenceParse(item));
+      this.win = msg.win;
+    },
   }
 }
 

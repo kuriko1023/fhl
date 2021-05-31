@@ -70,6 +70,7 @@ export default {
         this.status = '连接失败';
       },
     });
+    getApp().globalData.isHost = true;
   },
   methods: {
     onSocketMessage() {
