@@ -6,13 +6,13 @@
         {{ status }}
       </template>
       <view v-else class="center">
-        <view>
+        <view style="margin: 10px 0">
         <view style="display: inline-block">
           <view style="float:left">
             <image class="circle" src="/static/picture.png" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666">{{ host }}</p>
           </view>
-          <p style="float:left; margin-top: 10px;" class="status">{{ hostStatus }}</p>
+          <p style="float:left; margin-top: 15px;" class="status">{{ hostStatus }}</p>
         </view>
         </view>
         <view>
@@ -21,7 +21,7 @@
             <image class="circle" src="/static/picture1.jpg" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666">{{ guest }}</p>
           </view>
-          <p style="float:left; margin-top: 10px;" class="status">{{ guestStatus }}</p>
+          <p style="float:left; margin-top: 15px;" class="status">{{ guestStatus }}</p>
         </view>
         </view>
 <!--        <p>客人：{{ guest }}</p>-->
@@ -106,13 +106,13 @@ export default {
   z-index: -1;
 }
 .status{
-  font-size: 22px;
+  font-size: 26px;
   font-family: 华文行楷;
   font-weight: bold;
   color: #49443d;
 }
 .circle {
-  width: 40px;
+  width: 45px;
   border-radius: 50%;
   margin-right: 12px;
 }
@@ -128,7 +128,7 @@ export default {
   bottom: 0;
   left: 0;
   width: 100%;
-  margin-bottom: 5%;
+  margin-bottom: 8%;
 }
 
 .btn2{
