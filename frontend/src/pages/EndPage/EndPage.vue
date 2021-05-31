@@ -3,7 +3,7 @@
     <image class="background" src="/static/game_background.png" ></image>
     <view>
       <view style="text-align: center;">
-      <text class="result">{{ win === 1 ? '胜利' : win === 0 ? '平局' : '失败' }}</text>
+      <image mode="widthFix" class="result" :src=" win === 1 ? '/static/victory.png' : win === 0 ? '/static/tie.png' : '/static/lose.png' "></image>
       </view>
       <image src="/static/history_background.png" class="history_background"></image>
     <view  class="info">
@@ -61,9 +61,9 @@ name: "EndPage",
 
 <style scoped>
 .result{
-  font-size: 54px;
-  font-family:"书体坊向佳红毛笔行书";
+  width: 30%;
   margin-top: 10px;
+  margin-bottom: 10px;
 }
 .background{
   position: absolute;
@@ -83,14 +83,14 @@ name: "EndPage",
 
 .info{
   position: absolute;
-  height: 100%;
+  height: 80%;
   width: 88%;
   margin: 0 6% 10px 6%;
   overflow: scroll;
 }
 .history_background{
   position: absolute;
-  height: 100%;
+  height: 80%;
   width: 88%;
   margin: 0 6% 10px 6%;
 }
