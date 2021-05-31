@@ -302,7 +302,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 				if size != 1 && size != 3 {
 					panic("Incorrect size")
 				}
-				left, right := generateC(size, 10)
+				left, right := generateC(size, 7 + 3 * size)
 				subject = &SubjectC{
 					WordsLeft:  left,
 					WordsRight: right,
