@@ -5,8 +5,8 @@
         <view  class="center">
           <view>
             <view style="display: inline-block">
-              <view v-for="word in item" :key="word.value" style="float: left">
-                <text class="kati" :style="{color: wordColor[word.highlight]}">{{word.value}}</text>
+              <view v-for="word in item" :key="word.word" style="float: left">
+                <text class="kati" :style="{color: wordColor[word.highlight]}">{{word.word}}</text>
               </view>
             </view>
           </view>

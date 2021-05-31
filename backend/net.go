@@ -108,12 +108,14 @@ func broadcastRoomStatus(room *Room) {
 	}
 	// 向所有玩家的连接发送消息
 	for _, p := range room.People {
-		p.Channel <- object
+		if p.Channel != nil {
+			p.Channel <- object
+		}
 	}
 }
 
 // 一位玩家选择坐下
-func playerSetReady(p *Player) bool {
+func playerReady(p *Player) bool {
 	room := p.InRoom
 	if room.Host == p.Id {
 		room.HostReady = true
@@ -146,8 +148,12 @@ func bicastGameStatus(room *Room) {
 		"host_timer":  room.HostTimer,
 		"guest_timer": room.GuestTimer,
 	}
-	Players[room.Host].Channel <- object
-	Players[room.Guest].Channel <- object
+	if Players[room.Host].Channel != nil {
+		Players[room.Host].Channel <- object
+	}
+	if room.Guest != "" && Players[room.Guest].Channel != nil {
+		Players[room.Guest].Channel <- object
+	}
 }
 
 func bicastGameDelta(room *Room, change interface{}) {
@@ -158,29 +164,42 @@ func bicastGameDelta(room *Room, change interface{}) {
 		"host_timer":  room.HostTimer,
 		"guest_timer": room.GuestTimer,
 	}
-	Players[room.Host].Channel <- object
-	Players[room.Guest].Channel <- object
+	if Players[room.Host].Channel != nil {
+		Players[room.Host].Channel <- object
+	}
+	if room.Guest != "" && Players[room.Guest].Channel != nil {
+		Players[room.Guest].Channel <- object
+	}
 }
 
 func bicastGameEnd(room *Room, winner Side) {
-	var winnerStr string
+	var winnerVal int
 	switch winner {
 	case SideHost:
-		winnerStr = "host"
+		winnerVal = 1
 	case SideGuest:
-		winnerStr = "guest"
+		winnerVal = -1
 	case SideNone:
-		winnerStr = "tie"
+		winnerVal = 0
 	}
-	object := map[string]interface{}{
-		"type":    "end_status",
-		"winner":  winnerStr,
-		"mode":    room.Mode,
-		"subject": room.Subject.Dump(),
-		"history": roomHistoryStrings(room),
+	if Players[room.Host].Channel != nil {
+		Players[room.Host].Channel <- map[string]interface{}{
+			"type":    "end_status",
+			"winner":  winnerVal,
+			"mode":    room.Mode,
+			"subject": room.Subject.Dump(),
+			"history": roomHistoryStrings(room),
+		}
 	}
-	Players[room.Host].Channel <- object
-	Players[room.Guest].Channel <- object
+	if room.Guest != "" && Players[room.Guest].Channel != nil {
+		Players[room.Guest].Channel <- map[string]interface{}{
+			"type":    "end_status",
+			"winner":  -winnerVal,
+			"mode":    room.Mode,
+			"subject": room.Subject.Dump(),
+			"history": roomHistoryStrings(room),
+		}
+	}
 }
 
 func nowMilliseconds() int64 {
@@ -225,14 +244,16 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 	defer func() {
 		if e := recover(); e != nil {
 			if s, ok := e.(string); ok {
-				p.Channel <- errorMsg(s)
+				if p.Channel != nil {
+					p.Channel <- errorMsg(s)
+				}
 			}
 		}
 	}()
 
 	switch object["type"] {
 	case "ready":
-		if !playerSetReady(p) {
+		if !playerReady(p) {
 			panic("Already occupied")
 		}
 
@@ -244,8 +265,10 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			panic("Room should be idle with two ready players")
 		}
 		p.InRoom.State = "gen"
-		Players[p.InRoom.Guest].Channel <- map[string]string{
-			"type": "start_generate",
+		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
+			Players[p.InRoom.Guest].Channel <- map[string]string{
+				"type": "start_generate",
+			}
 		}
 
 	case "set_mode":
@@ -286,7 +309,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 				if size != 1 && size != 3 {
 					panic("Incorrect size")
 				}
-				left, right := generateC(size, 10)
+				left, right := generateC(size, 7+3*size)
 				subject = &SubjectC{
 					WordsLeft:  left,
 					WordsRight: right,
@@ -315,7 +338,9 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			"size":    size,
 			"subject": subjectRepr,
 		}
-		Players[p.InRoom.Guest].Channel <- resp
+		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
+			Players[p.InRoom.Guest].Channel <- resp
+		}
 		if isGenerate {
 			p.Channel <- resp
 		}
@@ -439,9 +464,11 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		}
 
 		if incorrectReason != "" {
-			p.Channel <- map[string]string{
-				"type":   "invalid_answer",
-				"reason": incorrectReason,
+			if p.Channel != nil {
+				p.Channel <- map[string]string{
+					"type":   "invalid_answer",
+					"reason": incorrectReason,
+				}
 			}
 			break
 		}

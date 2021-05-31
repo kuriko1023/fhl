@@ -54,11 +54,11 @@ Vue.prototype.historySentenceParse = function(str) {
     for(let j = 0; j < parse[0].length; j++){
         let tmpObject = {}
         tmpObject.word = parse[0][j]
-        let index = j + ''
+        let index = j.toString(36)
         if(parse[1].indexOf(index) !== -1){
             tmpObject.highlight = 1
         }
-        if(parse.length > 2 && parse[2].indexOf(index) !== -1){
+        else if(parse.length > 2 && parse[2].indexOf(index) !== -1){
             tmpObject.highlight = 2
         }
         else{
@@ -71,6 +71,79 @@ Vue.prototype.historySentenceParse = function(str) {
 
 Vue.prototype.getHistory = function(){
 
+}
+
+Vue.prototype.parseSubject = function (mode, text) {
+  let subject = {}
+  switch (mode) {
+    case 'A': {
+      subject.subject1 = []
+      subject.subject1.push(text)
+      break
+    }
+    case 'B': {
+      // 1 要用的字   2 当前的字
+      let parse = text.split('/')
+      subject.subject1 = []
+      for (let i = 0; i < parse[0].length; i++) {
+        let tmpObject = {}
+        tmpObject.value = parse[0][i]
+        if(parseInt(parse[1]) === i){
+          tmpObject.show = 1
+        }
+        else  tmpObject.show = 0
+        subject.subject1.push(tmpObject)
+      }
+      break
+    }
+    case 'C': {
+      // 1 未使用  0 已使用
+      let parse = text.split('/')
+      subject.subject1 = parse[0].split(' ')
+      let tmpArray = parse[1].split(' ')
+      subject.subject2 = []
+      for (let i = 0; i < tmpArray.length; i++) {
+        let tmpObject = {}
+        tmpObject.value = tmpArray[i]
+        if(parse[2] !== undefined) {
+          tmpObject.show = 1 - parseInt(parse[2][i])
+          console.log("gamePage")
+        }
+        else {
+          tmpObject.show = 1
+          console.log("endPage")
+        }
+        subject.subject2.push(tmpObject)
+      }
+      break
+    }
+    case 'D': {
+      // 1 未使用  0 已使用
+      let parse = text.split('/')
+      let tmpArray1 = parse[0].split(' ')
+      let tmpArray2 = parse[1].split(' ')
+      subject.subject1 = []
+      subject.subject2 = []
+      for (let i = 0; i < tmpArray1.length; i++) {
+        let tmpObject1 = {}
+        tmpObject1.value = tmpArray1[i]
+        if(parse[2] !== undefined) {
+          tmpObject1.show = 1 - parseInt(parse[2][i])
+        }
+        else tmpObject1.show = 1
+        subject.subject1.push(tmpObject1)
+        let tmpObject2 = {}
+        tmpObject2.value = tmpArray2[i]
+        if(parse[3] !== undefined) {
+          tmpObject2.show = 1 - parseInt(parse[3][i])
+        }
+        else tmpObject2.show = 1
+        subject.subject2.push(tmpObject2)
+      }
+      break
+    }
+  }
+  return subject
 }
 
 App.mpType = 'app'
