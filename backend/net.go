@@ -115,7 +115,7 @@ func broadcastRoomStatus(room *Room) {
 }
 
 // 一位玩家选择坐下
-func playerSetReady(p *Player) bool {
+func playerReady(p *Player) bool {
 	room := p.InRoom
 	if room.Host == p.Id {
 		room.HostReady = true
@@ -246,7 +246,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 
 	switch object["type"] {
 	case "ready":
-		if !playerSetReady(p) {
+		if !playerReady(p) {
 			panic("Already occupied")
 		}
 
