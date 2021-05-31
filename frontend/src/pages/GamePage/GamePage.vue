@@ -1,13 +1,13 @@
 <template>
   <view>
-    <image class="background" src="/static/game_background.png" ></image>
+    <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
     <view style="padding: 15px">
     <view id="subject" style="margin-bottom: 20px">
       <subject-block :mode="mode" :subject="subject">
       </subject-block>
     </view>
     <view id="answering" style="display: flex; margin: 0 15px">
-      <image class="circle" src="/static/picture.png" mode="widthFix"></image>
+      <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
       <view style="display: flex;">
         <view v-for="word in answer" :key="word.word">
           <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</text>
@@ -23,7 +23,7 @@
         <!--      <button @click="onStop">stop</button>-->
 <!--      <button @click="onStop2">stop2</button>-->
     </view>
-    <image src="/static/history_background.png" class="history_background"></image>
+    <image src="https://flyhana.starrah.cn/static/history_background.png" class="history_background"></image>
     <view id="answerHistory">
       <history-block :data="history"/>
     </view>

@@ -1,6 +1,6 @@
 <template>
   <view>
-    <image src="/static/room.png" class="background"></image>
+    <image src="https://flyhana.starrah.cn/static/room.png" class="background"></image>
     <view style="width: 100%; height: 100%; padding-top: 20%">
       <template v-if='!connected'>
         {{ status }}
@@ -9,7 +9,7 @@
         <view style="margin: 10px 0">
         <view style="display: inline-block">
           <view style="float:left">
-            <image class="circle" src="/static/picture.png" mode="widthFix"></image>
+            <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666">{{ host }}</p>
           </view>
           <p style="float:left; margin-top: 15px;" class="status">{{ hostStatus }}</p>
@@ -18,7 +18,7 @@
         <view>
         <view style="display: inline-block">
           <view style="float:left">
-            <image class="circle" src="/static/picture1.jpg" mode="widthFix"></image>
+            <image class="circle" src="https://flyhana.starrah.cn/static/picture1.jpg" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666">{{ guest }}</p>
           </view>
           <p style="float:left; margin-top: 15px;" class="status">{{ guestStatus }}</p>

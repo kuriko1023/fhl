@@ -72,7 +72,7 @@ export default {
   font-family: "楷体","楷体_GB2312";
   font-size: 34px;
   background-size: cover;
-  background-image: url("/static/tianzige.png");
+  background-image: url("https://flyhana.starrah.cn/static/tianzige.png");
   margin: 0 7px 0 7px;
 }
 .subjectText {

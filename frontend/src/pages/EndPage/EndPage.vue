@@ -1,11 +1,11 @@
 <template>
   <view>
-    <image class="background" src="/static/game_background.png" ></image>
+    <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
     <view>
       <view style="text-align: center;">
-      <image mode="widthFix" class="result" :src=" win === 1 ? '/static/victory.png' : win === 0 ? '/static/tie.png' : '/static/lose.png' "></image>
+      <image mode="widthFix" class="result" :src=" win === 1 ? 'https://flyhana.starrah.cn/static/victory.png' : win === 0 ? 'https://flyhana.starrah.cn/static/tie.png' : 'https://flyhana.starrah.cn/static/lose.png' "></image>
       </view>
-      <image src="/static/history_background.png" class="history_background"></image>
+      <image src="https://flyhana.starrah.cn/static/history_background.png" class="history_background"></image>
     <view  class="info">
     <view>
       <subject-block :mode="mode" :subject="subject" />
