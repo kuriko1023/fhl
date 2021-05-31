@@ -128,7 +128,7 @@ Vue.prototype.parseSubject = function (mode, text) {
         let tmpObject1 = {}
         tmpObject1.value = tmpArray1[i]
         if(parse[2] !== undefined) {
-          tmpObject1.show = parseInt(parse[2][i])
+          tmpObject1.show = 1 - parseInt(parse[2][i])
         }
         else tmpObject1.show = 1
         subject.subject1.push(tmpObject1)

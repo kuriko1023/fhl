@@ -55,7 +55,8 @@ export default {
     return{
       colorB: {
         0: '#000000',
-        1: '#ad2b29'
+        1: '#ad2b29',
+        2: '#828282',
       },
       colorD: {
         0: '#828282',
