@@ -676,20 +676,20 @@ messageLoop:
 	log.Println("connection closed")
 }
 
-func playerInfoHandler(w http.ResponseWriter, r *http.Request) {
-	id := login(r.URL.Path[len("/player/"):])
+func profileHandler(w http.ResponseWriter, r *http.Request) {
+	id := login(r.URL.Path[len("/profile/"):])
 
-	p := Players[id]
-	if p == nil {
-		w.Write([]byte("null"))
-		return
+	obj := map[string]interface{}{
+		"id":       id,
+		"nickname": nil,
+		"avatar":   nil,
+	}
+	if p := Players[id]; p != nil {
+		obj["nickname"] = p.Nickname
+		obj["avatar"] = p.Avatar
 	}
 	enc := json.NewEncoder(w)
-	enc.Encode(map[string]string{
-		"id":       p.Id,
-		"nickname": p.Nickname,
-		"avatar":   p.Avatar,
-	})
+	enc.Encode(obj)
 }
 
 var testCounter = 0
@@ -730,7 +730,7 @@ func resetHandler(w http.ResponseWriter, r *http.Request) {
 
 func SetUpHttp() {
 	http.HandleFunc("/channel/", channelHandler)
-	http.HandleFunc("/player/", playerInfoHandler)
+	http.HandleFunc("/profile/", profileHandler)
 	if Config.Debug {
 		http.HandleFunc("/test", testHandler)
 		http.HandleFunc("/reset", resetHandler)
