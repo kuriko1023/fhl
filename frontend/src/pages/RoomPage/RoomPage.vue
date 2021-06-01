@@ -36,7 +36,7 @@
           </uni-col>
           <uni-col :span="12">
             <view>
-              <button @click="startGame" :disabled='!(hostStatus === "ready" && guest !== "")' class="btn2">开始游戏</button>
+              <button @click="startGame" :disabled='!(hostStatus === "ready" && guest !== "" && isHost)' class="btn2">开始游戏</button>
             </view>
           </uni-col>
         </uni-row>
@@ -61,6 +61,8 @@ export default {
       hostStatus: '',
       guest: '',
       guestAvatar: '',
+
+      isHost: false,
     };
   },
   onLoad() {
@@ -88,7 +90,7 @@ export default {
         },
       })});
 
-      getApp().globalData.isHost = (this.room === getApp().globalData.my.id);
+      this.isHost = getApp().globalData.isHost = (this.room === getApp().globalData.my.id);
     });
   },
   onShareAppMessage (res) {
