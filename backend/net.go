@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math"
 	"math/rand"
 	"net"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,7 +48,7 @@ func login(code string) string {
 		log.Println(err)
 		return ""
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		return ""
@@ -70,6 +72,25 @@ func login(code string) string {
 	return object.OpenID
 }
 
+func retrieveAvatar(url string) []byte {
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Println(err)
+		return []byte{}
+	}
+	contentType := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") || strings.IndexByte(contentType, ' ') != -1 {
+		return []byte{}
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(nil, resp.Body, 64*1024))
+	if err != nil {
+		log.Println(err)
+		return []byte{}
+	}
+	// TODO: Store the MIME type
+	return body
+}
+
 // 移除 slice 中的一个元素
 func removeElement(s []*Player, p *Player) []*Player {
 	for i, e := range s {
@@ -85,11 +106,12 @@ func removeElement(s []*Player, p *Player) []*Player {
 func broadcastRoomStatus(room *Room) {
 	p := GetPlayer(room.Host)
 	object := map[string]interface{}{
-		"type":        "room_status",
-		"host":        p.Nickname,
-		"host_avatar": p.Avatar,
-		"host_status": "absent",
-		"guest":       nil,
+		"type":         "room_status",
+		"host":         p.Nickname,
+		"host_avatar":  p.Id + "/" + strconv.FormatInt(p.AvatarUpdated, 36),
+		"host_status":  "absent",
+		"guest":        nil,
+		"guest_avatar": nil,
 	}
 	if room.HostReady {
 		object["host_status"] = "ready"
@@ -108,7 +130,7 @@ func broadcastRoomStatus(room *Room) {
 	if g := room.Guest; g != "" {
 		p := GetPlayer(g)
 		object["guest"] = p.Nickname
-		object["guest_avatar"] = p.Avatar
+		object["guest_avatar"] = p.Id + "/" + strconv.FormatInt(p.AvatarUpdated, 36)
 	}
 	// 向所有玩家的连接发送消息
 	for _, p := range room.People {
@@ -265,7 +287,8 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			panic("Incorrect format")
 		}
 		p.Nickname = nickname
-		p.Avatar = avatar
+		p.Avatar = retrieveAvatar(avatar)
+		p.AvatarUpdated = time.Now().Unix()
 		if err := p.Save(); err != nil {
 			fmt.Println(err)
 		}
@@ -682,20 +705,27 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	obj := map[string]interface{}{
 		"id":       id,
 		"nickname": nil,
-		"avatar":   nil,
 	}
 	if p := Players[id]; p != nil {
 		obj["nickname"] = p.Nickname
-		obj["avatar"] = p.Avatar
 	}
 	enc := json.NewEncoder(w)
 	enc.Encode(obj)
 }
 
+func avatarHandler(w http.ResponseWriter, r *http.Request) {
+	id := strings.SplitN(r.URL.Path[len("/avatar/"):], "/", 2)[0]
+	if p := Players[id]; p != nil {
+		w.Write(p.Avatar)
+	} else {
+		w.WriteHeader(404)
+	}
+}
+
 var testCounter = 0
 
 func testHandler(w http.ResponseWriter, r *http.Request) {
-	content, err := ioutil.ReadFile("test.html")
+	content, err := os.ReadFile("test.html")
 	if err != nil {
 		w.WriteHeader(404)
 		return
@@ -731,6 +761,7 @@ func resetHandler(w http.ResponseWriter, r *http.Request) {
 func SetUpHttp() {
 	http.HandleFunc("/channel/", channelHandler)
 	http.HandleFunc("/profile/", profileHandler)
+	http.HandleFunc("/avatar/", avatarHandler)
 	if Config.Debug {
 		http.HandleFunc("/test", testHandler)
 		http.HandleFunc("/reset", resetHandler)
