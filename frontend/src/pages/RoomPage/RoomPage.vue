@@ -77,7 +77,7 @@ export default {
         this.room = room;
       }
 
-      uni.login({success: (res) => uni.connectSocket({
+      uni.login({success: (res) => this.connectSocket({
         // url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
         url: 'wss://flyhana.starrah.cn/channel/' + this.room + '/' + res.code,
         success: () => {
@@ -92,6 +92,9 @@ export default {
 
       this.isHost = getApp().globalData.isHost = (this.room === getApp().globalData.my.id);
     });
+  },
+  onUnload() {
+    this.closeSocket();
   },
   onShareAppMessage (res) {
     return {
