@@ -12,11 +12,11 @@ name: "StartPage",
     profileInitialized: false,
   }),
   onLoad() {
-    this.retrieveServerProfile()
+    this.retrieveServerProfile(() => this.profileInitialized = true)
   },
   methods: {
     onEnter(){
-      this.requestLocalProfile(() => this.enterRoom());
+      this.requestLocalProfile(() => this.enterRoom())
     },
     enterRoom() {
       getApp().globalData.myRoom = true;

@@ -2,12 +2,12 @@
   <view>
     <image src="https://flyhana.starrah.cn/static/room.png" class="background"></image>
     <view style="width: 100%; height: 100%; padding-top: 20%">
-      <template v-if='!profileInitialized || !connected'>
+      <template v-if='!connected'>
         {{ status }}
       </template>
       <view v-else class="center">
         <view style="margin: 10px 0">
-        id = [{{ room }}]<br><br>
+        room = [{{ room.substr(0, 8) }}]<br><br>
         <view style="display: inline-block">
           <view style="float: left; width: 100px; text-align: center;">
             <image class="circle" :src="hostAvatar" mode="widthFix"></image>
@@ -52,7 +52,7 @@ export default {
     return {
       profileInitialized: false,
       connected: false,
-      status: '连接中',
+      status: '获取玩家信息',
 
       room: '',
 
@@ -64,29 +64,32 @@ export default {
     };
   },
   onLoad() {
-    this.retrieveServerProfile();
+    this.retrieveServerProfile(() => {
+      this.status = '连接房间';
 
-    if (getApp().globalData.myRoom) {
-      delete getApp().globalData.myRoom;
-      this.room = getApp().globalData.my.id;
-    } else {
-      const room = uni.getEnterOptionsSync().query.room;
-      this.room = room;
-    }
+      if (getApp().globalData.myRoom) {
+        delete getApp().globalData.myRoom;
+        this.room = getApp().globalData.my.id;
+      } else {
+        const room = uni.getEnterOptionsSync().query.room;
+        this.room = room;
+      }
 
-    uni.login({success: (res) => uni.connectSocket({
-      // url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
-      url: 'wss://flyhana.starrah.cn/channel/my/' + res.code,
-      success: () => {
-        // setTimeout(() => this.connected = true, 1000)
-        this.connected = true;
-        this.registerSocketMessageListener();
-      },
-      fail: () => {
-        this.status = '连接失败';
-      },
-    })});
-    getApp().globalData.isHost = true;
+      uni.login({success: (res) => uni.connectSocket({
+        // url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
+        url: 'wss://flyhana.starrah.cn/channel/' + this.room + '/' + res.code,
+        success: () => {
+          // setTimeout(() => this.connected = true, 1000)
+          this.connected = true;
+          this.registerSocketMessageListener();
+        },
+        fail: () => {
+          this.status = '连接失败';
+        },
+      })});
+
+      getApp().globalData.isHost = (this.room === getApp().globalData.my.id);
+    });
   },
   onShareAppMessage (res) {
     return {
@@ -124,7 +127,7 @@ export default {
       })
     },
     sitDown() {
-      this.sendSocketMessage({type: 'ready'});
+      this.requestLocalProfile(() => this.sendSocketMessage({type: 'ready'}));
     },
     startGame() {
       this.sendSocketMessage({type: 'start_generate'});
@@ -151,6 +154,7 @@ export default {
 }
 .circle {
   width: 45px;
+  height: 45px;
   border-radius: 50%;
 }
 .center {

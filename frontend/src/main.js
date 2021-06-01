@@ -3,9 +3,9 @@ import App from './App'
 
 Vue.config.productionTip = false
 
-Vue.prototype.retrieveServerProfile = function () {
+Vue.prototype.retrieveServerProfile = function (callback) {
   if (getApp().globalData.my) {
-    this.profileInitialized = true;
+    callback();
     return;
   }
   const req = () => uni.login({success: (res) => uni.request({
@@ -22,7 +22,7 @@ Vue.prototype.retrieveServerProfile = function () {
         avatar: obj.avatar,
         nickname: obj.nickname,
       };
-      this.profileInitialized = true;
+      callback();
     },
     fail: () => req(),
   })});
