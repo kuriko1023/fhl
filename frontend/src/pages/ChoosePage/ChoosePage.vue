@@ -6,10 +6,10 @@
 <!--        <uni-col :span="12">-->
           <view class="modeChoose">
             <radio-group @change="onModeChange" >
-              <label><radio class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">单字飞花</span></label>
-              <label><radio class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">多字飞花</span></label>
-              <label><radio class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">超级飞花</span></label>
-              <label><radio class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">谜之飞花</span></label>
+              <label><radio :disabled="!isHost" class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">单字飞花</span></label>
+              <label><radio :disabled="!isHost" class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">多字飞花</span></label>
+              <label><radio :disabled="!isHost" class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">超级飞花</span></label>
+              <label><radio :disabled="!isHost" class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">谜之飞花</span></label>
             </radio-group>
           </view>
 <!--        </uni-col>-->
@@ -23,7 +23,7 @@
                 <span class="tip" >选择题型：</span>
               </uni-col>
               <uni-col :span="12">
-                <picker :range="range[mode]" @change="onSizeChange" :value="picker" mode="selector" >
+                <picker :disabled="!isHost" :range="range[mode]" @change="onSizeChange" :value="picker" mode="selector" >
                   <view class="picker_btn">
                     {{range[mode][picker]}}
                   </view>
@@ -50,7 +50,7 @@
         </template>
       </view>
       <view class="bottom">
-        <uni-row>
+        <uni-row v-if='isHost'>
           <uni-col :span="12">
           <view>
             <button @click="generate" class="btn1">{{isSubject?'换一换':'生成题目'}}</button>
@@ -63,6 +63,13 @@
             </button>
           </view>
           </uni-col>
+        </uni-row>
+        <uni-row v-else>
+          <view>
+            <button class="btn-full" disabled="true">
+              请等待房主选题
+            </button>
+          </view>
         </uni-row>
       </view>
     </view>
@@ -78,6 +85,7 @@ name: "ChoosePage",
   },
   data(){
     return{
+      isHost: false,
       mode: 'A',
       picker: 0,
       range: {
@@ -108,6 +116,7 @@ name: "ChoosePage",
   },
   onLoad() {
     this.registerSocketMessageListener();
+    this.isHost = getApp().globalData.isHost;
   },
   methods:{
     sendChoice(){
@@ -158,7 +167,7 @@ name: "ChoosePage",
       this.mode = msg.mode
       if(this.mode !== 'A') {
         for(let i = 0; i < this.range[this.mode].length; i++){
-          if(this.range[this.mode][i] == msg.size){
+          if(this.rangeValue[this.mode][i] == msg.size){
             this.picker = i
           }
         }
@@ -170,9 +179,7 @@ name: "ChoosePage",
           this.subject.subject1[0].show = 0;
       }
       //显示题目
-      if(!this.isSubject){
-        this.isSubject = true
-      }
+      this.isSubject = (msg.subject !== null)
     }
   }
 }
@@ -217,6 +224,12 @@ name: "ChoosePage",
     border-radius: 10px;
     margin-left: 18%;
     margin-right:10%;
+    font-size: 14px;
+  }
+  .btn-full{
+    border-radius: 10px;
+    margin-left: 9%;
+    margin-right:9%;
     font-size: 14px;
   }
   .tip{

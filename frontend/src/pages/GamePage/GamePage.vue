@@ -68,6 +68,7 @@ export default {
   },
   data() {
     return {
+      isHost: false,
       answerColor: {
         0: '#000000',
         1: '#ad2b29',
@@ -127,6 +128,8 @@ export default {
   },
   onLoad() {
     this.registerSocketMessageListener();
+    this.isHost = getApp().globalData.isHost;
+    this.side = (this.isHost ? 0 : 1);
   },
   methods:{
     pop(){
@@ -231,7 +234,7 @@ export default {
           console.log('game_update', msg);
           this.answer = this.historySentenceParse(msg.text)
           this.active1 = this.active2 = false
-          this.inputAnswer = ''
+          if (this.side === 0) this.inputAnswer = ''
           setTimeout(() => {
             this.sendingAnswer = false
             switch (this.mode){
