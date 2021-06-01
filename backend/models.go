@@ -377,7 +377,7 @@ func GetPlayer(id string) *Player {
 	p := &Player{
 		Id:            id,
 		Nickname:      "猫猫" + id,
-		Avatar:        []byte{},
+		Avatar:        defaultAvatar,
 		AvatarUpdated: time.Now().Unix(),
 	}
 	p.Save()
