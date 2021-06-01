@@ -19,6 +19,7 @@ name: "StartPage",
       this.requestLocalProfile(() => this.enterRoom());
     },
     enterRoom() {
+      getApp().globalData.myRoom = true;
       uni.navigateTo({
         url: "/pages/RoomPage/RoomPage"
       })

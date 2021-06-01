@@ -8,8 +8,9 @@ Vue.prototype.retrieveServerProfile = function () {
     this.profileInitialized = true;
     return;
   }
-  const req = () => uni.request({
-    url: 'https://flyhana.starrah.cn/profile/!kuriko1023',
+  const req = () => uni.login({success: (res) => uni.request({
+    // url: 'https://flyhana.starrah.cn/profile/!kuriko1023',
+    url: 'https://flyhana.starrah.cn/profile/' + res.code,
     success: (res) => {
       const obj = res.data;
       if (!obj || !obj.id) {
@@ -24,7 +25,7 @@ Vue.prototype.retrieveServerProfile = function () {
       this.profileInitialized = true;
     },
     fail: () => req(),
-  });
+  })});
   req();
 };
 

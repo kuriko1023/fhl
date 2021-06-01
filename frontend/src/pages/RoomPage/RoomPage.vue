@@ -7,7 +7,7 @@
       </template>
       <view v-else class="center">
         <view style="margin: 10px 0">
-        {{ room }}<br><br>
+        id = [{{ room }}]<br><br>
         <view style="display: inline-block">
           <view style="float: left; width: 100px; text-align: center;">
             <image class="circle" :src="hostAvatar" mode="widthFix"></image>
@@ -54,7 +54,7 @@ export default {
       connected: false,
       status: '连接中',
 
-      room: '自己的房间',
+      room: '',
 
       host: '',
       hostAvatar: '',
@@ -66,15 +66,17 @@ export default {
   onLoad() {
     this.retrieveServerProfile();
 
-    const firstLoad = getApp().globalData.firstLoad;
-    if (!firstLoad) {
-      getApp().globalData.firstLoad = true;
+    if (getApp().globalData.myRoom) {
+      delete getApp().globalData.myRoom;
+      this.room = getApp().globalData.my.id;
+    } else {
       const room = uni.getEnterOptionsSync().query.room;
       this.room = room;
     }
 
-    uni.connectSocket({
-      url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
+    uni.login({success: (res) => uni.connectSocket({
+      // url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
+      url: 'wss://flyhana.starrah.cn/channel/my/' + res.code,
       success: () => {
         // setTimeout(() => this.connected = true, 1000)
         this.connected = true;
@@ -83,13 +85,13 @@ export default {
       fail: () => {
         this.status = '连接失败';
       },
-    });
+    })});
     getApp().globalData.isHost = true;
   },
   onShareAppMessage (res) {
     return {
       title: '分享标题',
-      path: '/pages/RoomPage/RoomPage?room=别人的房间',
+      path: '/pages/RoomPage/RoomPage?room=' + this.room,
       imageUrl: 'https://flyhana.starrah.cn/static/tianzige.png',
     };
   },
