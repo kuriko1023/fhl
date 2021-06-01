@@ -50,8 +50,28 @@ Vue.prototype.requestLocalProfile = function (callback) {
   }
 };
 
+let socketTask = null;
+
 let messageListener = null;
 const messageQueue = [];
+
+Vue.prototype.connectSocket = function (obj) {
+  const conn = () => {
+    messageQueue.splice(0);
+    socketTask = uni.connectSocket(obj);
+  };
+  if (socketTask) {
+    socketTask.onClose(conn);
+    socketTask.close();
+  } else {
+    conn();
+  }
+};
+
+Vue.prototype.closeSocket = function () {
+  socketTask.close();
+  socketTask.onClose(() => socketTask = null);
+};
 
 Vue.prototype.registerSocketMessageListener = function () {
   messageListener = this;
