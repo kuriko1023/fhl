@@ -713,8 +713,22 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	enc.Encode(obj)
 }
 
+var defaultAvatar []byte
+
+func init() {
+	var err error
+	defaultAvatar, err = os.ReadFile("../frontend/src/static_remote/grey_avatar_132.jpg")
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
 func avatarHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.SplitN(r.URL.Path[len("/avatar/"):], "/", 2)[0]
+	if id == "" {
+		w.Write(defaultAvatar)
+		return
+	}
 	if p := Players[id]; p != nil {
 		w.Write(p.Avatar)
 	} else {
