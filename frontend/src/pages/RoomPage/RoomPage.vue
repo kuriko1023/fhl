@@ -2,7 +2,7 @@
   <view>
     <image src="https://flyhana.starrah.cn/static/room.png" class="background"></image>
     <view style="width: 100%; height: 100%; padding-top: 20%">
-      <template v-if='!connected'>
+      <template v-if='!profileInitialized || !connected'>
         {{ status }}
       </template>
       <view v-else class="center">
@@ -50,8 +50,9 @@ export default {
   name: "RoomPage",
   data() {
     return {
+      profileInitialized: false,
       connected: false,
-      status: '- 状态 -',
+      status: '连接中',
 
       room: '自己的房间',
 
@@ -61,9 +62,7 @@ export default {
     };
   },
   onLoad() {
-    uni.showShareMenu({
-      path: '/ABCDEFG',
-    });
+    this.retrieveServerProfile();
 
     const firstLoad = getApp().globalData.firstLoad;
     if (!firstLoad) {
@@ -96,6 +95,12 @@ export default {
     onSocketMessage() {
       const msg = this.popSocketMessage(['room_status', 'start_generate']);
       if (msg.type === 'room_status') {
+        if (getApp().globalData.my.create) {
+          // 需要发送个人信息
+          delete getApp().globalData.my.create
+          this.sendProfileUpdate()
+          return; // 下次收到消息时更新
+        }
         this.host = msg.host;
         this.hostStatus = msg.host_status;  // absent, present, ready
         this.guest = (msg.guest || '');
@@ -104,6 +109,13 @@ export default {
           url: "/pages/ChoosePage/ChoosePage"
         })
       }
+    },
+    sendProfileUpdate() {
+      this.sendSocketMessage({
+        type: 'profile',
+        nickname: getApp().globalData.my.nickname,
+        avatar: getApp().globalData.my.avatar,
+      })
     },
     sitDown() {
       this.sendSocketMessage({type: 'ready'});

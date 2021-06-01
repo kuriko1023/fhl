@@ -3,6 +3,52 @@ import App from './App'
 
 Vue.config.productionTip = false
 
+Vue.prototype.retrieveServerProfile = function () {
+  if (getApp().globalData.my) {
+    this.profileInitialized = true;
+    return;
+  }
+  const req = () => uni.request({
+    url: 'https://flyhana.starrah.cn/profile/!kuriko1023',
+    success: (res) => {
+      const obj = res.data;
+      if (!obj || !obj.id) {
+        req();
+        return;
+      }
+      getApp().globalData.my = {
+        id: obj.id,
+        avatar: obj.avatar,
+        nickname: obj.nickname,
+      };
+      this.profileInitialized = true;
+    },
+    fail: () => req(),
+  });
+  req();
+};
+
+Vue.prototype.requestLocalProfile = function (callback) {
+  console.log(getApp().globalData.my)
+  if (getApp().globalData.my.nickname === null) {
+    uni.getUserProfile({
+      desc: '用于向其他玩家展示头像和昵称',
+      success: (res) => {
+        console.log(res)
+        getApp().globalData.my.avatar = res.userInfo.avatarUrl
+        getApp().globalData.my.nickname = res.userInfo.nickName
+        getApp().globalData.my.create = true
+        callback()
+      },
+      fail: () => {
+        console.log('getUserProfile() failed')
+      },
+    })
+  } else {
+    callback()
+  }
+};
+
 let messageListener = null;
 const messageQueue = [];
 
