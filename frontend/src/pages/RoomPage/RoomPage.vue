@@ -10,7 +10,7 @@
         {{ room }}<br><br>
         <view style="display: inline-block">
           <view style="float: left; width: 100px; text-align: center;">
-            <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
+            <image class="circle" :src="hostAvatar" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666">{{ host }}</p>
           </view>
           <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ hostStatus === 'ready' ? '已准备' : hostStatus === 'present' ? '在线' : '离线' }}</p>
@@ -19,7 +19,7 @@
         <view>
         <view style="display: inline-block">
           <view style="float: left; width: 100px; text-align: center;">
-            <image class="circle" :src="'https://flyhana.starrah.cn/static/' + (guest !== '' ? 'picture1.jpg' : 'grey_avatar_132.jpg')" mode="widthFix"></image>
+            <image class="circle" :src="guestAvatar" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666">{{ guest !== '' ? guest : '客人' }}</p>
           </view>
           <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ guest !== '' ? '已准备' : '未进入' }}</p>
@@ -57,8 +57,10 @@ export default {
       room: '自己的房间',
 
       host: '',
+      hostAvatar: '',
       hostStatus: '',
       guest: '',
+      guestAvatar: '',
     };
   },
   onLoad() {
@@ -102,8 +104,10 @@ export default {
           return; // 下次收到消息时更新
         }
         this.host = msg.host;
+        this.hostAvatar = 'https://flyhana.starrah.cn/avatar/' + msg.host_avatar;
         this.hostStatus = msg.host_status;  // absent, present, ready
         this.guest = (msg.guest || '');
+        this.guestAvatar = 'https://flyhana.starrah.cn/avatar/' + (msg.guest_avatar || '');
       } else if (msg.type === 'start_generate') {
         uni.redirectTo({
           url: "/pages/ChoosePage/ChoosePage"
