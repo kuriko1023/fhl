@@ -13,6 +13,8 @@ window.addEventListener("load", function(evt) {
         var d = document.createElement("div");
         if (chroma) d.style.color = chroma;
         if (bold) d.style.fontWeight = 'bold';
+		d.style.width = '100%';
+		d.style.overflowWrap = 'anywhere';
         d.textContent = message;
         output.appendChild(d);
         d.scrollIntoView();
