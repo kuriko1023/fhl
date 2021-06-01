@@ -83,9 +83,11 @@ func removeElement(s []*Player, p *Player) []*Player {
 
 // 向所有房间中的玩家更新房间状态
 func broadcastRoomStatus(room *Room) {
+	p := GetPlayer(room.Host)
 	object := map[string]interface{}{
 		"type":        "room_status",
-		"host":        GetPlayer(room.Host).Nickname,
+		"host":        p.Nickname,
+		"host_avatar": p.Avatar,
 		"host_status": "absent",
 		"guest":       nil,
 	}
@@ -104,7 +106,9 @@ func broadcastRoomStatus(room *Room) {
 		}
 	}
 	if g := room.Guest; g != "" {
-		object["guest"] = g
+		p := GetPlayer(g)
+		object["guest"] = p.Nickname
+		object["guest_avatar"] = p.Avatar
 	}
 	// 向所有玩家的连接发送消息
 	for _, p := range room.People {
@@ -253,6 +257,22 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 	}()
 
 	switch object["type"] {
+	case "profile":
+		nickname, ok1 := object["nickname"].(string)
+		avatar, ok2 := object["avatar"].(string)
+		// TODO: 用 session key 验证签名
+		if !ok1 || !ok2 {
+			panic("Incorrect format")
+		}
+		p.Nickname = nickname
+		p.Avatar = avatar
+		if err := p.Save(); err != nil {
+			fmt.Println(err)
+		}
+		if p.InRoom != nil {
+			broadcastRoomStatus(p.InRoom)
+		}
+
 	case "ready":
 		if !playerReady(p) {
 			panic("Already occupied")
@@ -656,6 +676,22 @@ messageLoop:
 	log.Println("connection closed")
 }
 
+func playerInfoHandler(w http.ResponseWriter, r *http.Request) {
+	id := login(r.URL.Path[len("/player/"):])
+
+	p := Players[id]
+	if p == nil {
+		w.Write([]byte("null"))
+		return
+	}
+	enc := json.NewEncoder(w)
+	enc.Encode(map[string]string{
+		"id":       p.Id,
+		"nickname": p.Nickname,
+		"avatar":   p.Avatar,
+	})
+}
+
 var testCounter = 0
 
 func testHandler(w http.ResponseWriter, r *http.Request) {
@@ -694,6 +730,7 @@ func resetHandler(w http.ResponseWriter, r *http.Request) {
 
 func SetUpHttp() {
 	http.HandleFunc("/channel/", channelHandler)
+	http.HandleFunc("/player/", playerInfoHandler)
 	if Config.Debug {
 		http.HandleFunc("/test", testHandler)
 		http.HandleFunc("/reset", resetHandler)
