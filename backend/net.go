@@ -473,7 +473,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 
 		incorrectReason := ""
 
-		texts := strings.Split(text, "/")
+		texts := strings.Split(text, " ")
 		correct, articleIdx, sentenceIdx := lookupText(texts)
 		if !correct {
 			if articleIdx != -1 {
