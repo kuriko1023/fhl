@@ -7,7 +7,8 @@
       </subject-block>
     </view>
     <view id="answering" style="display: flex; margin: 0 15px">
-      <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
+      <image class="circle" :style="((side === 1) ^ isHost) ? '' : 'display: none'" :src="hostAvatar" mode="widthFix"></image>
+      <image class="circle" :style="((side === 0) ^ isHost) ? '' : 'display: none'" :src="guestAvatar" mode="widthFix"></image>
       <view style="display: flex;">
         <view v-for="word in answer" :key="word.word">
           <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</text>
@@ -69,6 +70,8 @@ export default {
   data() {
     return {
       isHost: false,
+      hostAvatar: '',
+      guestAvatar: '',
       answerColor: {
         0: '#000000',
         1: '#ad2b29',
@@ -130,6 +133,8 @@ export default {
     this.registerSocketMessageListener();
     this.isHost = getApp().globalData.isHost;
     this.side = (this.isHost ? 0 : 1);
+    this.hostAvatar = getApp().globalData.hostAvatar;
+    this.guestAvatar = getApp().globalData.guestAvatar;
   },
   methods:{
     pop(){

@@ -141,6 +141,8 @@ export default {
     },
     startGame() {
       this.sendSocketMessage({type: 'start_generate'});
+      getApp().globalData.hostAvatar = this.hostAvatar;
+      getApp().globalData.guestAvatar = this.guestAvatar;
       uni.redirectTo({
         url: "/pages/ChoosePage/ChoosePage"
       })
