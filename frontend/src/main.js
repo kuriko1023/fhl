@@ -51,17 +51,40 @@ Vue.prototype.requestLocalProfile = function (callback) {
 };
 
 let socketTask = null;
+let socketCloseCallback = null;
+let socketUrl = null;
 
 let messageListener = null;
 const messageQueue = [];
 
+uni.onSocketClose(() => {
+  console.log('socket closed!');
+  socketTask = null;
+  messageQueue.splice(0);
+  if (socketCloseCallback) {
+    socketCloseCallback();
+    socketCloseCallback = null;
+  } else {
+    // Unexpected disconnection
+    console.log('unexpected disconnection');
+    const conn = () => socketUrl().then((url) => socketTask = uni.connectSocket({
+      url: url,
+      success: () => {
+        console.log('reconnected! ' + url)
+      },
+      fail: () => setTimeout(conn, 1000),
+    }));
+    conn();
+  }
+});
+
 Vue.prototype.connectSocket = function (obj) {
-  const conn = () => {
-    messageQueue.splice(0);
-    socketTask = uni.connectSocket(obj);
-  };
+  socketUrl = obj.url;
+  const conn = () =>
+    socketUrl().then((url) =>
+      socketTask = uni.connectSocket(Object.assign(obj, {url: url})));
   if (socketTask) {
-    socketTask.onClose(conn);
+    socketCloseCallback = conn;
     socketTask.close();
   } else {
     conn();
@@ -69,8 +92,9 @@ Vue.prototype.connectSocket = function (obj) {
 };
 
 Vue.prototype.closeSocket = function () {
+  if (!socketTask) return;
+  socketCloseCallback = () => socketTask = null;
   socketTask.close();
-  socketTask.onClose(() => socketTask = null);
 };
 
 Vue.prototype.registerSocketMessageListener = function () {
@@ -94,10 +118,6 @@ Vue.prototype.popSocketMessage = (types) => {
   }
   return {_none: true};
 };
-
-uni.onSocketClose(() => {
-  console.log('socket closed!');
-});
 
 uni.onSocketMessage((res) => {
   let payload = res.data;
