@@ -123,6 +123,8 @@ export default {
         this.hostStatus = msg.host_status;  // absent, present, ready
         this.guest = (msg.guest || '');
         this.guestAvatar = 'https://flyhana.starrah.cn/avatar/' + (msg.guest_avatar || '');
+        getApp().globalData.hostAvatar = this.hostAvatar;
+        getApp().globalData.guestAvatar = this.guestAvatar;
       } else if (msg.type === 'start_generate') {
         uni.redirectTo({
           url: "/pages/ChoosePage/ChoosePage"
@@ -141,8 +143,6 @@ export default {
     },
     startGame() {
       this.sendSocketMessage({type: 'start_generate'});
-      getApp().globalData.hostAvatar = this.hostAvatar;
-      getApp().globalData.guestAvatar = this.guestAvatar;
       uni.redirectTo({
         url: "/pages/ChoosePage/ChoosePage"
       })
