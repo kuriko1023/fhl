@@ -220,7 +220,7 @@ export default {
 
     onSocketMessage() {
       if (this.peekSocketMessage().type === 'end_status') {
-        uni.navigateTo({
+        uni.redirectTo({
           url: '/pages/EndPage/EndPage'
         });
         return;
@@ -278,12 +278,6 @@ export default {
             console.log(this.myExtraTime, this.sideExtraTime);
             this.changeSide()
           }, 2000);
-          break
-        }
-        case 'game_end':{
-          uni.navigateTo({
-            'url': '/pages/EndPage/EndPage'
-          })
           break
         }
         case 'invalid_answer':{
