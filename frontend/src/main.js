@@ -140,7 +140,7 @@ Vue.prototype.historySentenceParse = function(str) {
     let parse = str.split('/')
     for(let j = 0; j < parse[0].length; j++){
         let tmpObject = {}
-        tmpObject.word = parse[0][j]
+        tmpObject.word = (parse[0][j] === ' ' ? '　' : parse[0][j])
         let index = j.toString(36)
         if(parse[1].indexOf(index) !== -1){
             tmpObject.highlight = 1

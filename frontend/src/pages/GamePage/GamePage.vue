@@ -204,12 +204,12 @@ export default {
       if (this.sendingAnswer) return;
       this.sendingAnswer = true
       const normalizedAnswer = this.inputAnswer
-        .replace(/ ，。？！/g, ' ')
-        .replace(/\/+/g, ' ')
+        .replace(/[ ，。？！\/,.?!]+/g, ' ')
         .replace(/《》“”「」『』—/g, '')
+        .trim()
       this.sendSocketMessage({
         'type': 'answer',
-        'text': this.inputAnswer,
+        'text': normalizedAnswer,
       })
     },
 
