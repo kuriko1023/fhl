@@ -1,11 +1,31 @@
 <template>
   <view>
-    <image class="background" src="/static/game_background.png" ></image>
+    <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
     <view>
       <view style="text-align: center;">
-      <image mode="widthFix" class="result" :src=" win === 1 ? '/static/victory.png' : win === 0 ? '/static/tie.png' : '/static/lose.png' "></image>
+      <image mode="widthFix" class="result" :src=" win === 1 ? 'https://flyhana.starrah.cn/static/victory.png' : win === 0 ? 'https://flyhana.starrah.cn/static/tie.png' : 'https://flyhana.starrah.cn/static/lose.png' "></image>
       </view>
-      <image src="/static/history_background.png" class="history_background"></image>
+      <view >
+        <uni-row>
+
+          <uni-col :span="8">
+        <view >
+        <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
+        <p style="font-size: 12px; color: #666666">{{ host }}</p>
+        </view>
+          </uni-col>
+          <uni-col :span="8">
+           <image class="vs"  src="/static/vs.png" mode="widthFix"></image>
+          </uni-col>
+          <uni-col :span="8">
+        <view >
+          <image class="circle" :src="'https://flyhana.starrah.cn/static/' + (guest !== '' ? 'picture1.jpg' : 'grey_avatar_132.jpg')" mode="widthFix"></image>
+          <p style="font-size: 12px; color: #666666">{{ guest !== '' ? guest : '客人' }}</p>
+        </view>
+          </uni-col>
+        </uni-row>
+      </view>
+      <image src="https://flyhana.starrah.cn/static/history_background.png" class="history_background"></image>
     <view  class="info">
     <view>
       <subject-block :mode="mode" :subject="subject" />
@@ -34,6 +54,8 @@ name: "EndPage",
       subject: {},
       history: [],
       win: 0,
+      host: '',
+      guest: '',
     }
   },
   onLoad() {
@@ -52,7 +74,7 @@ name: "EndPage",
       this.mode = msg.mode;
       this.subject = this.parseSubject(msg.mode, msg.subject);
       this.history = msg.history.map((item) => this.historySentenceParse(item));
-      this.win = msg.win;
+      this.win = msg.winner;
     },
   }
 }
@@ -93,5 +115,12 @@ name: "EndPage",
   height: 80%;
   width: 88%;
   margin: 0 6% 10px 6%;
+}
+.circle {
+  width: 35px;
+  border-radius: 50%;
+}
+.vs{
+  width: 50px;
 }
 </style>

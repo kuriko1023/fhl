@@ -1,6 +1,6 @@
 <template>
 	<view class="content">
-		<image class="logo" src="/static/logo.png"></image>
+		<image class="logo" src="https://flyhana.starrah.cn/static/logo.png"></image>
 		<view>
 			<text class="title">{{title}}</text>
 			<br>

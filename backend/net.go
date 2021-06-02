@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	cumulativeTimer = 20000
-	turnTimer       = 6000
+	cumulativeTimer = 60000
+	turnTimer       = 60000
 )
 
 var upgrader = websocket.Upgrader{
@@ -210,6 +210,7 @@ func resetRoomState(room *Room) {
 	room.State = ""
 	room.HostReady = false
 	room.Guest = ""
+	room.Subject = nil
 }
 
 func errorMsg(s string) map[string]string {
@@ -697,6 +698,8 @@ func SetUpHttp() {
 		http.HandleFunc("/test", testHandler)
 		http.HandleFunc("/reset", resetHandler)
 	}
+	http.Handle("/static/", http.StripPrefix("/static/",
+		http.FileServer(http.Dir("../frontend/src/static_remote"))))
 
 	port := Config.Port
 	log.Printf("Listening on http://localhost:%d/\n", port)

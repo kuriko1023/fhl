@@ -1,15 +1,15 @@
 <template>
   <view>
-    <image class="background" src="/static/game_background.png" ></image>
+    <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
     <view class="content">
 <!--      <uni-row>-->
 <!--        <uni-col :span="12">-->
           <view class="modeChoose">
             <radio-group @change="onModeChange" >
-              <label><radio class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">单字飞花</span></label>
-              <label><radio class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">多字飞花</span></label>
-              <label><radio class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">超级飞花</span></label>
-              <label><radio class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">谜之飞花</span></label>
+              <label><radio class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">梦笔生花</span></label>
+              <label><radio class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">走马观花</span></label>
+              <label><radio class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">天女散花</span></label>
+              <label><radio class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">雾里看花</span></label>
             </radio-group>
           </view>
 <!--        </uni-col>-->
@@ -94,9 +94,9 @@ name: "ChoosePage",
       isSubject: false,
       subject: {},
       rule: {
-        'A': "题目为一个字或词，玩家需轮流说出带有该字（词）的合法诗句。",
+        'A': "题目为一个字或词，玩家需轮流说出带有该字（词）的合法诗句。如：\n 给出的题目吗为【霜】， 玩家回答【空里流霜不觉飞】即符合规则。",
         'B': "题目为一句诗句，从该诗句中选取若干个字，玩家依次说出包含当前关键字的合法诗句。  如：\n" +
-            "给出的题目诗句为 “春花秋月何时了” , 则玩家依次说出含有春、花、秋、月、何、时的诗句。",
+            "给出的题目诗句为 【春花秋月何时】了 , 则两个玩家玩家各自轮流说出含有春、花、秋、月、何、时的诗句。",
         'C': "题目生成一组固定字词，与一组可消去字词，玩家轮流从固定字词与可消去字词中各选择一个，说出同时含有两者的诗句，即可消去一个字词。\n" +
             "  如：\n" +
             "    给出的题目为 固定字词：【山 天】 可消去字词：【水、青、红、明月、松】， 玩家回答 【斜阳却在青山外】后，即可消去字词 青。",
