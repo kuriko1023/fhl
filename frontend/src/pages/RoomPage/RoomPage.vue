@@ -11,7 +11,7 @@
         <view style="display: inline-block">
           <view style="float: left; width: 100px; text-align: center;">
             <image class="circle" :src="hostAvatar" mode="widthFix"></image>
-            <p style="font-size: 12px; color: #666666">{{ host }}</p>
+            <p style="font-size: 12px; color: #666666; height: 18px">{{ host }}</p>
           </view>
           <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ hostStatus === 'ready' ? '已准备' : hostStatus === 'present' ? '在线' : '离线' }}</p>
         </view>
@@ -20,7 +20,7 @@
         <view style="display: inline-block">
           <view style="float: left; width: 100px; text-align: center;">
             <image class="circle" :src="guestAvatar" mode="widthFix"></image>
-            <p style="font-size: 12px; color: #666666">{{ guest !== '' ? guest : '客人' }}</p>
+            <p style="font-size: 12px; color: #666666; height: 18px">{{ guest !== '' ? guest : '客人' }}</p>
           </view>
           <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ guest !== '' ? '已准备' : '未进入' }}</p>
         </view>
@@ -77,9 +77,17 @@ export default {
         this.room = room;
       }
 
-      uni.login({success: (res) => this.connectSocket({
-        // url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
-        url: 'wss://flyhana.starrah.cn/channel/' + this.room + '/' + res.code,
+      const urlPromise = () => new Promise((resolve, reject) => {
+        uni.login({
+          success: (res) => resolve(
+            // 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
+            'wss://flyhana.starrah.cn/channel/' + this.room + '/' + res.code,
+          ),
+          fail: () => reject(),
+        });
+      });
+      this.connectSocket({
+        url: urlPromise,
         success: () => {
           // setTimeout(() => this.connected = true, 1000)
           this.connected = true;
@@ -88,13 +96,10 @@ export default {
         fail: () => {
           this.status = '连接失败';
         },
-      })});
+      });
 
       this.isHost = getApp().globalData.isHost = (this.room === getApp().globalData.my.id);
     });
-  },
-  onUnload() {
-    this.closeSocket();
   },
   onShareAppMessage (res) {
     return {

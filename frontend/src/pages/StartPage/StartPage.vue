@@ -14,6 +14,9 @@ name: "StartPage",
   onLoad() {
     this.retrieveServerProfile(() => this.profileInitialized = true)
   },
+  onShow() {
+    this.closeSocket()
+  },
   methods: {
     onEnter(){
       this.requestLocalProfile(() => this.enterRoom())
