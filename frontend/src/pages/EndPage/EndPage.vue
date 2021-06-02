@@ -3,9 +3,10 @@
     <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
     <view>
       <view style="text-align: center;">
-      <image mode="widthFix" class="result" :src=" win === 1 ? 'https://flyhana.starrah.cn/static/victory.png' : win === 0 ? 'https://flyhana.starrah.cn/static/tie.png' : 'https://flyhana.starrah.cn/static/lose.png' "></image>
+<!--        <image mode="widthFix" class="result_background" src="/static/result.png"></image>-->
+        <image mode="widthFix" class="result" :src=" win === 1 ? 'https://flyhana.starrah.cn/static/victory.png' : win === 0 ? 'https://flyhana.starrah.cn/static/tie.png' : 'https://flyhana.starrah.cn/static/lose.png' "></image>
       </view>
-      <view >
+      <view style="text-align: center; margin: 10px 0 5px 0; padding: 0 30px">
         <uni-row>
 
           <uni-col :span="8">
@@ -15,7 +16,8 @@
         </view>
           </uni-col>
           <uni-col :span="8">
-           <image class="vs"  src="/static/vs.png" mode="widthFix"></image>
+           <image class="vs"  src="https://flyhana.starrah.cn/static/vs.png" mode="widthFix"></image>
+<!--            <p style="font-family: '楷体'; font-size: 24px; font-weight: bold">对战</p>-->
           </uni-col>
           <uni-col :span="8">
         <view >
@@ -87,6 +89,9 @@ name: "EndPage",
   margin-top: 10px;
   margin-bottom: 10px;
 }
+.result_background{
+  width: 35%;
+}
 .background{
   position: absolute;
   height: 100%;
@@ -105,14 +110,14 @@ name: "EndPage",
 
 .info{
   position: absolute;
-  height: 80%;
+  height: 65%;
   width: 88%;
   margin: 0 6% 10px 6%;
   overflow: scroll;
 }
 .history_background{
   position: absolute;
-  height: 80%;
+  height: 65%;
   width: 88%;
   margin: 0 6% 10px 6%;
 }
@@ -121,6 +126,6 @@ name: "EndPage",
   border-radius: 50%;
 }
 .vs{
-  width: 50px;
+  width: 60px;
 }
 </style>
