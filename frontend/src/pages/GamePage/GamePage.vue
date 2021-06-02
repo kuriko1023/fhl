@@ -7,8 +7,9 @@
       </subject-block>
     </view>
     <view id="answering" style="display: flex; margin: 0 15px">
-      <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
-      <view style="display: flex;">
+      <image class="circle" :style="((side === 1) ^ isHost) ? '' : 'display: none'" :src="hostAvatar" mode="widthFix"></image>
+      <image class="circle" :style="((side === 0) ^ isHost) ? '' : 'display: none'" :src="guestAvatar" mode="widthFix"></image>
+      <view style="display: flex; width: 100%; overflow: scroll">
         <view v-for="word in answer" :key="word.word">
           <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</text>
         </view>
@@ -33,7 +34,7 @@
           <input placeholder="输入答案" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="20" v-model='inputAnswer' />
 
 <!--            TODO: 是否有效-->
-        <view v-if='side === 0' form-type="submit" :class="'btn' + (sendingAnswer ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
+        <view v-if='side === 0' form-type="submit" :class="'btn' + (answerSendTimer !== -1 ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
         </view>
       </form>
     </view>
@@ -68,6 +69,9 @@ export default {
   },
   data() {
     return {
+      isHost: false,
+      hostAvatar: '',
+      guestAvatar: '',
       answerColor: {
         0: '#000000',
         1: '#ad2b29',
@@ -122,11 +126,15 @@ export default {
       answer:  [],
       history: [],
       inputAnswer: '',
-      sendingAnswer: false,
+      answerSendTimer: -1,
     }
   },
   onLoad() {
     this.registerSocketMessageListener();
+    this.isHost = getApp().globalData.isHost;
+    this.side = (this.isHost ? 0 : 1);
+    this.hostAvatar = getApp().globalData.hostAvatar;
+    this.guestAvatar = getApp().globalData.guestAvatar;
   },
   methods:{
     pop(){
@@ -197,18 +205,36 @@ export default {
         'url': '/pages/EndPage/EndPage'
       })
     },
+    clearAnswerSendTimer() {
+      if (this.answerSendTimer !== -1) {
+        clearTimeout(this.answerSendTimer)
+        this.answerSendTimer = -1
+        return true
+      } else {
+        return false
+      }
+    },
     onSubmitAnswer(e){
-      if (this.sendingAnswer) return;
-      this.sendingAnswer = true
+      if (this.answerSendTimer !== -1) return;
+      this.answerSendTimer = setTimeout(() => {
+        if (this.clearAnswerSendTimer()) {
+          this.popMessage = '【断线】请检查网络连接并重试'
+          this.pop()
+        }
+      }, 5000)
+      const normalizedAnswer = this.inputAnswer
+        .replace(/[ ，。？！\/,.?!]+/g, ' ')
+        .replace(/《》“”「」『』—/g, '')
+        .trim()
       this.sendSocketMessage({
         'type': 'answer',
-        'text': this.inputAnswer,
+        'text': normalizedAnswer,
       })
     },
 
     onSocketMessage() {
       if (this.peekSocketMessage().type === 'end_status') {
-        uni.navigateTo({
+        uni.redirectTo({
           url: '/pages/EndPage/EndPage'
         });
         return;
@@ -231,9 +257,9 @@ export default {
           console.log('game_update', msg);
           this.answer = this.historySentenceParse(msg.text)
           this.active1 = this.active2 = false
-          this.inputAnswer = ''
+          if (this.side === 0) this.inputAnswer = ''
           setTimeout(() => {
-            this.sendingAnswer = false
+            this.clearAnswerSendTimer()
             switch (this.mode){
               case 'B': {
                 let index = parseInt(msg.update)
@@ -268,14 +294,8 @@ export default {
           }, 2000);
           break
         }
-        case 'game_end':{
-          uni.navigateTo({
-            'url': '/pages/EndPage/EndPage'
-          })
-          break
-        }
         case 'invalid_answer':{
-          this.sendingAnswer = false
+          this.clearAnswerSendTimer()
           let popupText = '【' + msg.reason + '】　'
           switch (msg.reason) {
             case '不审题': popupText += '不匹配剩余的关键词'; break;

@@ -1,6 +1,6 @@
 <template>
   <view id="background">
-    <image class="startButton" @click="onEnter" src="https://flyhana.starrah.cn/static/game_start.png"></image>
+    <image v-if='profileInitialized' class="startButton" @click="onEnter" src="https://flyhana.starrah.cn/static/game_start.png"></image>
     <image class="background" src="https://flyhana.starrah.cn/static/start_background.png" ></image>
   </view>
 </template>
@@ -8,23 +8,21 @@
 <script>
 export default {
 name: "StartPage",
+  data: () => ({
+    profileInitialized: false,
+  }),
+  onLoad() {
+    this.retrieveServerProfile(() => this.profileInitialized = true)
+  },
+  onShow() {
+    this.closeSocket()
+  },
   methods: {
     onEnter(){
-      console.log("1")
-
-      // 发布时使用 getUserProfile
-      // uni.getUserProfile({
-      // 测试时使用 getUserInfo 会返回「微信用户」和灰色头像
-      uni.getUserInfo({
-        desc: '用于向其他玩家展示头像和昵称',
-        success: (res) => {
-          console.log(res.userInfo.nickName, res.userInfo.avatarUrl)
-        },
-        fail: () => {
-          console.log('getUserProfile() failed')
-        },
-      })
-
+      this.requestLocalProfile(() => this.enterRoom())
+    },
+    enterRoom() {
+      getApp().globalData.myRoom = true;
       uni.navigateTo({
         url: "/pages/RoomPage/RoomPage"
       })

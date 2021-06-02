@@ -29,6 +29,7 @@ name: "History",
       wordColor: {
         0: '#000000',
         1: '#ad2b29',
+        2: '#5e270d',
       }
     }
   }

@@ -2,24 +2,33 @@
   <view>
     <image src="https://flyhana.starrah.cn/static/room.png" class="background"></image>
     <view style="width: 100%; height: 100%; padding-top: 20%">
-      <template v-if='!connected'>
-        {{ status }}
-      </template>
+      <view v-if='!connected' class='center'
+        style='width: 80%; height: 60px; position: relative'>
+        <view class='vertical-center' style='width: 32px; height: 32px; left: 30%'>
+          <!-- Dave Gandy, https://www.flaticon.com/authors/dave-gandy -->
+          <image src='/static/spinner-of-dots.png'
+            class='spinning'
+            style='width: 100%; height: 100%' />
+        </view>
+        <p style='left: 50%' class='vertical-center'>{{ status }}</p>
+      </view>
       <view v-else class="center">
         <view style="margin: 10px 0">
         <view style="display: inline-block">
-          <view style="float: left; width: 100px; text-align: center;">
-            <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
-            <p style="font-size: 12px; color: #666666">{{ host }}</p>
+          <view style="float: left; width: 100px; text-align: center; position: relative;">
+            <p class='badge'>房主</p>
+            <image class="circle" :src="hostAvatar" mode="widthFix"></image>
+            <p style="font-size: 12px; color: #666666; height: 18px">{{ host }}</p>
           </view>
           <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ hostStatus === 'ready' ? '已准备' : hostStatus === 'present' ? '在线' : '离线' }}</p>
         </view>
         </view>
         <view>
         <view style="display: inline-block">
-          <view style="float: left; width: 100px; text-align: center;">
-            <image class="circle" :src="'https://flyhana.starrah.cn/static/' + (guest !== '' ? 'picture1.jpg' : 'grey_avatar_132.jpg')" mode="widthFix"></image>
-            <p style="font-size: 12px; color: #666666">{{ guest !== '' ? guest : '客人' }}</p>
+          <view style="float: left; width: 100px; text-align: center; position: relative;">
+            <p class='badge'>客人</p>
+            <image class="circle" :src="guestAvatar" mode="widthFix"></image>
+            <p style="font-size: 12px; color: #666666; height: 18px">{{ guest !== '' ? guest : '客人' }}</p>
           </view>
           <p style="position: relative; margin-left: 100px; margin-top: 15px;" class="status">{{ guest !== '' ? '已准备' : '未进入' }}</p>
         </view>
@@ -35,7 +44,7 @@
           </uni-col>
           <uni-col :span="12">
             <view>
-              <button @click="startGame" :disabled='!(hostStatus === "ready" && guest !== "")' class="btn2">开始游戏</button>
+              <button @click="startGame" :disabled='!(hostStatus === "ready" && guest !== "" && isHost)' class="btn2">开始游戏</button>
             </view>
           </uni-col>
         </uni-row>
@@ -49,46 +58,95 @@ export default {
   name: "RoomPage",
   data() {
     return {
+      profileInitialized: false,
       connected: false,
-      status: '- 状态 -',
+      status: '获取玩家信息',
+
+      room: '',
 
       host: '',
+      hostAvatar: '',
       hostStatus: '',
       guest: '',
+      guestAvatar: '',
+
+      isHost: false,
     };
   },
   onLoad() {
-    uni.showShareMenu({
-      path: '/ABCDEFG',
+    this.retrieveServerProfile(() => {
+      this.status = '连接房间';
+
+      if (getApp().globalData.myRoom) {
+        delete getApp().globalData.myRoom;
+        this.room = getApp().globalData.my.id;
+      } else {
+        const room = uni.getEnterOptionsSync().query.room;
+        this.room = room;
+      }
+
+      const urlPromise = () => new Promise((resolve, reject) => {
+        uni.login({
+          success: (res) => resolve(
+            // 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
+            'wss://flyhana.starrah.cn/channel/' + this.room + '/' + res.code,
+          ),
+          fail: () => reject(),
+        });
+      });
+      this.connectSocket({
+        url: urlPromise,
+        success: () => {
+          this.registerSocketMessageListener();
+        },
+        fail: () => {
+          this.status = '连接失败';
+        },
+      });
+
+      this.isHost = getApp().globalData.isHost = (this.room === getApp().globalData.my.id);
     });
-    uni.connectSocket({
-      url: 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
-      success: () => {
-        // setTimeout(() => this.connected = true, 1000)
-        this.connected = true;
-        this.registerSocketMessageListener();
-      },
-      fail: () => {
-        this.status = '连接失败';
-      },
-    });
-    getApp().globalData.isHost = true;
+  },
+  onShareAppMessage (res) {
+    return {
+      title: '分享标题',
+      path: '/pages/RoomPage/RoomPage?room=' + this.room,
+      imageUrl: 'https://flyhana.starrah.cn/static/tianzige.png',
+    };
   },
   methods: {
     onSocketMessage() {
       const msg = this.popSocketMessage(['room_status', 'start_generate']);
       if (msg.type === 'room_status') {
+        if (getApp().globalData.my.create) {
+          // 需要发送个人信息
+          delete getApp().globalData.my.create
+          this.sendProfileUpdate()
+          return; // 下次收到消息时更新
+        }
+        this.connected = true;
         this.host = msg.host;
+        this.hostAvatar = 'https://flyhana.starrah.cn/avatar/' + msg.host_avatar;
         this.hostStatus = msg.host_status;  // absent, present, ready
         this.guest = (msg.guest || '');
+        this.guestAvatar = 'https://flyhana.starrah.cn/avatar/' + (msg.guest_avatar || '');
+        getApp().globalData.hostAvatar = this.hostAvatar;
+        getApp().globalData.guestAvatar = this.guestAvatar;
       } else if (msg.type === 'start_generate') {
         uni.redirectTo({
           url: "/pages/ChoosePage/ChoosePage"
         })
       }
     },
+    sendProfileUpdate() {
+      this.sendSocketMessage({
+        type: 'profile',
+        nickname: getApp().globalData.my.nickname,
+        avatar: getApp().globalData.my.avatar,
+      })
+    },
     sitDown() {
-      this.sendSocketMessage({type: 'ready'});
+      this.requestLocalProfile(() => this.sendSocketMessage({type: 'ready'}));
     },
     startGame() {
       this.sendSocketMessage({type: 'start_generate'});
@@ -115,6 +173,7 @@ export default {
 }
 .circle {
   width: 45px;
+  height: 45px;
   border-radius: 50%;
 }
 .center {
@@ -122,6 +181,22 @@ export default {
   width: fit-content;
   /*left: 20%;*/
   margin: auto;
+}
+.vertical-center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.badge {
+  position: absolute;
+  left: -1.5em;
+  top: -0.5ex;
+  font-size: 14px;
+  background-color: #84765e;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 4px;
 }
 
 .bottom {
@@ -147,5 +222,13 @@ export default {
   margin-left: 18%;
   margin-right:10%;
   font-size: 14px;
+}
+
+@keyframes spinning {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinning {
+  animation: spinning 2s linear infinite;
 }
 </style>
