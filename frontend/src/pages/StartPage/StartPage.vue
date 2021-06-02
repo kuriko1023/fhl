@@ -1,7 +1,7 @@
 <template>
   <view id="background">
-    <image class="startButton" @click="onEnter" src="/static/game_start.png"></image>
-    <image class="background" src="/static/start_background.png" ></image>
+    <image class="startButton" @click="onEnter" src="https://flyhana.starrah.cn/static/game_start.png"></image>
+    <image class="background" src="https://flyhana.starrah.cn/static/start_background.png" ></image>
   </view>
 </template>
 
