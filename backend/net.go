@@ -374,6 +374,8 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			p.InRoom.Mode = mode
 			p.InRoom.Subject = subject
 			subjectRepr = subject.Dump()
+		} else {
+			p.InRoom.Subject = nil
 		}
 
 		resp := map[string]interface{}{
