@@ -58,7 +58,7 @@
           </uni-col>
           <uni-col :span="12">
           <view>
-            <button class="btn2" @click="onConfirm">
+            <button class="btn2" @click="onConfirm" :disabled="!isSubject">
               确定
             </button>
           </view>
