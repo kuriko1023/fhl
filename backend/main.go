@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"database/sql"
@@ -27,7 +26,7 @@ func main() {
 	if configPath == "" {
 		configPath = "config.json"
 	}
-	content, err := ioutil.ReadFile(configPath)
+	content, err := os.ReadFile(configPath)
 	if err != nil {
 		panic(err)
 	}

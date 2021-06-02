@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"database/sql"
 )
@@ -11,7 +12,10 @@ import (
 type Player struct {
 	Id       string
 	Nickname string
-	Avatar   string
+	Avatar   []byte
+
+	// 头像上次更新的时刻
+	AvatarUpdated int64
 
 	// 当前所处的房间
 	InRoom *Room
@@ -44,7 +48,7 @@ type Room struct {
 	HostReady bool    // 房主是否坐下
 	Guest     string  // 已经坐下的客人 id
 	State     string  // 游戏状态，空字符串表示等待，gen 表示正在选题，game 表示游戏中
-	Mode      string  // "A" "B" "C" "D" 之一表示游戏玩法。在 gen 状态下，后接空格与 size
+	Mode      string  // "A" "B" "C" "D" 之一表示游戏玩法。在 gen 状态下，后接 size（如 B5）
 	Subject   Subject // 游戏题目与进度（详细见下）
 	// 之前提交的所有文本，偶数下标对应房主，奇数下标对应客人
 	// 若一次提交包含多句（以标点分隔的小段），则用斜杠“/”分隔
@@ -322,7 +326,7 @@ func SetUpDatabase() (*sql.DB, error) {
 
 	// 创建表
 	cmd := "CREATE TABLE IF NOT EXISTS players" +
-		"(id TEXT UNIQUE PRIMARY KEY, nickname TEXT, avatar TEXT)"
+		"(id TEXT UNIQUE PRIMARY KEY, nickname TEXT, avatar BLOB)"
 	if _, err := db.Exec(cmd); err != nil {
 		db.Close()
 		return nil, err
@@ -333,13 +337,14 @@ func SetUpDatabase() (*sql.DB, error) {
 	Rooms = map[string]*Room{}
 
 	// 读取玩家信息
+	now := time.Now().Unix()
 	rows, err := db.Query("SELECT * FROM players")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		p := Player{}
+		p := Player{AvatarUpdated: now}
 		err := rows.Scan(&p.Id, &p.Nickname, &p.Avatar)
 		if err != nil {
 			return nil, err
@@ -370,9 +375,10 @@ func GetPlayer(id string) *Player {
 		return p
 	}
 	p := &Player{
-		Id:       id,
-		Nickname: "猫猫" + id,
-		Avatar:   "https://kawa.moe/favicon.ico",
+		Id:            id,
+		Nickname:      "猫猫" + id,
+		Avatar:        defaultAvatar,
+		AvatarUpdated: time.Now().Unix(),
 	}
 	p.Save()
 	return p

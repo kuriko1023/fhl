@@ -3,8 +3,99 @@ import App from './App'
 
 Vue.config.productionTip = false
 
+Vue.prototype.retrieveServerProfile = function (callback) {
+  if (getApp().globalData.my) {
+    callback();
+    return;
+  }
+  const req = () => uni.login({success: (res) => uni.request({
+    // url: 'https://flyhana.starrah.cn/profile/!kuriko1023',
+    url: 'https://flyhana.starrah.cn/profile/' + res.code,
+    success: (res) => {
+      const obj = res.data;
+      if (!obj || !obj.id) {
+        req();
+        return;
+      }
+      getApp().globalData.my = {
+        id: obj.id,
+        avatar: obj.avatar,
+        nickname: obj.nickname,
+      };
+      callback();
+    },
+    fail: () => req(),
+  })});
+  req();
+};
+
+Vue.prototype.requestLocalProfile = function (callback) {
+  console.log(getApp().globalData.my)
+  if (getApp().globalData.my.nickname === null) {
+    uni.getUserProfile({
+      desc: '用于向其他玩家展示头像和昵称',
+      success: (res) => {
+        console.log(res)
+        getApp().globalData.my.avatar = res.userInfo.avatarUrl
+        getApp().globalData.my.nickname = res.userInfo.nickName
+        getApp().globalData.my.create = true
+        callback()
+      },
+      fail: () => {
+        console.log('getUserProfile() failed')
+      },
+    })
+  } else {
+    callback()
+  }
+};
+
+let socketTask = null;
+let socketCloseCallback = null;
+let socketUrl = null;
+
 let messageListener = null;
 const messageQueue = [];
+
+uni.onSocketClose(() => {
+  console.log('socket closed!');
+  socketTask = null;
+  messageQueue.splice(0);
+  if (socketCloseCallback) {
+    socketCloseCallback();
+    socketCloseCallback = null;
+  } else {
+    // Unexpected disconnection
+    console.log('unexpected disconnection');
+    const conn = () => socketUrl().then((url) => socketTask = uni.connectSocket({
+      url: url,
+      success: () => {
+        console.log('reconnected! ' + url)
+      },
+      fail: () => setTimeout(conn, 1000),
+    }));
+    conn();
+  }
+});
+
+Vue.prototype.connectSocket = function (obj) {
+  socketUrl = obj.url;
+  const conn = () =>
+    socketUrl().then((url) =>
+      socketTask = uni.connectSocket(Object.assign(obj, {url: url})));
+  if (socketTask) {
+    socketCloseCallback = conn;
+    socketTask.close();
+  } else {
+    conn();
+  }
+};
+
+Vue.prototype.closeSocket = function () {
+  if (!socketTask) return;
+  socketCloseCallback = () => socketTask = null;
+  socketTask.close();
+};
 
 Vue.prototype.registerSocketMessageListener = function () {
   messageListener = this;
@@ -13,7 +104,10 @@ Vue.prototype.registerSocketMessageListener = function () {
 };
 
 Vue.prototype.sendSocketMessage =
-  (msg) => uni.sendSocketMessage({data: JSON.stringify(msg)});
+  (msg) => {
+    console.log('send', msg)
+    uni.sendSocketMessage({data: JSON.stringify(msg), success: () => console.log('sent', msg), fail: () => console.log('fail', msg)});
+  }
 
 Vue.prototype.peekSocketMessage = () => messageQueue[0];
 Vue.prototype.tryPopSocketMessage = (type) =>
@@ -27,10 +121,6 @@ Vue.prototype.popSocketMessage = (types) => {
   }
   return {_none: true};
 };
-
-uni.onSocketClose(() => {
-  console.log('socket closed!');
-});
 
 uni.onSocketMessage((res) => {
   let payload = res.data;
@@ -53,7 +143,7 @@ Vue.prototype.historySentenceParse = function(str) {
     let parse = str.split('/')
     for(let j = 0; j < parse[0].length; j++){
         let tmpObject = {}
-        tmpObject.word = parse[0][j]
+        tmpObject.word = (parse[0][j] === ' ' ? '　' : parse[0][j])
         let index = j.toString(36)
         if(parse[1].indexOf(index) !== -1){
             tmpObject.highlight = 1
