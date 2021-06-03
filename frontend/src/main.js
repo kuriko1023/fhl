@@ -175,8 +175,7 @@ Vue.prototype.parseSubject = function (mode, text) {
   let subject = {}
   switch (mode) {
     case 'A': {
-      subject.subject1 = []
-      subject.subject1.push(text)
+      subject.subject1 = text.split('')
       break
     }
     case 'B': {
