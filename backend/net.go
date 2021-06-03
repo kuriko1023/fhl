@@ -834,8 +834,12 @@ func SetUpHttp() {
 		http.HandleFunc("/test", testHandler)
 		http.HandleFunc("/reset", resetHandler)
 	}
-	http.Handle("/static/", http.StripPrefix("/static/",
-		http.FileServer(http.Dir("../frontend/src/static_remote"))))
+	fileServer := http.StripPrefix("/static/",
+		http.FileServer(http.Dir("../frontend/src/static_remote")))
+	http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		fileServer.ServeHTTP(w, r)
+	})
 
 	port := Config.Port
 	log.Printf("Listening on http://localhost:%d/\n", port)
