@@ -110,6 +110,14 @@ Vue.prototype.sendSocketMessage =
   }
 
 Vue.prototype.peekSocketMessage = () => messageQueue[0];
+Vue.prototype.tryPeekSocketMessage = (type) => {
+  for (let i = 0; i < messageQueue.length; i++)
+    if (messageQueue[i].type === type) {
+      messageQueue.splice(0, i);
+      return true;
+    }
+  return false;
+};
 Vue.prototype.tryPopSocketMessage = (type) =>
   (type === undefined || messageQueue[0].type === type) ?
   messageQueue.shift() : {_none: true};

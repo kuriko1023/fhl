@@ -116,12 +116,12 @@ export default {
   },
   methods: {
     onSocketMessage() {
-      if (this.peekSocketMessage().type === 'generated') {
+      if (this.tryPeekSocketMessage('generated')) {
         uni.redirectTo({
           url: "/pages/ChoosePage/ChoosePage"
         })
         return
-      } else if (this.peekSocketMessage().type === 'game_status') {
+      } else if (this.tryPeekSocketMessage('game_status')) {
         uni.redirectTo({
           url: "/pages/GamePage/GamePage"
         })
