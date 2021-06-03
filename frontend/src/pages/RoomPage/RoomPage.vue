@@ -116,7 +116,19 @@ export default {
   },
   methods: {
     onSocketMessage() {
-      const msg = this.popSocketMessage(['room_status', 'start_generate']);
+      if (this.peekSocketMessage().type === 'generated') {
+        uni.redirectTo({
+          url: "/pages/ChoosePage/ChoosePage"
+        })
+        return
+      } else if (this.peekSocketMessage().type === 'game_status') {
+        uni.redirectTo({
+          url: "/pages/GamePage/GamePage"
+        })
+        return
+      }
+
+      const msg = this.popSocketMessage('room_status');
       if (msg.type === 'room_status') {
         if (getApp().globalData.my.create) {
           // 需要发送个人信息
@@ -132,10 +144,6 @@ export default {
         this.guestAvatar = 'https://flyhana.starrah.cn/avatar/' + (msg.guest_avatar || '');
         getApp().globalData.hostAvatar = this.hostAvatar;
         getApp().globalData.guestAvatar = this.guestAvatar;
-      } else if (msg.type === 'start_generate') {
-        uni.redirectTo({
-          url: "/pages/ChoosePage/ChoosePage"
-        })
       }
     },
     sendProfileUpdate() {

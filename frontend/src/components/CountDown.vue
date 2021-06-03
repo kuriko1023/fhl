@@ -35,7 +35,6 @@ name: "CountDown",
   watch: {
     active: function(val){
       //console.log('active')
-      console.log('active', val);
       if(val){
         if (this.int === -1)
           this.int = setInterval(this.intervalFunction, this.time)
@@ -52,11 +51,7 @@ name: "CountDown",
     },
     update: function () {
       const val = this.current;
-      console.log('current', val);
-      if(val !== 0) {
-       // console.log('current')
-        this.cur = 100 - (val / this.time) * 100
-      }
+      this.cur = 100 - (val / this.time) * 100
     }
   },
   methods:{
