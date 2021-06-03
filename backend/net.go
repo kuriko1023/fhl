@@ -738,7 +738,9 @@ messageLoop:
 	// 而 outChannel 不能被外界关闭
 	close(outChannel)
 
-	broadcastRoomStatus(room)
+	if room.State == "" {
+		broadcastRoomStatus(room)
+	}
 
 	log.Println("connection closed")
 }
