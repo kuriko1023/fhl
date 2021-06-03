@@ -70,7 +70,8 @@ name: "CountDown",
   },
   mounted() {
     if (this.active) {
-      this.int = setInterval(this.intervalFunction, this.time)
+      if (this.int === -1)
+        this.int = setInterval(this.intervalFunction, this.time)
     }
   },
   unmounted() {
