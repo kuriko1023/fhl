@@ -35,6 +35,9 @@
         </view>
 <!--        <p>客人：{{ guest }}</p>-->
       </view>
+      <view v-if="isHost && connected" style='text-align: center; font-size: 14px; margin-top: 4ex'>
+        点击右上角「…」按钮<br>邀请好友加入房间
+      </view>
       <view class="bottom">
         <uni-row>
           <uni-col :span="12">
@@ -109,9 +112,9 @@ export default {
   },
   onShareAppMessage (res) {
     return {
-      title: '分享标题',
+      title: '一起来玩飞花令吧',
       path: '/pages/RoomPage/RoomPage?room=' + this.room,
-      imageUrl: 'https://flyhana.starrah.cn/static/tianzige.png',
+      imageUrl: '/static/start_background.jpg',
     };
   },
   methods: {
