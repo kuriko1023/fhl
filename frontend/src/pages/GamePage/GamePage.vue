@@ -248,7 +248,7 @@ export default {
     },
 
     onSocketMessage() {
-      if (this.peekSocketMessage().type === 'end_status') {
+      if (this.tryPeekSocketMessage('end_status')) {
         uni.redirectTo({
           url: '/pages/EndPage/EndPage'
         });

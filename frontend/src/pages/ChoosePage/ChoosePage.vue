@@ -158,7 +158,7 @@ name: "ChoosePage",
       })
     },
     onSocketMessage() {
-      if (this.peekSocketMessage().type === 'game_status') {
+      if (this.tryPeekSocketMessage('game_status')) {
         uni.redirectTo({
           url: '/pages/GamePage/GamePage'
         });
