@@ -50,7 +50,6 @@
         </uni-row>
       </view>
     </view>
-    <view style="font-family: STKaiti; font-size: 12px; position: absolute; left: 6px; bottom: 6px; opacity: 0">字体</view>
   </view>
 </template>
 
