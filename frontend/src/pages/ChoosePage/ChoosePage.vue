@@ -6,10 +6,10 @@
 <!--        <uni-col :span="12">-->
           <view class="modeChoose">
             <radio-group @change="onModeChange" >
-              <label><radio :disabled="!isHost" class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">单字飞花</span></label>
-              <label><radio :disabled="!isHost" class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">多字飞花</span></label>
-              <label><radio :disabled="!isHost" class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">超级飞花</span></label>
-              <label><radio :disabled="!isHost" class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">谜之飞花</span></label>
+              <div><label><radio :disabled="!isHost" class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">梦笔生花</span></label></div>
+              <div><label><radio :disabled="!isHost" class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">走马观花</span></label></div>
+              <div><label><radio :disabled="!isHost" class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">天女散花</span></label></div>
+              <div><label><radio :disabled="!isHost" class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">雾里看花</span></label></div>
             </radio-group>
           </view>
 <!--        </uni-col>-->
@@ -66,7 +66,7 @@
         </uni-row>
         <uni-row v-else>
           <view>
-            <button class="btn-full" disabled="true">
+            <button class="btn-full">
               请等待房主选题
             </button>
           </view>
@@ -103,14 +103,12 @@ name: "ChoosePage",
       subject: {},
       rule: {
         'A': "题目为一个字或词，玩家需轮流说出带有该字（词）的合法诗句。",
-        'B': "题目为一句诗句，从该诗句中选取若干个字，玩家依次说出包含当前关键字的合法诗句。  如：\n" +
-            "给出的题目诗句为 “春花秋月何时了” , 则玩家依次说出含有春、花、秋、月、何、时的诗句。",
-        'C': "题目生成一组固定字词，与一组可消去字词，玩家轮流从固定字词与可消去字词中各选择一个，说出同时含有两者的诗句，即可消去一个字词。\n" +
-            "  如：\n" +
-            "    给出的题目为 固定字词：【山 天】 可消去字词：【水、青、红、明月、松】， 玩家回答 【斜阳却在青山外】后，即可消去字词 青。",
-        'D': "题目生成两组可消去字词。玩家轮流从两组可消去字词中各选择一个，说出同时含有两者的诗句，即可分别消去字词\n" +
-            "  如：\n" +
-            "  给出的题目为 【三、何】【二十、月】，玩家回答【江月何年初照人】，即可消去字词何， 月。",
+        'B': "题目为一句诗句，从该诗句中选取若干个字，玩家依次说出包含当前关键字的合法诗句。\n" +
+            "如题目为【春花秋月何时了】，则玩家依次说出含有春、花、秋、月、何、时、了的诗句。",
+        'C': "题目为一组固定字与一组可消去词，玩家轮流从两组字词中各选择一个，说出同时含有两者的诗句。每个消去词只能被选择一次。\n" +
+            "如题目包括固定字【山】与可消去词【水、青、红、明月、松】，玩家回答【斜阳却在青山外】后，即消去【青】。",
+        'D': "题目为两组字词。玩家轮流从两组字词中各选择一个，说出同时含有两者的诗句。所有词都只能被选择一次。\n" +
+            "如题目为 【三、何】【二十、月】，玩家回答【江月何年初照人】，即消去【何】【月】二词。",
       }
     }
   },
@@ -190,6 +188,7 @@ name: "ChoosePage",
     position: absolute;
     top: 0;
     left: 0;
+    padding: 20px;
   }
   .background{
     position: absolute;
@@ -202,8 +201,12 @@ name: "ChoosePage",
     color: #444444
   }
   .modeChoose{
-    /*width: 50%;*/
-    margin: 0 10px 0 10px;
+    margin: 0 10px 10px 10px;
+  }
+  .modeChoose div {
+    display: inline-block;
+    width: 50%;
+    text-align: center;
   }
   .picker_btn {
     background-color: white;
@@ -227,6 +230,8 @@ name: "ChoosePage",
     font-size: 14px;
   }
   .btn-full{
+    background-color: #689a74;
+    color: white;
     border-radius: 10px;
     margin-left: 9%;
     margin-right:9%;
@@ -237,19 +242,16 @@ name: "ChoosePage",
     color: #366440;
     font-weight: bold;
   }
-  .content {
-    margin: 20px;
-  }
   .content_background {
     background-color: #fdf8ed;
     border: 1.3px solid #975f5b;
     border-radius: 10px;
-    padding: 10px;
+    padding: 7px 10px;
     horiz-align: center;
-    position: absolute;
     min-height: 100px;
     margin: 5px 10px;
     font-size: 14px;
+    line-height: 1.6;
   }
   .bottom {
     position: fixed;
