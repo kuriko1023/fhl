@@ -9,7 +9,7 @@
     <view id="answering" style="display: flex; margin: 0 15px">
       <image class="circle" :style="((side === 1) ^ isHost) ? '' : 'display: none'" :src="hostAvatar" mode="widthFix"></image>
       <image class="circle" :style="((side === 0) ^ isHost) ? '' : 'display: none'" :src="guestAvatar" mode="widthFix"></image>
-      <view style="display: flex;">
+      <view style="display: flex; width: 100%; overflow: scroll">
         <view v-for="word in answer" :key="word.word">
           <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</text>
         </view>
