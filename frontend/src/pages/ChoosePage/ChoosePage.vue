@@ -120,7 +120,6 @@ name: "ChoosePage",
   onLoad() {
     this.registerSocketMessageListener();
     this.isHost = getApp().globalData.isHost;
-    this.isHost = true
   },
   methods:{
     sendChoice(){

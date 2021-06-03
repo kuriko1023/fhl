@@ -227,7 +227,7 @@ export default {
         .trim()
       this.sendSocketMessage({
         'type': 'answer',
-        'text': '!' + normalizedAnswer,
+        'text': normalizedAnswer,
       })
     },
     updateTimers (msg) {
