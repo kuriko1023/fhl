@@ -2,14 +2,21 @@
   <view>
     <image src="https://flyhana.starrah.cn/static/room.png" class="background"></image>
     <view style="width: 100%; height: 100%; padding-top: 20%">
-      <template v-if='!connected'>
-        {{ status }}
-      </template>
+      <view v-if='!connected' class='center'
+        style='width: 80%; height: 60px; position: relative'>
+        <view class='vertical-center' style='width: 32px; height: 32px; left: 30%'>
+          <!-- Dave Gandy, https://www.flaticon.com/authors/dave-gandy -->
+          <image src='/static/spinner-of-dots.png'
+            class='spinning'
+            style='width: 100%; height: 100%' />
+        </view>
+        <p style='left: 50%' class='vertical-center'>{{ status }}</p>
+      </view>
       <view v-else class="center">
         <view style="margin: 10px 0">
-        room = [{{ room.substr(0, 8) }}]<br><br>
         <view style="display: inline-block">
-          <view style="float: left; width: 100px; text-align: center;">
+          <view style="float: left; width: 100px; text-align: center; position: relative;">
+            <p class='badge'>房主</p>
             <image class="circle" :src="hostAvatar" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666; height: 18px">{{ host }}</p>
           </view>
@@ -18,7 +25,8 @@
         </view>
         <view>
         <view style="display: inline-block">
-          <view style="float: left; width: 100px; text-align: center;">
+          <view style="float: left; width: 100px; text-align: center; position: relative;">
+            <p class='badge'>客人</p>
             <image class="circle" :src="guestAvatar" mode="widthFix"></image>
             <p style="font-size: 12px; color: #666666; height: 18px">{{ guest !== '' ? guest : '客人' }}</p>
           </view>
@@ -89,8 +97,6 @@ export default {
       this.connectSocket({
         url: urlPromise,
         success: () => {
-          // setTimeout(() => this.connected = true, 1000)
-          this.connected = true;
           this.registerSocketMessageListener();
         },
         fail: () => {
@@ -118,6 +124,7 @@ export default {
           this.sendProfileUpdate()
           return; // 下次收到消息时更新
         }
+        this.connected = true;
         this.host = msg.host;
         this.hostAvatar = 'https://flyhana.starrah.cn/avatar/' + msg.host_avatar;
         this.hostStatus = msg.host_status;  // absent, present, ready
@@ -175,6 +182,22 @@ export default {
   /*left: 20%;*/
   margin: auto;
 }
+.vertical-center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.badge {
+  position: absolute;
+  left: -1.5em;
+  top: -0.5ex;
+  font-size: 14px;
+  background-color: #84765e;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
 
 .bottom {
   position: fixed;
@@ -199,5 +222,13 @@ export default {
   margin-left: 18%;
   margin-right:10%;
   font-size: 14px;
+}
+
+@keyframes spinning {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinning {
+  animation: spinning 2s linear infinite;
 }
 </style>
