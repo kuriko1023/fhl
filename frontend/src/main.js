@@ -104,7 +104,10 @@ Vue.prototype.registerSocketMessageListener = function () {
 };
 
 Vue.prototype.sendSocketMessage =
-  (msg) => uni.sendSocketMessage({data: JSON.stringify(msg)});
+  (msg) => {
+    console.log('send', msg)
+    uni.sendSocketMessage({data: JSON.stringify(msg), success: () => console.log('sent', msg), fail: () => console.log('fail', msg)});
+  }
 
 Vue.prototype.peekSocketMessage = () => messageQueue[0];
 Vue.prototype.tryPopSocketMessage = (type) =>

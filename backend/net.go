@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	cumulativeTimer = 60000
-	turnTimer       = 60000
+	cumulativeTimer = 20000
+	turnTimer       = 6000
 )
 
 var upgrader = websocket.Upgrader{
@@ -143,6 +143,9 @@ func broadcastRoomStatus(room *Room) {
 // 一位玩家选择坐下
 func playerReady(p *Player) bool {
 	room := p.InRoom
+	if room.State != "" {
+		return false
+	}
 	if room.Host == p.Id {
 		room.HostReady = true
 	} else {
@@ -156,6 +159,20 @@ func playerReady(p *Player) bool {
 	return true
 }
 
+func roomGenerateStatus(room *Room) map[string]interface{} {
+	subjectRepr := interface{}(nil)
+	if subject := room.Subject; subject != nil {
+		subjectRepr = subject.Dump()
+	}
+	size, _ := strconv.Atoi(room.Mode[1:])
+	return map[string]interface{}{
+		"type":    "generated",
+		"mode":    room.Mode[0:1],
+		"size":    size,
+		"subject": subjectRepr,
+	}
+}
+
 func roomHistoryStrings(room *Room) []string {
 	history := []string{}
 	for _, a := range room.History {
@@ -164,21 +181,26 @@ func roomHistoryStrings(room *Room) []string {
 	return history
 }
 
-// 向游戏中的两位玩家更新游戏状态
-func bicastGameStatus(room *Room) {
-	object := map[string]interface{}{
+func roomGameStatus(room *Room) map[string]interface{} {
+	hostTimer := room.HostTimer
+	guestTimer := room.GuestTimer
+	curTurnTimer := turnTimer - int(nowMilliseconds()-room.LastMoveAt)
+	if curTurnTimer < 0 {
+		if room.CurMoveSide == SideHost {
+			hostTimer += curTurnTimer
+		} else {
+			guestTimer += curTurnTimer
+		}
+		curTurnTimer = 0
+	}
+	return map[string]interface{}{
 		"type":        "game_status",
 		"mode":        room.Mode,
 		"subject":     room.Subject.Dump(),
 		"history":     roomHistoryStrings(room),
-		"host_timer":  room.HostTimer,
-		"guest_timer": room.GuestTimer,
-	}
-	if Players[room.Host].Channel != nil {
-		Players[room.Host].Channel <- object
-	}
-	if room.Guest != "" && Players[room.Guest].Channel != nil {
-		Players[room.Guest].Channel <- object
+		"host_timer":  hostTimer,
+		"guest_timer": guestTimer,
+		"turn_timer":  curTurnTimer,
 	}
 }
 
@@ -309,10 +331,9 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			panic("Room should be idle with two ready players")
 		}
 		p.InRoom.State = "gen"
+		p.InRoom.Mode = "A"
 		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
-			Players[p.InRoom.Guest].Channel <- map[string]string{
-				"type": "start_generate",
-			}
+			Players[p.InRoom.Guest].Channel <- roomGenerateStatus(p.InRoom)
 		}
 
 	case "set_mode":
@@ -331,7 +352,28 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			panic("Incorrect format")
 		}
 
-		subjectRepr := interface{}(nil)
+		// 检查 size
+		switch mode {
+		case "A":
+			if size != 0 {
+				panic("Incorrect size")
+			}
+		case "B":
+			if size < 5 || size > 9 {
+				panic("Incorrect size")
+			}
+		case "C":
+			if size != 1 && size != 3 {
+				panic("Incorrect size")
+			}
+		case "D":
+			if size < 5 || size > 10 {
+				panic("Incorrect size")
+			}
+		}
+		p.InRoom.Mode = mode + strconv.Itoa(size)
+
+		// 生成题目
 		if isGenerate {
 			var subject Subject
 			switch mode {
@@ -344,15 +386,9 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 				}
 				subject = &SubjectA{Word: word}
 			case "B":
-				if size < 5 || size > 9 {
-					panic("Incorrect size")
-				}
 				words := generateB(size)
 				subject = &SubjectB{Words: []rune(words), CurIndex: 0}
 			case "C":
-				if size != 1 && size != 3 {
-					panic("Incorrect size")
-				}
 				left, right := generateC(size, 7+3*size)
 				subject = &SubjectC{
 					WordsLeft:  left,
@@ -360,9 +396,6 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 					UsedRight:  make([]bool, 10),
 				}
 			case "D":
-				if size < 5 || size > 10 {
-					panic("Incorrect size")
-				}
 				left, right := generateD(size)
 				subject = &SubjectD{
 					WordsLeft:  left,
@@ -371,24 +404,17 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 					UsedRight:  make([]bool, size),
 				}
 			}
-			p.InRoom.Mode = mode
 			p.InRoom.Subject = subject
-			subjectRepr = subject.Dump()
 		} else {
 			p.InRoom.Subject = nil
 		}
 
-		resp := map[string]interface{}{
-			"type":    "generated",
-			"mode":    mode,
-			"size":    size,
-			"subject": subjectRepr,
-		}
+		object := roomGenerateStatus(p.InRoom)
 		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
-			Players[p.InRoom.Guest].Channel <- resp
+			Players[p.InRoom.Guest].Channel <- object
 		}
 		if isGenerate {
-			p.Channel <- resp
+			p.Channel <- object
 		}
 
 	case "start_game":
@@ -403,6 +429,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		}
 
 		p.InRoom.State = "game"
+		p.InRoom.Mode = p.InRoom.Mode[0:1]
 		p.InRoom.History = []CorrectAnswer{}
 		p.InRoom.HistorySet = map[string]struct{}{}
 		p.InRoom.LastMoveAt = nowMilliseconds()
@@ -410,7 +437,13 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		p.InRoom.HostTimer = cumulativeTimer
 		p.InRoom.GuestTimer = cumulativeTimer
 
-		bicastGameStatus(p.InRoom)
+		object := roomGameStatus(p.InRoom)
+		if Players[p.InRoom.Host].Channel != nil {
+			Players[p.InRoom.Host].Channel <- object
+		}
+		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
+			Players[p.InRoom.Guest].Channel <- object
+		}
 
 		p.InRoom.TimerStopSignal = make(chan struct{})
 		go func(room *Room) {
@@ -422,13 +455,13 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 					return
 				case <-time.After(time.Second / 2):
 					m.Lock()
-					var turnTimer int
+					var curTimer int
 					var oppTimer int
 					if room.CurMoveSide == SideHost {
-						turnTimer = room.HostTimer
+						curTimer = room.HostTimer
 						oppTimer = room.GuestTimer
 					} else {
-						turnTimer = room.GuestTimer
+						curTimer = room.GuestTimer
 						oppTimer = room.HostTimer
 					}
 					if oppTimer < 0 {
@@ -444,7 +477,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 					if timeUsed < 0 {
 						timeUsed = 0
 					}
-					if turnTimer < timeUsed {
+					if curTimer < timeUsed {
 						bicastGameEnd(room, 1-room.CurMoveSide)
 						resetRoomState(room)
 						room.TimerStopSignal = nil
@@ -645,7 +678,13 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		close(ch)
 	}(c, inChannel)
 
-	broadcastRoomStatus(room)
+	if room.State == "" {
+		broadcastRoomStatus(room)
+	} else if room.State == "gen" {
+		outChannel <- roomGenerateStatus(room)
+	} else if room.State == "game" {
+		outChannel <- roomGameStatus(room)
+	}
 
 	pingTicker := time.NewTicker(5 * time.Second)
 	defer pingTicker.Stop()
@@ -682,10 +721,13 @@ messageLoop:
 	// 清除全局存储的状态
 	DataMutex.Lock()
 	room.People = removeElement(room.People, player)
-	if player.Id == room.Host {
-		room.HostReady = false
-	} else if player.Id == room.Guest {
-		room.Guest = ""
+	if room.State == "" {
+		// 只有房间处于等待状态时，才认为是退出了房间
+		if player.Id == room.Host {
+			room.HostReady = false
+		} else if player.Id == room.Guest {
+			room.Guest = ""
+		}
 	}
 	player.InRoom = nil
 	player.Channel = nil
