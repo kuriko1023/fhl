@@ -2,6 +2,7 @@
   <view id="background">
     <image v-if='profileInitialized' class="startButton" @click="onEnter" src="https://flyhana.starrah.cn/static/game_start.png"></image>
     <image class="background" src="https://flyhana.starrah.cn/static/start_background.png" ></image>
+    <view style="font-family: STKaiti; font-size: 12px; position: absolute; left: 6px; bottom: 6px; opacity: 0">字体</view>
   </view>
 </template>
 

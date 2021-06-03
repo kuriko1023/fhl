@@ -45,7 +45,7 @@ name: "History",
 }
 
 .kati {
-  font-family: "楷体","楷体_GB2312";
+  font-family: "STKaiti";
   font-size: 21px;
   padding: 5px 1px;
 }

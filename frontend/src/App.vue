@@ -68,4 +68,9 @@
 
   uni-picker .uni-picker-action.uni-picker-action-confirm
   {color: #366440 !important;}
+
+  @font-face {
+    font-family: "STKaiti";
+    src: url("https://flyhana.starrah.cn/static/STKaiti.woff2") format("woff2");
+  }
 </style>

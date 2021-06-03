@@ -17,7 +17,7 @@
           </uni-col>
           <uni-col :span="8">
            <image class="vs"  src="https://flyhana.starrah.cn/static/vs.png" mode="widthFix"></image>
-<!--            <p style="font-family: '楷体'; font-size: 24px; font-weight: bold">对战</p>-->
+<!--            <p style="font-family: 'STKaiti'; font-size: 24px; font-weight: bold">对战</p>-->
           </uni-col>
           <uni-col :span="8">
         <view >
