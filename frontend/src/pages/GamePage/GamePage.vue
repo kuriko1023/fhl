@@ -34,7 +34,7 @@
           <input placeholder="输入答案" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="20" v-model='inputAnswer' />
 
 <!--            TODO: 是否有效-->
-        <view v-if='side === 0' form-type="submit" :class="'btn' + (sendingAnswer ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
+        <view v-if='side === 0' form-type="submit" :class="'btn' + (answerSendTimer !== -1 ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
         </view>
       </form>
     </view>
@@ -126,7 +126,7 @@ export default {
       answer:  [],
       history: [],
       inputAnswer: '',
-      sendingAnswer: false,
+      answerSendTimer: -1,
     }
   },
   onLoad() {
@@ -205,9 +205,23 @@ export default {
         'url': '/pages/EndPage/EndPage'
       })
     },
+    clearAnswerSendTimer() {
+      if (this.answerSendTimer !== -1) {
+        clearTimeout(this.answerSendTimer)
+        this.answerSendTimer = -1
+        return true
+      } else {
+        return false
+      }
+    },
     onSubmitAnswer(e){
-      if (this.sendingAnswer) return;
-      this.sendingAnswer = true
+      if (this.answerSendTimer !== -1) return;
+      this.answerSendTimer = setTimeout(() => {
+        if (this.clearAnswerSendTimer()) {
+          this.popMessage = '【断线】请检查网络连接并重试'
+          this.pop()
+        }
+      }, 5000)
       const normalizedAnswer = this.inputAnswer
         .replace(/[ ，。？！\/,.?!]+/g, ' ')
         .replace(/《》“”「」『』—/g, '')
@@ -245,7 +259,7 @@ export default {
           this.active1 = this.active2 = false
           if (this.side === 0) this.inputAnswer = ''
           setTimeout(() => {
-            this.sendingAnswer = false
+            this.clearAnswerSendTimer()
             switch (this.mode){
               case 'B': {
                 let index = parseInt(msg.update)
@@ -281,7 +295,7 @@ export default {
           break
         }
         case 'invalid_answer':{
-          this.sendingAnswer = false
+          this.clearAnswerSendTimer()
           let popupText = '【' + msg.reason + '】　'
           switch (msg.reason) {
             case '不审题': popupText += '不匹配剩余的关键词'; break;
