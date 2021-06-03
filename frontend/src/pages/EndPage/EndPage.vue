@@ -11,7 +11,7 @@
 
           <uni-col :span="8">
         <view >
-        <image class="circle" src="https://flyhana.starrah.cn/static/picture.png" mode="widthFix"></image>
+        <image class="circle" :src="hostAvatar" mode="widthFix"></image>
         <p style="font-size: 12px; color: #666666">{{ host }}</p>
         </view>
           </uni-col>
@@ -21,8 +21,8 @@
           </uni-col>
           <uni-col :span="8">
         <view >
-          <image class="circle" :src="'https://flyhana.starrah.cn/static/' + (guest !== '' ? 'picture1.jpg' : 'grey_avatar_132.jpg')" mode="widthFix"></image>
-          <p style="font-size: 12px; color: #666666">{{ guest !== '' ? guest : '客人' }}</p>
+          <image class="circle" :src="guestAvatar" mode="widthFix"></image>
+          <p style="font-size: 12px; color: #666666">{{ guest }}</p>
         </view>
           </uni-col>
         </uni-row>
@@ -58,9 +58,15 @@ name: "EndPage",
       win: 0,
       host: '',
       guest: '',
+      hostAvatar: '',
+      guestAvatar: '',
     }
   },
   onLoad() {
+    this.host = getApp().globalData.host;
+    this.guest = getApp().globalData.guest;
+    this.hostAvatar = getApp().globalData.hostAvatar;
+    this.guestAvatar = getApp().globalData.guestAvatar;
     this.registerSocketMessageListener();
   },
   methods:{
