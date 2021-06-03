@@ -397,7 +397,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 				subject = &SubjectC{
 					WordsLeft:  left,
 					WordsRight: right,
-					UsedRight:  make([]bool, 10),
+					UsedRight:  make([]bool, len(right)),
 				}
 			case "D":
 				left, right := generateD(size)
