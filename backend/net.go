@@ -102,8 +102,7 @@ func removeElement(s []*Player, p *Player) []*Player {
 	return s
 }
 
-// 向所有房间中的玩家更新房间状态
-func broadcastRoomStatus(room *Room) {
+func roomIdleStatus(room *Room) map[string]interface{} {
 	p := GetPlayer(room.Host)
 	object := map[string]interface{}{
 		"type":         "room_status",
@@ -132,7 +131,12 @@ func broadcastRoomStatus(room *Room) {
 		object["guest"] = p.Nickname
 		object["guest_avatar"] = p.Id + "/" + strconv.FormatInt(p.AvatarUpdated, 36)
 	}
-	// 向所有玩家的连接发送消息
+	return object
+}
+
+// 向房间中的所有玩家更新房间状态
+func broadcastRoomStatus(room *Room) {
+	object := roomIdleStatus(room)
 	for _, p := range room.People {
 		if p.Channel != nil {
 			p.Channel <- object
@@ -681,8 +685,10 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 	if room.State == "" {
 		broadcastRoomStatus(room)
 	} else if room.State == "gen" {
+		outChannel <- roomIdleStatus(room)
 		outChannel <- roomGenerateStatus(room)
 	} else if room.State == "game" {
+		outChannel <- roomIdleStatus(room)
 		outChannel <- roomGameStatus(room)
 	}
 

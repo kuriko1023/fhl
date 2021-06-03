@@ -142,6 +142,8 @@ export default {
         this.hostStatus = msg.host_status;  // absent, present, ready
         this.guest = (msg.guest || '');
         this.guestAvatar = 'https://flyhana.starrah.cn/avatar/' + (msg.guest_avatar || '');
+        getApp().globalData.host = this.host;
+        getApp().globalData.guest = this.guest;
         getApp().globalData.hostAvatar = this.hostAvatar;
         getApp().globalData.guestAvatar = this.guestAvatar;
       }
