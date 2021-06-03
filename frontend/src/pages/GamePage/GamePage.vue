@@ -130,11 +130,11 @@ export default {
     }
   },
   onLoad() {
-    this.registerSocketMessageListener();
     this.isHost = getApp().globalData.isHost;
     this.side = (this.isHost ? 0 : 1);
     this.hostAvatar = getApp().globalData.hostAvatar;
     this.guestAvatar = getApp().globalData.guestAvatar;
+    this.registerSocketMessageListener();
   },
   methods:{
     pop(){
@@ -149,7 +149,6 @@ export default {
     },
     onExtraFinish(){
       this.active2 = false
-      console.log('timeout')
       /*this.sendMessage({
         'type': 'timeout'
       })*/
@@ -174,7 +173,7 @@ export default {
       }
       this.active1 = true
       this.active2 = false
-      this.timerUpdate = 1 - this.timerUpdate
+      this.timerUpdate += 1
     },
     onStop(){
       this.active1 = false
@@ -231,6 +230,22 @@ export default {
         'text': normalizedAnswer,
       })
     },
+    updateTimers (msg) {
+      const guestTimer = msg.guest_timer / 1000;
+      const hostTimer = msg.host_timer / 1000;
+      if (getApp().globalData.isHost) {
+        this.myExtraTime = hostTimer;
+        this.sideExtraTime = guestTimer;
+      } else {
+        this.myExtraTime = guestTimer;
+        this.sideExtraTime = hostTimer;
+      }
+      this.current1 = msg.turn_timer / 1000;
+      this.current2 = (this.side === 0 ? this.myExtraTime : this.sideExtraTime);
+      this.active1 = (this.current1 > 0)
+      this.active2 = (this.current1 === 0)
+      this.timerUpdate += 1
+    },
 
     onSocketMessage() {
       if (this.peekSocketMessage().type === 'end_status') {
@@ -251,6 +266,8 @@ export default {
             let sentence = this.historySentenceParse(msg.history[i])
             this.history.push(sentence)
           }
+          this.side = (this.history.length % 2) ^ (this.isHost ? 0 : 1);
+          this.updateTimers(msg)
           break
         }
         case 'game_update':{
@@ -280,16 +297,7 @@ export default {
                 break
               }
             }
-            const guestTimer = msg.guest_timer / 1000;
-            const hostTimer = msg.host_timer / 1000;
-            if (getApp().globalData.isHost) {
-              this.myExtraTime = hostTimer;
-              this.sideExtraTime = guestTimer;
-            } else {
-              this.myExtraTime = guestTimer;
-              this.sideExtraTime = hostTimer;
-            }
-            console.log(this.myExtraTime, this.sideExtraTime);
+            this.updateTimers(msg)
             this.changeSide()
           }, 2000);
           break
