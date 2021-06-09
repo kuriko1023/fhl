@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"database/sql"
@@ -95,7 +94,6 @@ func main() {
 	fmt.Println(c, d)
 	fmt.Println(s.Dump())
 	os.Stdin.Read(make([]byte, 1))*/
-	fmt.Println("Server starting")
 
 	if db, err = SetUpDatabase(); err != nil {
 		panic(err)

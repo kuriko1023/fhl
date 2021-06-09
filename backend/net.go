@@ -234,13 +234,14 @@ func bicastGameEnd(room *Room, winner Side) {
 	case SideNone:
 		winnerVal = 0
 	}
+	history := roomHistoryStrings(room)
 	if Players[room.Host].Channel != nil {
 		Players[room.Host].Channel <- map[string]interface{}{
 			"type":    "end_status",
 			"winner":  winnerVal,
 			"mode":    room.Mode,
 			"subject": room.Subject.Dump(),
-			"history": roomHistoryStrings(room),
+			"history": history,
 		}
 	}
 	if room.Guest != "" && Players[room.Guest].Channel != nil {
@@ -249,9 +250,10 @@ func bicastGameEnd(room *Room, winner Side) {
 			"winner":  -winnerVal,
 			"mode":    room.Mode,
 			"subject": room.Subject.Dump(),
-			"history": roomHistoryStrings(room),
+			"history": history,
 		}
 	}
+	log.Println("Game end " + room.Host + ", " + room.Guest + ", " + strings.Join(history, ","))
 }
 
 func nowMilliseconds() int64 {
@@ -432,6 +434,8 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			panic("No subject generated")
 		}
 
+		log.Println("Game start " + p.Id + ", " + p.InRoom.Guest + ", " + p.InRoom.Subject.Dump())
+
 		p.InRoom.State = "game"
 		p.InRoom.Mode = p.InRoom.Mode[0:1]
 		p.InRoom.History = []CorrectAnswer{}
@@ -520,7 +524,8 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			} else {
 				incorrectReason = "大文豪"
 			}
-			println(articleIdx, sentenceIdx)
+			// println(articleIdx, sentenceIdx)
+			_, _ = articleIdx, sentenceIdx
 		}
 
 		if incorrectReason == "" {
@@ -749,8 +754,6 @@ messageLoop:
 	if room.State == "" {
 		broadcastRoomStatus(room)
 	}
-
-	log.Println("connection closed")
 }
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {

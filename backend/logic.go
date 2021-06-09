@@ -454,7 +454,6 @@ func loadPrecal() error {
 		return err
 	}
 	errCorrNumRecords = (stat.Size() - offs) / RECORD_W
-	println(errCorrOffset, errCorrNumRecords)
 
 	precalFile = file
 	return nil

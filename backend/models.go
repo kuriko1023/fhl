@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -374,6 +375,7 @@ func GetPlayer(id string) *Player {
 	if p := Players[id]; p != nil {
 		return p
 	}
+	log.Println("New player " + id)
 	p := &Player{
 		Id:            id,
 		Nickname:      "猫猫" + id,
