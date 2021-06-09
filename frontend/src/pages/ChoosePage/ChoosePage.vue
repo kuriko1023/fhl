@@ -53,7 +53,7 @@
         <uni-row v-if='isHost'>
           <uni-col :span="12">
           <view>
-            <button @click="generate" class="btn1">{{isSubject?'换一换':'生成题目'}}</button>
+            <button @click="generate" class="btn1" :disabled="isGenReqPending">{{isSubject?'换一换':'生成题目'}}</button>
           </view>
           </uni-col>
           <uni-col :span="12">
@@ -114,7 +114,9 @@ name: "ChoosePage",
         'D': "题目为两组可消去字词。玩家轮流从两组字词中各选择一个，说出同时含有两者的诗句。所有词都只能被选择一次。\n" +
             "如：\n" +
             "　给出的题目为【三、何】【二十、月】，玩家回答【江月何年初照人】，即可消去【何】【月】。",
-      }
+      },
+
+      isGenReqPending: false,
     }
   },
   onLoad() {
@@ -150,6 +152,7 @@ name: "ChoosePage",
       });
     },
     generate(){
+      this.isGenReqPending = true;
       this.sendSocketMessage({
         'type': 'generate',
         'mode': this.mode,
@@ -167,6 +170,7 @@ name: "ChoosePage",
       const msg = this.popSocketMessage('generated');
       if (msg._none) return;
       //更新题目，与选择器绑定
+      this.isGenReqPending = false
       this.mode = msg.mode
       if(this.mode !== 'A') {
         for(let i = 0; i < this.range[this.mode].length; i++){
@@ -233,6 +237,11 @@ name: "ChoosePage",
     margin-left: 18%;
     margin-right:10%;
     font-size: 14px;
+    transition: background-color 0.05s ease;
+  }
+  .btn1[disabled] {
+    background-color: #cdc;
+    color: white;
   }
   .btn-full{
     background-color: #689a74;
