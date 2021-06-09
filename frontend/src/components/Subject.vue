@@ -72,7 +72,7 @@ export default {
   font-family: "STKaiti";
   font-size: 34px;
   background-size: cover;
-  background-image: url("https://flyhana.starrah.cn/static/tianzige.png");
+  background-image: url("/static/tianzige.png");
   width: 45px;
   height: 45px;
   text-align: center;
