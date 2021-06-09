@@ -1,32 +1,34 @@
 <template>
   <view>
+    <image class="background" src="/static/game_background_scaled.jpg" ></image>
     <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
     <view>
       <view style="text-align: center;">
 <!--        <image mode="widthFix" class="result_background" src="/static/result.png"></image>-->
-        <image mode="widthFix" class="result" :src=" win === 1 ? 'https://flyhana.starrah.cn/static/victory.png' : win === 0 ? 'https://flyhana.starrah.cn/static/tie.png' : 'https://flyhana.starrah.cn/static/lose.png' "></image>
+        <image mode="widthFix" class="result" :src="'/static/' + (win === 1 ? 'victory.png' : win === 0 ? 'tie.png' : 'lose.png')"></image>
       </view>
       <view style="text-align: center; margin: 10px 0 5px 0; padding: 0 30px">
         <uni-row>
 
           <uni-col :span="8">
         <view >
-        <image class="circle" :src="hostAvatar" mode="widthFix"></image>
+        <image class="circle" style="width: 24px; height: 24px" :src="hostAvatar" mode="widthFix"></image>
         <p style="font-size: 12px; color: #666666">{{ host }}</p>
         </view>
           </uni-col>
           <uni-col :span="8">
-           <image class="vs"  src="https://flyhana.starrah.cn/static/vs.png" mode="widthFix"></image>
+           <image class="vs"  src="/static/vs.png" mode="widthFix"></image>
 <!--            <p style="font-family: 'STKaiti'; font-size: 24px; font-weight: bold">对战</p>-->
           </uni-col>
           <uni-col :span="8">
         <view >
-          <image class="circle" :src="guestAvatar" mode="widthFix"></image>
+          <image class="circle" style="width: 24px; height: 24px" :src="guestAvatar" mode="widthFix"></image>
           <p style="font-size: 12px; color: #666666">{{ guest }}</p>
         </view>
           </uni-col>
         </uni-row>
       </view>
+      <image src="/static/history_background_scaled.jpg" class="history_background"></image>
       <image src="https://flyhana.starrah.cn/static/history_background.png" class="history_background"></image>
     <view  class="info">
     <view>

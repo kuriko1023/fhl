@@ -1,6 +1,7 @@
 <template>
   <view>
-    <image src="https://flyhana.starrah.cn/static/room.png" class="background"></image>
+    <image src="/static/room_background_scaled.jpg" class="background"></image>
+    <image src="https://flyhana.starrah.cn/static/room_background.png" class="background"></image>
     <view style="width: 100%; height: 100%; padding-top: 20%">
       <view v-if='!connected' class='center'
         style='width: 80%; height: 60px; position: relative'>
