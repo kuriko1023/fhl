@@ -272,7 +272,7 @@ name: "ChoosePage",
     bottom: 0;
     left: 0;
     width: 100%;
-    margin-bottom: 5%;
+    margin-bottom: 8%;
   }
   .picker {
     margin: 10px;
