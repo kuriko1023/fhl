@@ -1,7 +1,7 @@
 <template>
   <view id="background">
     <image v-if='profileInitialized' class="startButton" @click="onEnter" src="https://flyhana.starrah.cn/static/game_start.png"></image>
-    <image class="background" src="/static/start_background.jpg" ></image>
+    <image class="background" src="/static/start_background_scaled.jpg" ></image>
     <image class="background" src="https://flyhana.starrah.cn/static/start_background.png" ></image>
   </view>
 </template>
