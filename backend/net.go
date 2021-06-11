@@ -517,15 +517,28 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		incorrectReason := ""
 
 		texts := strings.Split(text, " ")
-		correct, articleIdx, sentenceIdx := lookupText(texts)
-		if !correct {
-			if articleIdx != -1 {
-				incorrectReason = "没背熟"
-			} else {
-				incorrectReason = "大文豪"
+		// 检查长度限制
+		totalLen := 0
+		for _, s := range texts {
+			totalLen += len([]rune(s))
+		}
+		if totalLen < 4 {
+			incorrectReason = "捣浆糊"
+		} else if totalLen > 21 {
+			incorrectReason = "碎碎念"
+		}
+
+		if incorrectReason == "" {
+			correct, articleIdx, sentenceIdx := lookupText(texts)
+			if !correct {
+				if articleIdx != -1 {
+					incorrectReason = "没背熟"
+				} else {
+					incorrectReason = "大文豪"
+				}
+				// println(articleIdx, sentenceIdx)
+				_, _ = articleIdx, sentenceIdx
 			}
-			// println(articleIdx, sentenceIdx)
-			_, _ = articleIdx, sentenceIdx
 		}
 
 		if incorrectReason == "" {
