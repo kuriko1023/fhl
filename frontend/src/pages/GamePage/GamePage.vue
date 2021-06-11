@@ -33,7 +33,7 @@
     <view id="submit">
       <form>
         <view style="display: flex">
-          <input placeholder="输入答案" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="20" v-model='inputAnswer' />
+          <input placeholder="可用标点分隔多句，至多 21 字" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="24" v-model='inputAnswer' :disabled='answerSendTimer !== -1' />
 
 <!--            TODO: 是否有效-->
         <view v-if='side === 0' form-type="submit" :class="'btn' + (answerSendTimer !== -1 ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
@@ -312,6 +312,8 @@ export default {
             case '复读机': popupText += '与此前的答案重复'; break;
             case '没背熟': popupText += '存在相似但不一致的诗句'; break;
             case '大文豪': popupText += '没有找到相似的诗句'; break;
+            case '捣浆糊': popupText += '总字数少于四字'; break;
+            case '碎碎念': popupText += '总字数多于二十一字'; break;
           }
           this.popMessage = popupText
           this.pop()
