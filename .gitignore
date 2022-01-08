@@ -1,2 +1,21 @@
-node_modules/
-dist/
+# 数据源
+/dataset/10-sources/[0-9]/
+
+# 中间输出，第一位为数字，第二位为字母，后接横线与一标识符
+/dataset/[0-9][a-z]-*.txt
+/dataset/dedup/test/?[a-z]-*.txt
+
+# 编译器中间输出
+/dataset/dedup/target/
+
+# 额外的配置文件
+/backend/config?*.json
+
+# 数据文件
+/backend/dataset.txt
+/backend/dataset_precal.bin
+/backend/fhl.db
+
+# 前端库与发布包
+/frontend/node_modules/
+/frontend/dist/
