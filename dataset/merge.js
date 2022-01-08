@@ -53,10 +53,10 @@ const process = function (s) {
 const all = [];
 
 console.log('chinese-poetry/chinese-poetry');
-for (const f of fs.readdirSync('./chinese-poetry/wudai/huajianji')) {
+for (const f of fs.readdirSync('./10-sources/1/wudai/huajianji')) {
   if (f.indexOf('juan') === -1) continue;
   for (const item of
-    JSON.parse(fs.readFileSync('./chinese-poetry/wudai/huajianji/' + f)))
+    JSON.parse(fs.readFileSync('./10-sources/1/wudai/huajianji/' + f)))
   {
     if (item.author === '尹鹗 六首') item.author = '尹鹗';
     if (item.author === '欧陽炯') item.author = '欧阳炯';
@@ -72,8 +72,8 @@ for (const f of fs.readdirSync('./chinese-poetry/wudai/huajianji')) {
 }
 
 console.log('javayhu/poetry');
-for (const f of fs.readdirSync('./poetry/data/poetry')) {
-  const item = JSON.parse(fs.readFileSync('./poetry/data/poetry/' + f));
+for (const f of fs.readdirSync('./10-sources/2/data/poetry')) {
+  const item = JSON.parse(fs.readFileSync('./10-sources/2/data/poetry/' + f));
   all.push([
     item.dynasty,
     item.poet.name,
@@ -84,7 +84,7 @@ for (const f of fs.readdirSync('./poetry/data/poetry')) {
 
 console.log('yxcs/poems-db');
 for (let i = 1; i <= 4; i++) {
-  const lines = fs.readFileSync('./poems-db/poems' + i + '.json')
+  const lines = fs.readFileSync('./10-sources/3/poems' + i + '.json')
     .toString().trim().split('\n');
   for (const s of lines) {
     const item = JSON.parse(s);
@@ -101,7 +101,7 @@ for (let i = 1; i <= 4; i++) {
 
 console.log('snowtraces/poetry-source');
 for (const name of '诗词曲') {
-  const path = './poetry-source/source/' + name;
+  const path = './10-sources/4/source/' + name;
   for (const d1 of fs.readdirSync(path)) if (d1 !== 'README.md') {
     for (const f of fs.readdirSync(path + '/' + d1)) {
       const file = path + '/' + d1 + '/' + f;
@@ -117,7 +117,7 @@ for (const name of '诗词曲') {
   }
 }
 for (const item of
-  JSON.parse(fs.readFileSync('./poetry-source/source/其他/诗经.json')))
+  JSON.parse(fs.readFileSync('./10-sources/4/source/其他/诗经.json')))
 {
   all.push([
     '先秦',
@@ -126,9 +126,9 @@ for (const item of
     item.content.join('\n'),
   ]);
 }
-for (const f of fs.readdirSync('./poetry-source/全唐诗/ZZU_JSON_chs')) {
+for (const f of fs.readdirSync('./10-sources/4/全唐诗/ZZU_JSON_chs')) {
   for (const item of
-    JSON.parse(fs.readFileSync('./poetry-source/全唐诗/ZZU_JSON_chs/' + f)))
+    JSON.parse(fs.readFileSync('./10-sources/4/全唐诗/ZZU_JSON_chs/' + f)))
   {
     all.push([
       '唐',
@@ -139,14 +139,14 @@ for (const f of fs.readdirSync('./poetry-source/全唐诗/ZZU_JSON_chs')) {
   }
 }
 
-for (const line of fs.readFileSync('./extra.txt').toString().split('\n')) {
+for (const line of fs.readFileSync('./11-extra.txt').toString().split('\n')) {
   if (line) all.push(line.split('\t'));
 }
 
 let collCount = 0;
 let errCount = 0;
-const fdAll = fs.openSync('all.txt', 'w');
-const fdErr = fs.openSync('err.txt', 'w');
+const fdAll = fs.openSync('./1a-all.txt', 'w');
+const fdErr = fs.openSync('./1b-err.txt', 'w');
 all.forEach((x) => {
   const dynasty = normalizeDynasty(x[0]);
   const pars = process(x[3]);

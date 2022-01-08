@@ -64,14 +64,17 @@ impl DSU {
 }
 
 fn main() {
-  // const DATASET_PATH: &str = "test.txt";
-  // const ACCEPT_PATH: &str = "test_accept.txt";
-  // const CURATE_PATH: &str = "test_curate.txt";
-  const DATASET_PATH: &str = "../../all.txt";
-  const ACCEPT_PATH: &str = "../../all_accept.txt";
-  const CURATE_PATH: &str = "../../curate.txt";
-  const OUT_DUPS_PATH: &str = "dups.txt";
-  const OUT_DATA_PATH: &str = "dedup.txt";
+  macro_rules! file {
+    ($f:literal) => (concat!(
+      "../../",
+      // "../test/",
+      $f))
+  }
+  const DATASET_PATH: &str = file!("1a-all.txt");
+  const ACCEPT_PATH: &str = file!("20-accept.txt");
+  const CURATE_PATH: &str = file!("21-curate.txt");
+  const OUT_DUPS_PATH: &str = file!("2a-dups.txt");
+  const OUT_DATA_PATH: &str = file!("2b-dedup.txt");
 
   let dataset = read_dataset(DATASET_PATH).unwrap();
 
