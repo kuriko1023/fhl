@@ -423,7 +423,7 @@ var errCorrOffset int64
 var errCorrNumRecords int64
 
 func loadPrecal() error {
-	file, err := os.Open("dataset_precal.bin")
+	file, err := os.Open("../dataset/2c-precal.bin")
 	if err != nil {
 		return err
 	}
@@ -460,7 +460,7 @@ func loadPrecal() error {
 }
 
 func savePrecalGob() error {
-	file, err := os.Create("dataset_precal.bin")
+	file, err := os.Create("../dataset/2c-precal.bin")
 	if err != nil {
 		return err
 	}
@@ -516,7 +516,7 @@ func parseArticle(id int, s string) (*Article, string) {
 func initDataset() {
 	rand.Seed(1023)
 
-	file, err := os.Open("dataset.txt")
+	file, err := os.Open("../dataset/2b-dedup.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -548,9 +548,9 @@ func initDataset() {
 
 		// 随机抽取十分之一
 		i++
-		if sc.Text()[0] != '!' && i%10 != 0 {
+		/*if sc.Text()[0] != '!' && i%10 != 0 {
 			continue
-		}
+		}*/
 
 		// 将篇目加入列表
 		article, flag := parseArticle(len(articles), sc.Text())
@@ -633,6 +633,7 @@ func initDataset() {
 
 	// 找出仅由不重复的高频字组成的句子
 	allHotSentences = make([][]string, ALL_HOT_LEN_MAX-ALL_HOT_LEN_MIN+1)
+	allHotSentencesSet := make(map[string]struct{})
 	for i := range allHotSentences {
 		allHotSentences[i] = []string{}
 	}
@@ -665,7 +666,13 @@ func initDataset() {
 						}
 					}
 				}
+				// 去重
+				if _, existing := allHotSentencesSet[s]; existing {
+					goto out
+				}
+				// 通过检查，加入列表
 				allHotSentences[i] = append(allHotSentences[i], s)
+				allHotSentencesSet[s] = struct{}{}
 			out:
 			}
 		}
