@@ -1,6 +1,6 @@
 module github.com/kuriko1023/fhl/backend
 
-go 1.16
+go 1.17
 
 require (
 	github.com/agnivade/levenshtein v1.1.0
