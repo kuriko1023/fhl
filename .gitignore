@@ -2,8 +2,8 @@
 /dataset/10-sources/[0-9]/
 
 # 中间输出，第一位为数字，第二位为字母，后接横线与一标识符
-/dataset/[0-9][a-z]-*.txt
-/dataset/dedup/test/?[a-z]-*.txt
+/dataset/[0-9][a-z]-*
+/dataset/dedup/test/[0-9][a-z]-*
 
 # 编译器中间输出
 /dataset/dedup/target/

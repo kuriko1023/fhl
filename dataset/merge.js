@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-// awk 'BEGIN { FS = "\t" } { print $1 }' < all.txt | sort -u
+// awk 'BEGIN { FS = "\t" } { print $1 }' < 1a-all.txt | sort -u
 const normalizeDynasty = function (s) {
   if (s.match(/[近现当]/g)) return '近现代';
   if (s.match(/五代/g)) return '五代十国';
@@ -135,6 +135,36 @@ for (const f of fs.readdirSync('./10-sources/4/全唐诗/ZZU_JSON_chs')) {
       item.author,
       item.title,
       item.content.join('\n'),
+    ]);
+  }
+}
+
+console.log('Werneror/Poetry');
+for (const f of fs.readdirSync('./10-sources/5')) {
+  if (f.substring(f.length - 4) !== '.csv') continue;
+  if ([
+    '清末近现代初',
+    '清末民国初',
+    '近现代',
+    '近现代末当代初',
+    '民国末当代初',
+    '当代',
+  ].indexOf(f.substring(0, f.length - 4)) !== -1) {
+    continue;
+  }
+  const lines = fs.readFileSync('./10-sources/5/' + f).toString().split('\n');
+  for (const line of lines.slice(1)) {
+    // [matched range, title, dynasty, author, contents]
+    const fields =
+      /^"([^"]+)","([^"]+)","([^"]+)","([^"]+)"$/g.exec(line.trim());
+    if (!fields) continue;
+
+    const pat = /^(.+)末(.+)初$/g.exec(fields[2]);
+    all.push([
+      pat ? pat[1] : fields[2],
+      fields[3],
+      fields[1],
+      fields[4],
     ]);
   }
 }
