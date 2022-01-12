@@ -1,15 +1,15 @@
 {
-  "description": "项目配置文件",
-  "packOptions": {
-    "ignore": []
-  },
+  "miniprogramRoot": "dist/",
+  "projectname": "fhxl",
+  "description": "",
+  "appid": "wxc44db6df63f2a292",
   "setting": {
     "urlCheck": true,
-    "es6": true,
-    "enhance": false,
-    "postcss": true,
+    "es6": false,
+    "enhance": true,
+    "postcss": false,
     "preloadBackgroundData": false,
-    "minified": true,
+    "minified": false,
     "newFeature": false,
     "coverView": true,
     "nodeModules": false,
@@ -21,6 +21,7 @@
     "checkSiteMap": true,
     "uploadWithSourceMap": true,
     "compileHotReLoad": false,
+    "lazyloadPlaceholderEnable": false,
     "useMultiFrameRuntime": true,
     "useApiHook": true,
     "useApiHostProcess": true,
@@ -29,44 +30,17 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "enableEngineNative": false,
-    "bundle": false,
-    "useIsolateContext": true,
-    "useCompilerModule": true,
-    "userConfirmedUseCompilerModuleSwitch": false,
+    "useIsolateContext": false,
     "userConfirmedBundleSwitch": false,
     "packNpmManually": false,
     "packNpmRelationList": [],
-    "minifyWXSS": true
+    "minifyWXSS": true,
+    "disableUseStrict": false,
+    "minifyWXML": true,
+    "showES6CompileOption": false,
+    "useCompilerPlugins": false,
+    "ignoreUploadUnusedFiles": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.15.0",
-  "appid": "wx0b584df9a05dc328",
-  "projectname": "miniprogram-2",
-  "debugOptions": {
-    "hidedInDevtools": []
-  },
-  "scripts": {},
-  "isGameTourist": false,
-  "condition": {
-    "search": {
-      "list": []
-    },
-    "conversation": {
-      "list": []
-    },
-    "game": {
-      "list": []
-    },
-    "plugin": {
-      "list": []
-    },
-    "gamePlugin": {
-      "list": []
-    },
-    "miniprogram": {
-      "list": []
-    }
-  },
-  "miniprogramRoot": "./dist/dev/mp-weixin"
+  "condition": {}
 }
