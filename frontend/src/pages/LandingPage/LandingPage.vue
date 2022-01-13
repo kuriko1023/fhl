@@ -1,8 +1,9 @@
 <template>
   <view id="background">
-    <image v-if='profileInitialized' class="startButton" @tap="onEnter" src="http://123.57.21.143:8000/game_start.png"></image>
+    <image v-if='profileInitialized' class="startButton" @tap="onEnter"
+      :src="staticRes('game_start.png')" />
     <image class="background" :src=backgroundImage />
-    <image class="background" src="http://123.57.21.143:8000/start_background.png" ></image>
+    <image class="background" :src="staticRes('start_background.png')" />
   </view>
 </template>
 
@@ -10,6 +11,7 @@
 import { ref, onMounted } from 'vue';
 import {
   G,
+  staticRes,
   redirect,
   retrieveServerProfile,
   requestLocalProfile,
@@ -37,6 +39,7 @@ export default {
     };
 
     return {
+      staticRes,
       backgroundImage,
 
       profileInitialized,
