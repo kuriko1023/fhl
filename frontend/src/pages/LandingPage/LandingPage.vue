@@ -33,8 +33,7 @@ export default {
     const onEnter = () => {
       requestLocalProfile(() => {
         G.myRoom = true;
-        console.log('entering room', G.my);
-        // redirect("/pages/RoomPage/RoomPage");
+        redirect("/pages/RoomPage/RoomPage");
       });
     };
 
