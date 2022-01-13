@@ -2,6 +2,9 @@ import Taro from '@tarojs/taro';
 
 const G = {};
 
+const staticRes = (f) => `http://123.57.21.143:8000/${f}`;
+const apiServer = 'http://123.57.21.143';
+
 const redirect = (url) => {
   Taro.redirectTo({
     url,
@@ -14,7 +17,7 @@ const retrieveServerProfile = function (callback) {
     return;
   }
   const req = () => Taro.login({success: (res) => Taro.request({
-    url: 'http://123.57.21.143/profile/' + res.code,
+    url: `${apiServer}/profile/${res.code}`,
     success: (res) => {
       const obj = res.data;
       if (!obj || !obj.id) {
@@ -247,6 +250,8 @@ const parseSubject = function (mode, text) {
 
 export {
   G,
+  staticRes,
+  apiServer,
   redirect,
   retrieveServerProfile,
   requestLocalProfile,
