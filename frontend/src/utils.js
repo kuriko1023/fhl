@@ -4,12 +4,20 @@ const G = {};
 
 const staticRes = (f) => `http://123.57.21.143:8000/${f}`;
 const apiServer = 'http://123.57.21.143';
+const wsServer = 'ws://123.57.21.143';
 
 const redirect = (url) => {
   Taro.redirectTo({
     url,
   });
 };
+
+const getLoginCode = () => new Promise((resolve, reject) => {
+  Taro.login({
+    success: (res) => resolve(res.code),
+    fail: () => reject(),
+  });
+});
 
 const retrieveServerProfile = function (callback) {
   if (G.my) {
@@ -72,13 +80,13 @@ Taro.onSocketClose(() => {
   } else {
     // Unexpected disconnection
     console.log('unexpected disconnection');
-    const conn = () => socketUrl().then((url) => socketTask = Taro.connectSocket({
+    const conn = () => socketUrl().then((url) => Taro.connectSocket({
       url: url,
       success: () => {
         console.log('reconnected! ' + url)
       },
       fail: () => setTimeout(conn, 1000),
-    }));
+    }).then((task) => socketTask = task));
     conn();
   }
 });
@@ -87,7 +95,8 @@ const connectSocket = function (obj) {
   socketUrl = obj.url;
   const conn = () =>
     socketUrl().then((url) =>
-      socketTask = Taro.connectSocket(Object.assign(obj, {url: url})));
+      Taro.connectSocket(Object.assign(obj, {url: url}))
+        .then((task) => socketTask = task));
   if (socketTask) {
     socketCloseCallback = conn;
     socketTask.close();
@@ -102,8 +111,8 @@ const closeSocket = function () {
   socketTask.close();
 };
 
-const registerSocketMessageListener = function () {
-  messageListener = this;
+const registerSocketMessageListener = function (listener) {
+  messageListener = listener;
   if (messageQueue.length > 0)
     messageListener.onSocketMessage();
 };
@@ -252,7 +261,9 @@ export {
   G,
   staticRes,
   apiServer,
+  wsServer,
   redirect,
+  getLoginCode,
   retrieveServerProfile,
   requestLocalProfile,
   connectSocket,
@@ -262,6 +273,7 @@ export {
   peekSocketMessage,
   tryPeekSocketMessage,
   tryPopSocketMessage,
+  popSocketMessage,
   historySentenceParse,
   parseSubject,
 };

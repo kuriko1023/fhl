@@ -1,6 +1,7 @@
 export default {
   pages: [
     'pages/LandingPage/LandingPage',
+    'pages/RoomPage/RoomPage',
   ],
   window: {
     backgroundTextStyle: 'light',
