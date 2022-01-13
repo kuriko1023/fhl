@@ -4,7 +4,7 @@
   "description": "",
   "appid": "wxc44db6df63f2a292",
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "es6": false,
     "enhance": true,
     "postcss": false,
@@ -42,5 +42,6 @@
     "ignoreUploadUnusedFiles": true
   },
   "compileType": "miniprogram",
+  "libVersion": "2.14.1",
   "condition": {}
 }
