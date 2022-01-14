@@ -18,7 +18,7 @@
 <!--        </uni-col>-->
 <!--          <uni-col :span="6">-->
           <view v-if="mode==='B'||mode==='C'||mode==='D'" class="picker">
-            <span class="tip" >选择题型：</span>
+            <text class="tip" >选择题型：</text>
             <picker :disabled="!isHost" :range="range[mode]" @change="onSizeChange" :value="picker" mode="selector" >
               <view class="picker_btn">
                 {{range[mode][picker]}}
@@ -65,10 +65,10 @@
 </template>
 
 <script>
-import Subject from "../../components/Subject";
 import {
   G,
   staticRes,
+  redirect,
   registerSocketMessageListener,
   sendSocketMessage,
   peekSocketMessage,
@@ -77,6 +77,8 @@ import {
   popSocketMessage,
   parseSubject,
 } from '../../utils';
+
+import Subject from "../../components/Subject";
 
 export default {
   name: "ChoosePage",

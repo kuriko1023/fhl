@@ -1,7 +1,7 @@
 <template>
   <view class="history">
-    <ul style="padding: 10px">
-      <li v-for="item in data" :key="item">
+    <view style="padding: 10px"> <!-- ul -->
+      <view v-for="item in data" :key="item"> <!-- li -->
         <view  class="center">
           <view>
             <view style="display: inline-block">
@@ -11,8 +11,8 @@
             </view>
           </view>
         </view>
-      </li>
-    </ul>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -36,7 +36,7 @@ name: "History",
 }
 </script>
 
-<style scoped>
+<style>
 .background{
   position: absolute;
   height: 100%;
