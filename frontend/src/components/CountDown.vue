@@ -80,7 +80,7 @@ name: "CountDown",
 }
 </script>
 
-<style scoped>
+<style>
   .out{
     height: 7px;
     border-radius: 2px;
