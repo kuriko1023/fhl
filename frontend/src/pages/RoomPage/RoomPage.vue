@@ -1,7 +1,7 @@
 <template>
   <view>
     <image :src=backgroundImage class="background"></image>
-    <!--<image :src="staticRes('room_background.png')" class="background"></image>-->
+    <image :src="staticRes('room_background.png')" class="background"></image>
     <view style="width: 100%; height: 100%; padding-top: 20%">
       <view v-if='!connected' class='center'
         style='width: 80%; height: 60px; position: relative'>
@@ -56,11 +56,13 @@
 import { ref } from 'vue';
 import {
   G,
+  staticRes,
   apiServer,
   wsServer,
   redirect,
   retrieveServerProfile,
   requestLocalProfile,
+  enterQueryParam,
   getLoginCode,
   connectSocket,
   registerSocketMessageListener,
@@ -132,8 +134,7 @@ export default {
     };
     const startGame = () => {
       sendSocketMessage({type: 'start_generate'});
-      console.log('redirecting');
-      // redirect("/pages/ChoosePage/ChoosePage");
+      redirect("/pages/ChoosePage/ChoosePage");
     };
 
     // Initialization
@@ -144,8 +145,7 @@ export default {
         delete G.myRoom;
         room.value = G.my.id;
       } else {
-        const room = Taro.getLaunchOptionsSync().query.room;
-        room.value = room;
+        room.value = enterQueryParam().room;
       }
 
       const wsUrl = async () =>
@@ -164,6 +164,7 @@ export default {
     });
 
     return {
+      staticRes,
       backgroundImage,
       spinnerImage,
 

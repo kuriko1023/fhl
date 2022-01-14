@@ -63,6 +63,8 @@ const requestLocalProfile = function (callback) {
   }
 };
 
+const enterQueryParam = () => Taro.getEnterOptionsSync().query;
+
 let socketTask = null;
 let socketCloseCallback = null;
 let socketUrl = null;
@@ -266,6 +268,7 @@ export {
   getLoginCode,
   retrieveServerProfile,
   requestLocalProfile,
+  enterQueryParam,
   connectSocket,
   closeSocket,
   registerSocketMessageListener,
