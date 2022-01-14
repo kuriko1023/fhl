@@ -4,6 +4,7 @@ export default {
     'pages/RoomPage/RoomPage',
     'pages/ChoosePage/ChoosePage',
     'pages/GamePage/GamePage',
+    'pages/EndPage/EndPage',
   ],
   window: {
     backgroundTextStyle: 'light',
