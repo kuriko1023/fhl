@@ -79,21 +79,64 @@ import startBackgroundImage from '../../static/start_background_scaled.jpg';
 
 export default {
   name: "RoomPage",
-  setup() {
-    // Data
-    const profileInitialized = ref(false);
-    const connected = ref(false);
-    const status = ref('获取玩家信息');
-    const room = ref('');
-    const host = ref('');
-    const hostAvatar = ref('');
-    const hostStatus = ref('');
-    const guest = ref('');
-    const guestAvatar = ref('');
-    const isHost = ref(false);
+  data() {
+    return {
+      backgroundImage,
+      spinnerImage,
+      startBackgroundImage,
 
-    // Methods
-    const onSocketMessage = () => {
+      profileInitialized: false,
+      connected: false,
+      status: '获取玩家信息',
+
+      room: '',
+
+      host: '',
+      hostAvatar: '',
+      hostStatus: '',
+      guest: '',
+      guestAvatar: '',
+
+      isHost: false,
+    };
+  },
+  onLoad() {
+    retrieveServerProfile(() => {
+      this.status = '连接房间';
+
+      if (G.myRoom) {
+        delete G.myRoom;
+        this.room = G.my.id;
+      } else {
+        const room = uni.getEnterOptionsSync().query.room;
+        this.room = room;
+      }
+
+      const urlPromise = async () =>
+        `${wsServer}/channel/${this.room}/${await getLoginCode()}`;
+      connectSocket({
+        url: urlPromise,
+        success: () => {
+          registerSocketMessageListener({ onSocketMessage: this.onSocketMessage });
+        },
+        fail: () => {
+          this.status = '连接失败';
+        },
+      });
+
+      this.isHost = G.isHost = (this.room === G.my.id);
+    });
+  },
+  onShareAppMessage (res) {
+    return {
+      title: '一起来玩飞花令吧',
+      path: '/pages/RoomPage/RoomPage?room=' + this.room,
+      imageUrl: startBackgroundImage,
+    };
+  },
+  methods: {
+    staticRes,
+    onSocketMessage() {
       if (tryPeekSocketMessage('generated')) {
         redirect("/pages/ChoosePage/ChoosePage")
         return
@@ -110,87 +153,33 @@ export default {
           this.sendProfileUpdate()
           return; // 下次收到消息时更新
         }
-        connected.value = true;
-        host.value = msg.host;
-        hostAvatar.value = `${apiServer}/avatar/${msg.host_avatar}`;
-        hostStatus.value = msg.host_status;  // absent, present, ready
-        guest.value = (msg.guest || '');
-        guestAvatar.value = `${apiServer}/avatar/${msg.guest_avatar || ''}`;
-        G.host = host.value;
-        G.guest = guest.value;
-        G.hostAvatar = hostAvatar.value;
-        G.guestAvatar = guestAvatar.value;
+        this.connected = true;
+        this.host = msg.host;
+        this.hostAvatar = `${apiServer}/avatar/${msg.host_avatar}`;
+        this.hostStatus = msg.host_status;  // absent, present, ready
+        this.guest = (msg.guest || '');
+        this.guestAvatar = `${apiServer}/avatar/${msg.guest_avatar || ''}`;
+        G.host = this.host;
+        G.guest = this.guest;
+        G.hostAvatar = this.hostAvatar;
+        G.guestAvatar = this.guestAvatar;
       }
-    };
-    const sendProfileUpdate = () => {
+    },
+    sendProfileUpdate() {
       sendSocketMessage({
         type: 'profile',
         nickname: G.my.nickname,
         avatar: G.my.avatar,
       })
-    };
-    const sitDown = () => {
+    },
+    sitDown() {
       requestLocalProfile(() => sendSocketMessage({type: 'ready'}));
-    };
-    const startGame = () => {
+    },
+    startGame() {
       sendSocketMessage({type: 'start_generate'});
-      redirect("/pages/ChoosePage/ChoosePage");
-    };
-
-    // Initialization
-    retrieveServerProfile(() => {
-      status.value = '连接房间';
-
-      if (G.myRoom) {
-        delete G.myRoom;
-        room.value = G.my.id;
-      } else {
-        room.value = enterQueryParam().room;
-      }
-
-      const wsUrl = async () =>
-        `${wsServer}/channel/${room.value}/${await getLoginCode()}`;
-      connectSocket({
-        url: wsUrl,
-        success: () => {
-          registerSocketMessageListener({ onSocketMessage });
-        },
-        fail: () => {
-          status.value = '连接失败';
-        },
-      });
-
-      isHost.value = G.isHost = (room.value === G.my.id);
-    });
-
-    return {
-      staticRes,
-      backgroundImage,
-      spinnerImage,
-
-      profileInitialized,
-      connected,
-      status,
-      room,
-      host,
-      hostAvatar,
-      hostStatus,
-      guest,
-      guestAvatar,
-      isHost,
-
-      sitDown,
-      startGame,
-    };
-  },
-  onShareAppMessage (res) {
-    console.log(this.room);
-    return {
-      title: '一起来玩飞花令吧',
-      path: '/pages/RoomPage/RoomPage?room=' + this.room,
-      imageUrl: startBackgroundImage,
-    };
-  },
+      redirect("/pages/ChoosePage/ChoosePage")
+    }
+  }
 }
 </script>
 
