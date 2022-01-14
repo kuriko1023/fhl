@@ -13,8 +13,8 @@ window.addEventListener("load", function(evt) {
         var d = document.createElement("div");
         if (chroma) d.style.color = chroma;
         if (bold) d.style.fontWeight = 'bold';
-		d.style.width = '100%';
-		d.style.overflowWrap = 'anywhere';
+        d.style.width = '100%';
+        d.style.overflowWrap = 'anywhere';
         d.textContent = message;
         output.appendChild(d);
         d.scrollIntoView();
@@ -56,6 +56,10 @@ window.addEventListener("load", function(evt) {
             {
                 input.value = '{\n  "type": "start_generate"\n}';
             }
+            if (obj.type === 'generated' && host.value === 'my')
+                input.value = '{\n  "type": "confirm_subject"\n}';
+            if (obj.type === 'generated' && obj.confirm && host.value !== 'my')
+                input.value = '{\n  "type": "confirm_start"\n}';
             if (obj.type === 'game_status')
                 input.value = '{\n  "type": "answer",\n  "text": "!"\n}';
         }
@@ -75,16 +79,7 @@ window.addEventListener("load", function(evt) {
         ws.send(input.value);
         var obj = tryparse(input.value);
         if (obj.type === 'start_generate')
-            input.value = '{\n  "type": "set_mode",\n  "mode": "A",\n  "size": 0\n}';
-        else if (obj.type === 'set_mode') {
-            input.value = '{\n  "type": "generate",\n' +
-                '  "mode": ' + JSON.stringify(obj.mode) + ',\n' +
-                '  "size": ' + JSON.stringify(obj.size) + '\n' +
-                '}';
-        } else if (obj.type === 'generate')
-            input.value = '{\n  "type": "start_game"\n}';
-        else if (obj.type === 'start_game')
-            input.value = '{\n  "type": "answer",\n  "text": "!"\n}';
+            input.value = '{\n  "type": "generate",\n  "mode": "A",\n  "size": 0\n}';
         return false;
     };
     document.getElementById("close").onclick = function(evt) {
