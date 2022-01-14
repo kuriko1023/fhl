@@ -147,7 +147,7 @@ func broadcastRoomStatus(room *Room) {
 // 一位玩家选择坐下
 func playerReady(p *Player) bool {
 	room := p.InRoom
-	if room.State != "" {
+	if room.State != RoomStateIdle {
 		return false
 	}
 	if room.Host == p.Id {
@@ -163,17 +163,25 @@ func playerReady(p *Player) bool {
 	return true
 }
 
-func roomGenerateStatus(room *Room) map[string]interface{} {
-	subjectRepr := interface{}(nil)
-	if subject := room.Subject; subject != nil {
-		subjectRepr = subject.Dump()
-	}
-	size, _ := strconv.Atoi(room.Mode[1:])
-	return map[string]interface{}{
-		"type":    "generated",
-		"mode":    room.Mode[0:1],
-		"size":    size,
-		"subject": subjectRepr,
+func roomGenerateStatus(room *Room, p *Player) map[string]interface{} {
+	if room.Host == p.Id || (room.State&RoomStateGenConfirm) != 0 {
+		subjectRepr := interface{}(nil)
+		if subject := room.Subject; subject != nil {
+			subjectRepr = subject.Dump()
+		}
+		requestConfirm := ((room.State & RoomStateGenConfirm) != 0)
+		size, _ := strconv.Atoi(room.Mode[1:])
+		return map[string]interface{}{
+			"type":    "generated",
+			"mode":    room.Mode[0:1],
+			"size":    size,
+			"subject": subjectRepr,
+			"confirm": requestConfirm,
+		}
+	} else {
+		return map[string]interface{}{
+			"type": "generate_wait",
+		}
 	}
 }
 
@@ -261,7 +269,7 @@ func nowMilliseconds() int64 {
 }
 
 func resetRoomState(room *Room) {
-	room.State = ""
+	room.State = RoomStateIdle
 	room.HostReady = false
 	room.Guest = ""
 	room.Subject = nil
@@ -333,24 +341,29 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		if p.InRoom == nil || p.InRoom.Host != p.Id {
 			panic("Must be host")
 		}
-		if p.InRoom.State != "" || !p.InRoom.HostReady || p.InRoom.Guest == "" {
+		if p.InRoom.State != RoomStateIdle || !p.InRoom.HostReady || p.InRoom.Guest == "" {
 			panic("Room should be idle with two ready players")
 		}
-		p.InRoom.State = "gen"
+		p.InRoom.State = RoomStateGen
 		p.InRoom.Mode = "A"
-		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
-			Players[p.InRoom.Guest].Channel <- roomGenerateStatus(p.InRoom)
+		guest := Players[p.InRoom.Guest]
+		if guest != nil && guest.Channel != nil {
+			guest.Channel <- roomGenerateStatus(p.InRoom, guest)
 		}
 
-	case "set_mode":
-		fallthrough
+	// case "set_mode":
+	// 	fallthrough
+	// XXX: If "set_mode" is no longer needed, remove `isGenerate` below
 	case "generate":
 		isGenerate := (object["type"] == "generate")
 		if p.InRoom == nil || p.InRoom.Host != p.Id {
 			panic("Must be host")
 		}
-		if p.InRoom.State != "gen" {
+		if (p.InRoom.State & RoomStateGen) == 0 {
 			panic("Room should be in generation phase")
+		}
+		if (p.InRoom.State & RoomStateGenConfirm) != 0 {
+			panic("Subject already confirmed")
 		}
 		mode := parseMode(object["mode"])
 		size := parseInt(object["size"])
@@ -415,28 +428,43 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			p.InRoom.Subject = nil
 		}
 
-		object := roomGenerateStatus(p.InRoom)
-		if p.InRoom.Guest != "" && Players[p.InRoom.Guest].Channel != nil {
-			Players[p.InRoom.Guest].Channel <- object
-		}
 		if isGenerate {
-			p.Channel <- object
+			p.Channel <- roomGenerateStatus(p.InRoom, p)
 		}
 
-	case "start_game":
+	case "confirm_subject":
 		if p.InRoom == nil || p.InRoom.Host != p.Id {
 			panic("Must be host")
 		}
-		if p.InRoom.State != "gen" {
+		if (p.InRoom.State & RoomStateGen) == 0 {
 			panic("Room should be in generation phase")
+		}
+		if (p.InRoom.State & RoomStateGenConfirm) != 0 {
+			panic("Subject already confirmed")
 		}
 		if p.InRoom.Subject == nil {
 			panic("No subject generated")
 		}
 
-		log.Println("Game start " + p.Id + ", " + p.InRoom.Guest + ", " + p.InRoom.Subject.Dump())
+		p.InRoom.State = RoomStateGen | RoomStateGenConfirm
 
-		p.InRoom.State = "game"
+		guest := Players[p.InRoom.Guest]
+		if guest != nil && guest.Channel != nil {
+			guest.Channel <- roomGenerateStatus(p.InRoom, guest)
+		}
+		p.Channel <- roomGenerateStatus(p.InRoom, p)
+
+	case "confirm_start":
+		if p.InRoom == nil || p.InRoom.Guest != p.Id {
+			panic("Must be guest")
+		}
+		if p.InRoom.State != (RoomStateGen | RoomStateGenConfirm) {
+			panic("Room should be in confirm phase")
+		}
+
+		log.Println("Game start " + p.InRoom.Host + ", " + p.InRoom.Guest + ", " + p.InRoom.Subject.Dump())
+
+		p.InRoom.State = RoomStateGame
 		p.InRoom.Mode = p.InRoom.Mode[0:1]
 		p.InRoom.History = []CorrectAnswer{}
 		p.InRoom.HistorySet = map[string]struct{}{}
@@ -499,7 +527,7 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 		}(p.InRoom)
 
 	case "answer":
-		if p.InRoom.State != "game" {
+		if p.InRoom.State != RoomStateGame {
 			panic("Room should be in game phase")
 		}
 		playerSide := SideGuest
@@ -702,12 +730,12 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 		close(ch)
 	}(c, inChannel)
 
-	if room.State == "" {
+	if room.State == RoomStateIdle {
 		broadcastRoomStatus(room)
-	} else if room.State == "gen" {
+	} else if (room.State & RoomStateGen) != 0 {
 		outChannel <- roomIdleStatus(room)
-		outChannel <- roomGenerateStatus(room)
-	} else if room.State == "game" {
+		outChannel <- roomGenerateStatus(room, player)
+	} else if room.State == RoomStateGame {
 		outChannel <- roomIdleStatus(room)
 		outChannel <- roomGameStatus(room)
 	}
@@ -747,7 +775,7 @@ messageLoop:
 	// 清除全局存储的状态
 	DataMutex.Lock()
 	room.People = removeElement(room.People, player)
-	if room.State == "" {
+	if room.State == RoomStateIdle {
 		// 只有房间处于等待状态时，才认为是退出了房间
 		if player.Id == room.Host {
 			room.HostReady = false
@@ -764,7 +792,7 @@ messageLoop:
 	// 而 outChannel 不能被外界关闭
 	close(outChannel)
 
-	if room.State == "" {
+	if room.State == RoomStateIdle {
 		broadcastRoomStatus(room)
 	}
 }
