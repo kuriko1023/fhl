@@ -41,13 +41,11 @@
       </form>
     </view>
 <!--    临时测试用-->
-<!--    <button @click="onEnd"> end </button>-->
-<!--    <button @click="pop">test</button>-->
-    <!--
-    <uni-popup ref="popup" type="message">
-      <uni-popup-message type="warn" :message="popMessage"/>
-    </uni-popup>
-    -->
+<!--    <button @tap="onEnd"> end </button>-->
+<!--    <button @tap="pop('test')">test</button>-->
+    <view ref="popup" class="game-popup">
+      <text>{{ popMessage }}</text>
+    </view>
   </view>
 </template>
 
@@ -69,10 +67,6 @@ import {
 import gameBackgroundImage from '../../static/game_background_scaled.jpg';
 import historyBackgroundImage from '../../static/history_background_scaled.jpg';
 
-// import uniPopUp from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
-//import uniPopupMessage from '@dcloudio/uni-ui/lib/uni-popup-message/uni-popup-message.vue';
-//import {uniPopup} from '@dcloudio/uni-ui'
-// import {uniPopupMessage} from '@dcloudio/uni-ui'
 import Subject from "../../components/Subject";
 import History from "../../components/History";
 import CountDown from "../../components/CountDown";
@@ -82,8 +76,6 @@ export default {
     "subject-block": Subject,
     "history-block": History,
     "count-down": CountDown,
-    //uniPopup,
-    //uniPopupMessage,
   },
   data() {
     return {
@@ -148,6 +140,7 @@ export default {
       history: [],
       inputAnswer: '',
       answerSendTimer: -1,
+      popupTimer: -1,
     }
   },
   onLoad() {
@@ -159,9 +152,21 @@ export default {
   },
   methods:{
     staticRes,
-    pop(){
-      // TODO: 移植
-      // this.$refs.popup.open()
+    pop(message){
+      const cl = this.$refs.popup.classList;
+      if (this.popupTimer === -1) {
+        this.popMessage = message;
+        cl.add('out');
+        this.popupTimer = setTimeout(() => cl.remove('out'), 5000);
+      } else {
+        clearTimeout(this.popupTimer);
+        cl.remove('out');
+        setTimeout(() => {
+          this.popMessage = message;
+          cl.add('out');
+        }, 200);
+        this.popupTimer = setTimeout(() => cl.remove('out'), 5200);
+      }
     },
     onFinish(){
       this.info = 'finish'
@@ -238,8 +243,7 @@ export default {
       if (this.answerSendTimer !== -1) return;
       this.answerSendTimer = setTimeout(() => {
         if (this.clearAnswerSendTimer()) {
-          this.popMessage = '【断线】请检查网络连接并重试'
-          this.pop()
+          this.pop('【断线】请检查网络连接并重试')
         }
       }, 5000)
       const normalizedAnswer = this.inputAnswer
@@ -332,8 +336,7 @@ export default {
             case '捣浆糊': popupText += '总字数少于四字'; break;
             case '碎碎念': popupText += '总字数多于二十一字'; break;
           }
-          this.popMessage = popupText
-          this.pop()
+          this.pop(popupText)
         }
       }
     }
@@ -410,5 +413,25 @@ export default {
 
   .count_down{
     margin: 10px 5px;
+  }
+
+  .game-popup {
+    background: #fed;
+    overflow: hidden;
+    height: 0px;
+    transition: height 0.2s ease;
+    display: flex;
+    align-items: center;
+  }
+  .game-popup.out {
+    height: 120px;
+  }
+  .game-popup text {
+    color: rgba(238, 170, 51, 0);
+    transition: color 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .game-popup.out text {
+    color: rgba(238, 170, 51, 1);
+    transition: color 0.2s cubic-bezier(0.5, 0, 0.75, 0);
   }
 </style>
