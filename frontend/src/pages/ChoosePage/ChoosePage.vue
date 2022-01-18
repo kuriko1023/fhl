@@ -58,7 +58,7 @@
               :src="guestAvatar" mode="widthFix"></image>
           </view>
         </view>
-        <text style='font-family: Kai'>请等待房主选题</text>
+        <text class='kai'>请等待房主选题</text>
       </view>
       <view class="bottom">
         <uni-row v-if='isHost && !isSubjectChosen'>
