@@ -664,6 +664,14 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 查找/加入玩家数据库
 	player := GetPlayer(id)
+	// 如果是调试用，则任意取一个名字
+	if Config.Debug && cmpns[1][0] == '!' && player.Nickname == "" {
+		player.Nickname = "猫猫" + strconv.Itoa(len(Players))
+		if err := player.Save(); err != nil {
+			w.WriteHeader(500)
+			return
+		}
+	}
 
 	// 确认房间有效
 	if roomId == "my" {

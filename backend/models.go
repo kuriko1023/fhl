@@ -385,7 +385,7 @@ func GetPlayer(id string) *Player {
 	log.Println("New player " + id)
 	p := &Player{
 		Id:            id,
-		Nickname:      "猫猫" + id,
+		Nickname:      "",
 		Avatar:        defaultAvatar,
 		AvatarUpdated: time.Now().Unix(),
 	}
