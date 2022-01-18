@@ -1,7 +1,7 @@
 <template>
   <view>
     <image class="background" src="/static/game_background_scaled.jpg" ></image>
-    <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
+    <image class="background" :src="staticRes('game_background.png')" ></image>
     <view>
       <view style="text-align: center;">
 <!--        <image mode="widthFix" class="result_background" src="/static/result.png"></image>-->
@@ -29,7 +29,7 @@
         </uni-row>
       </view>
       <image src="/static/history_background_scaled.jpg" class="history_background"></image>
-      <image src="https://flyhana.starrah.cn/static/history_background.png" class="history_background"></image>
+      <image :src="staticRes('history_background.png')" class="history_background"></image>
     <view  class="info">
     <view>
       <subject-block :mode="mode" :subject="subject" />
