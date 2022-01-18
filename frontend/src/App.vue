@@ -7,6 +7,7 @@
 
             // 加载字体
             setTimeout(() => uni.loadFontFace({
+              global: true,
               family: 'Kai',
               source: `url("${staticRes('FZKTJW.woff2')}")`,
               success: (x) => { console.log('font loaded!', x) },
@@ -78,4 +79,8 @@
 
   uni-picker .uni-picker-action.uni-picker-action-confirm
   {color: #366440 !important;}
+
+  .kai {
+    font-family: Kai;
+  }
 </style>

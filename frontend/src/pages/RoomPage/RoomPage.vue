@@ -36,7 +36,7 @@
         </view>
 <!--        <p>客人：{{ guest }}</p>-->
       </view>
-      <view v-if="isHost && connected" style='text-align: center; font-size: 14px; margin-top: 4ex'>
+      <view v-if="isHost && connected" style='text-align: center; font-size: 14px; margin-top: 4ex; line-height: 1.6'>
         点击右上角「…」按钮<br>邀请好友加入房间
       </view>
       <view class="bottom">
@@ -182,7 +182,6 @@ export default {
 }
 .status{
   font-size: 26px;
-  font-family: 华文行楷;
   font-weight: bold;
   color: #49443d;
 }

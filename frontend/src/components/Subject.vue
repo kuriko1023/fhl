@@ -23,8 +23,8 @@
       <view  class="center">
         <view>
           <view style="display: inline-block">
-            <view v-for="item in subject.subject1" :key="item" style="float: left">
-                <text class="tianzige">{{item}}</text>
+            <view class="tianzige" v-for="item in subject.subject1" :key="item" style="float: left">
+                <text>{{item}}</text>
             </view>
           </view>
         </view>
@@ -69,14 +69,18 @@ export default {
 
 <style scoped>
 .tianzige {
-  font-family: Kai;
-  font-size: 34px;
-  background-size: cover;
   background-image: url("/static/tianzige.png");
   width: 45px;
   height: 45px;
+  background-size: cover;
   text-align: center;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+.tianzige text {
+  font-family: Kai;
+  font-size: 34px;
 }
 .subjectText {
   display: flex;
