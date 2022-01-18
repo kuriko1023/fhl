@@ -893,6 +893,7 @@ func SetUpHttp() {
 		http.FileServer(http.Dir("../frontend/src/static_remote")))
 	http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Cache-Control", "max-age=604800")
 		fileServer.ServeHTTP(w, r)
 	})
 
