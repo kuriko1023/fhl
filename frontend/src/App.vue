@@ -7,8 +7,8 @@
 
             // 加载字体
             setTimeout(() => uni.loadFontFace({
-              family: 'STKaiti',
-              source: `url("${staticRes('STKaiti.woff2')}")`,
+              family: 'Kai',
+              source: `url("${staticRes('FZKTJW.woff2')}")`,
               success: (x) => { console.log('font loaded!', x) },
               fail: (x) => { console.log('font load failed!', x) },
             }), 100)

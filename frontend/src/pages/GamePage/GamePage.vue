@@ -369,14 +369,14 @@ export default {
     margin-bottom: 5%;
   }
   .kati {
-    font-family: "STKaiti";
+    font-family: Kai;
     font-size: 21px;
     padding: 0 1px;
   }
 
   .btn{
     background-color: #366440;
-    font-family: "STKaiti";
+    font-family: Kai;
     color: white;
     border-radius: 6px;
     font-size: 14px;
