@@ -30,14 +30,17 @@ name: "CountDown",
   return{
     cur: 0,
     int: -1,
+    lastTimestamp: 0,
   }
   },
   watch: {
     active: function(val){
       //console.log('active')
       if(val){
-        if (this.int === -1)
-          this.int = setInterval(this.intervalFunction, this.time)
+        if (this.int === -1) {
+          this.lastTimestamp = Date.now()
+          this.int = setInterval(this.intervalFunction, 200)
+        }
       }
       else{
         if (this.int !== -1) {
@@ -59,7 +62,10 @@ name: "CountDown",
       return num + '%'
     },
     intervalFunction(){
-        this.cur = this.cur + 0.1
+        const now = Date.now()
+        // 10 = 1000 (ms) / 100 (percent)
+        this.cur += (now - this.lastTimestamp) / (10 * this.time);
+        this.lastTimestamp = now;
         if(this.cur >= 100){
           clearInterval(this.int)
           this.int = -1;
@@ -70,8 +76,10 @@ name: "CountDown",
   },
   mounted() {
     if (this.active) {
-      if (this.int === -1)
-        this.int = setInterval(this.intervalFunction, this.time)
+      if (this.int === -1) {
+        this.lastTimestamp = Date.now()
+        this.int = setInterval(this.intervalFunction, 200)
+      }
     }
   },
   unmounted() {
@@ -90,5 +98,6 @@ name: "CountDown",
     height: 7px;
     border-radius: 2px;
     margin: 3px 0;
+    transition: width linear 200ms;
   }
 </style>
