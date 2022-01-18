@@ -4,10 +4,10 @@
     <view class="content">
       <view class="modeChoose" v-if="isHost || isSubjectChosen">
         <radio-group @change="onModeChange" >
-          <div><label><radio :disabled="!isHost" class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">梦笔生花</span></label></div>
-          <div><label><radio :disabled="!isHost" class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">走马观花</span></label></div>
-          <div><label><radio :disabled="!isHost" class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">天女散花</span></label></div>
-          <div><label><radio :disabled="!isHost" class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">雾里看花</span></label></div>
+          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">梦笔生花</span></label></div>
+          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">走马观花</span></label></div>
+          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">天女散花</span></label></div>
+          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">雾里看花</span></label></div>
         </radio-group>
       </view>
       <view v-if="isHost || isSubjectChosen">
@@ -26,7 +26,7 @@
               <span class="tip" >选择题型</span>
             </uni-col>
             <uni-col :span="12">
-              <picker :disabled="!isHost" :range="range[mode]" @change="onSizeChange" :value="picker" mode="selector" >
+              <picker :disabled="!isHost || isSubjectChosen" :range="range[mode]" @change="onSizeChange" :value="picker" mode="selector" >
                 <view class="picker_btn">
                   {{range[mode][picker]}}
                 </view>
