@@ -3,5 +3,6 @@
   "appid": "<id>",
   "appsecret": "<secret>",
   "debug": false,
+  "allow_origin": "*",
   "article_cache": 50000
 }
