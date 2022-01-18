@@ -24,10 +24,8 @@ Vue.prototype.retrieveServerProfile = function (callback) {
         req();
         return;
       }
-      console.log('asd', obj);
       getApp().globalData.my = {
         id: obj.id,
-        avatar: obj.avatar,
         nickname: obj.nickname,
       };
       callback();
@@ -39,8 +37,7 @@ Vue.prototype.retrieveServerProfile = function (callback) {
 
 Vue.prototype.requestLocalProfile = function (callback) {
   console.log(getApp().globalData.my)
-  if (!getApp().globalData.my.nickname ||
-      !getApp().globalData.my.avatar) {
+  if (!getApp().globalData.my.nickname) {
     uni.getUserProfile({
       desc: '用于向其他玩家展示头像和昵称',
       success: (res) => {
