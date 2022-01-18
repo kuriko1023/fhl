@@ -1,7 +1,7 @@
 <template>
   <view>
     <image src="/static/room_background_scaled.jpg" class="background"></image>
-    <image src="https://flyhana.starrah.cn/static/room_background.png" class="background"></image>
+    <image :src="staticRes('room_background.png')" class="background"></image>
     <view style="width: 100%; height: 100%; padding-top: 20%">
       <view v-if='!connected' class='center'
         style='width: 80%; height: 60px; position: relative'>
@@ -58,6 +58,7 @@
 </template>
 
 <script>
+import { apiServer, wsServer } from 'utils';
 export default {
   name: "RoomPage",
   data() {
@@ -92,8 +93,7 @@ export default {
       const urlPromise = () => new Promise((resolve, reject) => {
         uni.login({
           success: (res) => resolve(
-            // 'wss://flyhana.starrah.cn/channel/my/!kuriko1023',
-            'wss://flyhana.starrah.cn/channel/' + this.room + '/' + res.code,
+            `${wsServer}/channel/${this.room}/${res.code}`,
           ),
           fail: () => reject(),
         });
@@ -142,10 +142,10 @@ export default {
         }
         this.connected = true;
         this.host = msg.host;
-        this.hostAvatar = 'https://flyhana.starrah.cn/avatar/' + msg.host_avatar;
+        this.hostAvatar = `${apiServer}/avatar/${msg.host_avatar}`;
         this.hostStatus = msg.host_status;  // absent, present, ready
         this.guest = (msg.guest || '');
-        this.guestAvatar = 'https://flyhana.starrah.cn/avatar/' + (msg.guest_avatar || '');
+        this.guestAvatar = `${apiServer}/avatar/${msg.guest_avatar || ''}`;
         getApp().globalData.host = this.host;
         getApp().globalData.guest = this.guest;
         getApp().globalData.hostAvatar = this.hostAvatar;

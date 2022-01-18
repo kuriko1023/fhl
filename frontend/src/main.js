@@ -3,14 +3,21 @@ import App from './App'
 
 Vue.config.productionTip = false
 
+import {
+  apiServer, wsServer, staticRes,
+} from 'utils';
+
+Vue.mixin({
+  methods: { staticRes }
+});
+
 Vue.prototype.retrieveServerProfile = function (callback) {
   if (getApp().globalData.my) {
     callback();
     return;
   }
   const req = () => uni.login({success: (res) => uni.request({
-    // url: 'https://flyhana.starrah.cn/profile/!kuriko1023',
-    url: 'https://flyhana.starrah.cn/profile/' + res.code,
+    url: `${apiServer}/profile/${res.code}`,
     success: (res) => {
       const obj = res.data;
       if (!obj || !obj.id) {

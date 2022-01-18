@@ -1,5 +1,6 @@
 <script>
   import GamePage from "@/pages/GamePage/GamePage";
+  import { staticRes } from 'utils';
 	export default {
 		onLaunch: function() {
 			console.log('App Launch')
@@ -7,7 +8,7 @@
             // 加载字体
             setTimeout(() => uni.loadFontFace({
               family: 'STKaiti',
-              source: 'url("https://flyhana.starrah.cn/static/STKaiti.woff2")',
+              source: `url("${staticRes('STKaiti.woff2')}")`,
               success: (x) => { console.log('font loaded!', x) },
               fail: (x) => { console.log('font load failed!', x) },
             }), 100)
@@ -77,9 +78,4 @@
 
   uni-picker .uni-picker-action.uni-picker-action-confirm
   {color: #366440 !important;}
-
-  @font-face {
-    font-family: "STKaiti";
-    src: url("https://flyhana.starrah.cn/static/STKaiti.woff2") format("woff2");
-  }
 </style>

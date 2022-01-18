@@ -1,6 +1,6 @@
 <template>
   <view>
-    <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
+    <image class="background" :src="staticRes('game_background.png')" ></image>
     <view class="content">
 <!--      <uni-row>-->
 <!--        <uni-col :span="12">-->
@@ -148,7 +148,7 @@ name: "ChoosePage",
     },
     onConfirm(){
       this.sendSocketMessage({
-        type: 'start_game',
+        type: 'confirm_subject',
       });
     },
     generate(){

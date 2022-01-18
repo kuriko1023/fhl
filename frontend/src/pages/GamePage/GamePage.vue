@@ -1,7 +1,7 @@
 <template>
   <view>
     <image class="background" src="/static/game_background_scaled.jpg" ></image>
-    <image class="background" src="https://flyhana.starrah.cn/static/game_background.png" ></image>
+    <image class="background" :src="staticRes('game_background.png')" ></image>
     <view style="padding: 15px">
     <view id="subject" style="margin-bottom: 20px">
       <subject-block :mode="mode" :subject="subject">
@@ -26,7 +26,7 @@
 <!--      <button @click="onStop2">stop2</button>-->
     </view>
     <image src="/static/history_background_scaled.jpg" class="history_background"></image>
-    <image src="https://flyhana.starrah.cn/static/history_background.png" class="history_background"></image>
+    <image :src="staticRes('history_background.png')" class="history_background"></image>
     <view id="answerHistory">
       <history-block :data="history"/>
     </view>
