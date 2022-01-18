@@ -392,3 +392,8 @@ func GetPlayer(id string) *Player {
 	p.Save()
 	return p
 }
+
+func ClearDatabase() error {
+	_, err := db.Exec("DELETE FROM players")
+	return err
+}
