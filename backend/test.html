@@ -9,7 +9,7 @@ window.addEventListener("load", function(evt) {
     var output = document.getElementById("output");
     var input = document.getElementById("input");
     var ws;
-    var print = function(message, chroma, bold) {
+    var print = function(message, chroma, bold, send) {
         var d = document.createElement("div");
         if (chroma) d.style.color = chroma;
         if (bold) d.style.fontWeight = 'bold';
@@ -18,6 +18,7 @@ window.addEventListener("load", function(evt) {
         d.textContent = message;
         output.appendChild(d);
         d.scrollIntoView();
+        if (send) d.onclick = function () { input.value = message; };
     };
     var unprint = function() {
         output.lastElementChild.remove();
@@ -75,7 +76,7 @@ window.addEventListener("load", function(evt) {
             return false;
         }
         print("SEND", "#f6a", true);
-        print(input.value, "#835");
+        print(input.value, "#835", false, true);
         ws.send(input.value);
         var obj = tryparse(input.value);
         if (obj.type === 'start_generate')

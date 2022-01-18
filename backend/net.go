@@ -633,6 +633,12 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 			bicastGameDelta(p.InRoom, change)
 		}
 
+	case "end":
+		if !Config.Debug {
+			panic("Not in debug mode")
+		}
+		p.InRoom.LastMoveAt = 0
+
 	default:
 		panic("Unknown type")
 	}
@@ -866,6 +872,11 @@ func resetHandler(w http.ResponseWriter, r *http.Request) {
 			room.TimerStopSignal = nil
 		}
 		resetRoomState(room)
+	}
+	Players = map[string]*Player{}
+	Rooms = map[string]*Room{}
+	if err := ClearDatabase(); err != nil {
+		w.WriteHeader(500)
 	}
 	DataMutex.Unlock()
 }
