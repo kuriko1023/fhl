@@ -18,7 +18,6 @@
           </uni-col>
           <uni-col :span="8">
            <image class="vs"  src="/static/vs.png" mode="widthFix"></image>
-<!--            <p style="font-family: 'STKaiti'; font-size: 24px; font-weight: bold">对战</p>-->
           </uni-col>
           <uni-col :span="8">
         <view >

@@ -69,7 +69,7 @@ export default {
 
 <style scoped>
 .tianzige {
-  font-family: "STKaiti";
+  font-family: Kai;
   font-size: 34px;
   background-size: cover;
   background-image: url("/static/tianzige.png");
@@ -91,7 +91,7 @@ export default {
 }
 
 .kati {
-  font-family: "STKaiti";
+  font-family: Kai;
   font-size: 21px;
   padding: 5px 3px;
 }
