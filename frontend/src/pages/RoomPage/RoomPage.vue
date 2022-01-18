@@ -120,7 +120,8 @@ export default {
   },
   methods: {
     onSocketMessage() {
-      if (this.tryPeekSocketMessage('generated')) {
+      if (this.tryPeekSocketMessage('generated') ||
+          this.tryPeekSocketMessage('generate_wait')) {
         uni.redirectTo({
           url: "/pages/ChoosePage/ChoosePage"
         })
