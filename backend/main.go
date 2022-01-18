@@ -14,6 +14,8 @@ var Config struct {
 	AppSecret string `json:"appsecret"`
 	Debug     bool   `json:"debug"`
 
+	AllowOrigin string `json:"allow_origin"`
+
 	ArticleCache int `json:"article_cache"`
 }
 
