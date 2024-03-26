@@ -861,10 +861,10 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 	var me string
 	if testCounter%2 == 0 {
 		host = "my"
-		me = "kuriko1023"
+		me = "kuriko"
 	} else {
-		host = "kuriko1023"
-		me = "PiscesOvO"
+		host = "kuriko"
+		me = "ayuu"
 	}
 	testCounter++
 	s = strings.Replace(s, "~ host ~", host, 1)

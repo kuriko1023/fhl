@@ -2,7 +2,7 @@
   "port": 2310,
   "appid": "<id>",
   "appsecret": "<secret>",
-  "debug": false,
+  "debug": true,
   "allow_origin": "*",
   "article_cache": 50000
 }
