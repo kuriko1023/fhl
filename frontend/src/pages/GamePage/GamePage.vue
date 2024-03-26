@@ -12,7 +12,7 @@
       <image class="circle" :style="'width: 28px; height: 28px; ' + (((side === 0) ^ isHost) ? '' : 'display: none')" :src="guestAvatar" mode="widthFix"></image>
       <view style="display: flex; width: 100%; overflow: scroll; height: 28px">
         <view v-for="word in answer" :key="word.word">
-          <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</text>
+          <p class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</p>
         </view>
       </view>
     </view>
@@ -363,10 +363,10 @@ export default {
   }
   #submit{
     position: fixed;
-    bottom: 0;
-    left: 0;
+    bottom: 5vh;
+    left: calc(50% - 30vh);
     width: 100%;
-    margin-bottom: 5%;
+    max-width: 60vh;
   }
   .kati {
     font-family: Kai;
