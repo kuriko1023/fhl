@@ -42,6 +42,17 @@
 </script>
 
 <style>
+uni-page-wrapper {
+  overflow: scroll;
+}
+uni-page {
+  min-height: 100%;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 60vh;
+  position: relative;
+}
+
 	/*每个页面公共css */
   radio::before,
   checkbox::before {

@@ -3,10 +3,10 @@
     <ul style="padding: 10px">
       <li v-for="item in data" :key="item">
         <view  class="center">
-          <view>
+          <view style='line-height: 0; margin-bottom: 0.5ex'>
             <view style="display: inline-block">
               <view v-for="word in item" :key="word.word" style="float: left">
-                <text class="kati" :style="{color: wordColor[word.highlight]}">{{word.word}}</text>
+                <p class="kati" :style="{color: wordColor[word.highlight]}">{{word.word}}</p>
               </view>
             </view>
           </view>

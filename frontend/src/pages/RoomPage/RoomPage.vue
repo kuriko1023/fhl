@@ -1,3 +1,4 @@
+<!-- http://localhost:8080/?uid=u1#/pages/RoomPage/RoomPage -->
 <template>
   <view>
     <image src="/static/room_background_scaled.jpg" class="background"></image>
@@ -86,17 +87,28 @@ export default {
         delete getApp().globalData.myRoom;
         this.room = getApp().globalData.my.id;
       } else {
-        const room = uni.getEnterOptionsSync().query.room;
+        let room = 'my';
+        if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {
+          room = uni.getEnterOptionsSync().query.room;
+        } else {
+          if (window.location.search.startsWith('?room='))
+            room = window.location.search.substring('?room='.length);
+        }
         this.room = room;
       }
 
       const urlPromise = () => new Promise((resolve, reject) => {
-        uni.login({
-          success: (res) => resolve(
-            `${wsServer}/channel/${this.room}/${res.code}`,
-          ),
-          fail: () => reject(),
-        });
+        if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {
+          uni.login({
+            success: (res) => resolve(
+              `${wsServer}/channel/${this.room}/${res.code}`,
+            ),
+            fail: () => reject(),
+          });
+        } else {
+          const code = '!' + getApp().globalData.my.id;
+          resolve(`${wsServer}/channel/${this.room}/${code}`);
+        }
       });
       this.connectSocket({
         url: urlPromise,
@@ -215,10 +227,10 @@ export default {
 
 .bottom {
   position: fixed;
-  bottom: 0;
-  left: 0;
+  bottom: 8vh;
+  left: calc(50% - 30vh);
   width: 100%;
-  margin-bottom: 8%;
+  max-width: 60vh;
 }
 
 .btn2{

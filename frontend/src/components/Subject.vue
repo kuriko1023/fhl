@@ -4,7 +4,7 @@
     <template v-if="mode === 'D'">
       <view style="display: flex; flex-wrap:wrap;" class="subjectText">
         <view v-for="item in subject.subject1" :key="item.value">
-          <text class="kati word" :style="{color: colorD[item.show]}">{{item.value}}</text>
+          <p class="kati word" :style="{color: colorD[item.show]}">{{item.value}}</p>
         </view>
       </view>
     </template>
@@ -13,7 +13,7 @@
         <view class="subjectText">
           <view style="display: inline-block;" >
             <view v-for="item in subject.subject1" :key="item.value" style="float: left">
-              <text class="kati char" :style="{color: colorB[item.show]}">{{item.value}}</text>
+              <p class="kati char" :style="{color: colorB[item.show]}">{{item.value}}</p>
             </view>
           </view>
         </view>
@@ -35,7 +35,7 @@
         <view class="subjectText">
           <view style="display: inline-block;" >
             <view v-for="item in subject.subject2" :key="item.value" style="float: left">
-              <text class="kati word" :style="{color: colorD[item.show]}">{{item.value}}</text>
+              <p class="kati word" :style="{color: colorD[item.show]}">{{item.value}}</p>
             </view>
           </view>
         </view>
