@@ -46,7 +46,7 @@
 import Subject from "@/components/Subject";
 import History from "@/components/History";
 export default {
-name: "EndPage",
+name: "FinishPage",
   components:{
     "subject-block": Subject,
     "history-block": History
@@ -73,7 +73,7 @@ name: "EndPage",
   methods:{
     onBack(){
       uni.redirectTo({
-        'url': '/pages/RoomPage/RoomPage'
+        'url': '/pages/room'
       })
     },
     onSocketMessage() {

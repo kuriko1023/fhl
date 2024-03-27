@@ -1,4 +1,4 @@
-<!-- http://localhost:8080/?uid=u1#/pages/RoomPage/RoomPage -->
+<!-- http://localhost:8080/?uid=u1#/pages/room -->
 <template>
   <view>
     <image src="/static/room_background_scaled.jpg" class="background"></image>
@@ -130,12 +130,12 @@ export default {
       if (this.tryPeekSocketMessage('generated') ||
           this.tryPeekSocketMessage('generate_wait')) {
         uni.redirectTo({
-          url: "/pages/ChoosePage/ChoosePage"
+          url: "/pages/subject"
         })
         return
       } else if (this.tryPeekSocketMessage('game_status')) {
         uni.redirectTo({
-          url: "/pages/GamePage/GamePage"
+          url: "/pages/game"
         })
         return
       }
@@ -173,7 +173,7 @@ export default {
     startGame() {
       this.sendSocketMessage({type: 'start_generate'});
       uni.redirectTo({
-        url: "/pages/ChoosePage/ChoosePage"
+        url: "/pages/subject"
       })
     }
   }
