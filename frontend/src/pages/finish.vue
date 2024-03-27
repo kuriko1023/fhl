@@ -7,13 +7,13 @@
 <!--        <image mode="widthFix" class="result_background" src="/static/result.png"></image>-->
         <image mode="widthFix" class="result" :src="'/static/' + (win === 1 ? 'victory.png' : win === 0 ? 'tie.png' : 'lose.png')"></image>
       </view>
-      <view style="text-align: center; margin: 10px 0 5px 0; padding: 0 30px">
+      <view style="text-align: center; margin: 10px 0 5px 0; padding: 0 30px; line-height: 0">
         <uni-row>
 
           <uni-col :span="8">
         <view >
         <image class="circle" style="width: 24px; height: 24px" :src="hostAvatar" mode="widthFix"></image>
-        <p style="font-size: 12px; color: #666666">{{ host }}</p>
+        <p style="font-size: 12px; color: #666666; line-height: 1">{{ host }}</p>
         </view>
           </uni-col>
           <uni-col :span="8">
@@ -22,7 +22,7 @@
           <uni-col :span="8">
         <view >
           <image class="circle" style="width: 24px; height: 24px" :src="guestAvatar" mode="widthFix"></image>
-          <p style="font-size: 12px; color: #666666">{{ guest }}</p>
+          <p style="font-size: 12px; color: #666666; line-height: 1">{{ guest }}</p>
         </view>
           </uni-col>
         </uni-row>
@@ -37,7 +37,9 @@
       <history-block :data="history"/>
     </view>
     </view>
-<!--    <button @click="onBack" class="btn1">返回</button>-->
+    <view>
+      <button @click="onBack" class="btn-back">返回</button>
+    </view>
   </view>
   </view>
 </template>
@@ -106,18 +108,20 @@ name: "FinishPage",
   z-index: -1;
 }
 
-.btn1{
+.btn-back {
   background-color: #689a74;
   color: white;
   border-radius: 10px;
-  margin-left: 18%;
-  margin-right:10%;
+  position: absolute;
+  width: 80%;
+  left: 10%;
+  bottom: 5vh;
   font-size: 14px;
 }
 
 .info{
   position: absolute;
-  height: 65%;
+  height: 57vh;
   width: 88%;
   margin: 0 6% 10px 6%;
   overflow: scroll;

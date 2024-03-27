@@ -4,7 +4,7 @@
       <li v-for="item in data" :key="item">
         <view  class="center">
           <view style='line-height: 0; margin-bottom: 0.5ex'>
-            <view style="display: inline-block">
+            <view style="display: inline-block; line-height: 0.5">
               <view v-for="word in item" :key="word.word" style="float: left">
                 <p class="kati" :style="{color: wordColor[word.highlight]}">{{word.word}}</p>
               </view>
