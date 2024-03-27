@@ -66,7 +66,7 @@ func loginWx(code string) string {
 		return ""
 	}
 
-	return "wx:" + object.OpenID
+	return "wx_" + object.OpenID
 }
 
 func loginWeb(code string) string {
@@ -74,7 +74,7 @@ func loginWeb(code string) string {
 	h.Write([]byte(code))
 	digest := h.Sum(nil)
 	trunc := fmt.Sprintf("%x", digest)[:20]
-	return "web:" + trunc
+	return "web_" + trunc
 }
 
 func login(code string) string {
