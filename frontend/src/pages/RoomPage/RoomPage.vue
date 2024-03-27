@@ -98,17 +98,12 @@ export default {
       }
 
       const urlPromise = () => new Promise((resolve, reject) => {
-        if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {
-          uni.login({
-            success: (res) => resolve(
-              `${wsServer}/channel/${this.room}/${res.code}`,
-            ),
-            fail: () => reject(),
-          });
-        } else {
-          const code = '!' + getApp().globalData.my.id;
-          resolve(`${wsServer}/channel/${this.room}/${code}`);
-        }
+        this.adaptedLogin({
+          success: (code) => resolve(
+            `${wsServer}/channel/${this.room}/${code}`,
+          ),
+          fail: () => reject(),
+        });
       });
       this.connectSocket({
         url: urlPromise,
