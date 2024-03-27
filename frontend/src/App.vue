@@ -26,7 +26,7 @@
 
 <style>
 uni-page-wrapper {
-  overflow: scroll;
+  overflow: hidden;
 }
 uni-page {
   min-height: 100%;

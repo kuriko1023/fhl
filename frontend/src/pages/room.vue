@@ -1,4 +1,3 @@
-<!-- http://localhost:8080/?uid=u1#/pages/room -->
 <template>
   <view>
     <image src="/static/room_background_scaled.jpg" class="background"></image>
