@@ -3,40 +3,23 @@
   import { staticRes } from 'utils';
 	export default {
 		onLaunch: function() {
-			console.log('App Launch')
-
             // 加载字体
-            setTimeout(() => uni.loadFontFace({
+            const loadFont = () => uni.loadFontFace({
               global: true,
               family: 'Kai',
               source: `url("${staticRes('FZKTJW.woff2')}")`,
               success: (x) => { console.log('font loaded!', x) },
-              fail: (x) => { console.log('font load failed!', x) },
-            }), 100)
+              fail: (x) => {
+                console.log('font load failed!', x)
+                setTimeout(loadFont, 500)
+              },
+            })
+            setTimeout(loadFont, 100)
 
 		},
 		onShow: function() {
-		  // function connect() {
-      //   let int = setInterval(function () {
-      //     uni.connectSocket({
-      //       url: 'ws://66.42.69.75:2310/channel/my/!kuriko',
-      //       success: () => {
-      //         console.log('connect success')
-      //       }
-      //     })
-      //     uni.onSocketOpen(function (res) {
-      //       clearInterval(int)
-      //     })
-      //   }, 100)
-      // }
-      // connect()
-      // uni.onSocketClose(function(res) {
-      //       connect()
-      //     }
-      // )
 		},
 		onHide: function() {
-			console.log('App Hide')
 		}
 	}
 </script>
