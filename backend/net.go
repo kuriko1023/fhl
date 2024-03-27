@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,12 +34,7 @@ var upgrader = websocket.Upgrader{
 // 登录
 // 传入微信登录 wx.login() 获得的 code
 // 返回 OpenID
-func login(code string) string {
-	// 调试用，若 code 以 "!" 开头，则 OpenID 等于 code 去掉 "!"
-	if Config.Debug && len(code) >= 2 && code[0] == '!' {
-		return code[1:]
-	}
-
+func loginWx(code string) string {
 	resp, err := http.Get(
 		"https://api.weixin.qq.com/sns/jscode2session?appid=" + Config.AppID +
 			"&secret=" + Config.AppSecret +
@@ -69,7 +66,63 @@ func login(code string) string {
 		return ""
 	}
 
-	return object.OpenID
+	return "wx:" + object.OpenID
+}
+
+func loginWeb(code string) string {
+	h := sha512.New()
+	h.Write([]byte(code))
+	digest := h.Sum(nil)
+	trunc := fmt.Sprintf("%x", digest)[:20]
+	return "web:" + trunc
+}
+
+func login(code string) string {
+	if len(code) >= 180 {
+		return ""
+	}
+
+	id := ""
+	name := ""
+
+	// 调试用，若 code 以 "!" 开头，则 ID 等于 code 去掉 "!"
+	if Config.Debug && len(code) >= 2 && code[0] == '!' {
+		id = code[1:]
+		name = "猫猫" + strconv.Itoa(len(Players))
+	}
+
+	var prefix string
+
+	prefix = "web_login:"
+	if len(code) >= len(prefix) && code[:len(prefix)] == prefix {
+		code = code[len(prefix):]
+		id = loginWeb(code)
+		decoded, err := hex.DecodeString(code)
+		if err != nil {
+			return ""
+		}
+		name = string(decoded)
+		log.Println("name", name)
+	}
+
+	prefix = "wx_login:"
+	if len(code) >= len(prefix) && code[:len(prefix)] == prefix {
+		id = loginWx(code[len(prefix):])
+	}
+
+	if id == "" {
+		return ""
+	}
+
+	if Players[id] == nil && name != "" {
+		// 注册新玩家
+		player := GetPlayer(id)
+		player.Nickname = name
+		if err := player.Save(); err != nil {
+			return ""
+		}
+	}
+	return id
 }
 
 func retrieveAvatar(url string) []byte {
@@ -645,6 +698,10 @@ func handlePlayerMessage(p *Player, object map[string]interface{}) {
 }
 
 func channelHandler(w http.ResponseWriter, r *http.Request) {
+	if Config.Debug {
+		w.Header().Set("Access-Control-Allow-Origin", Config.AllowOrigin)
+	}
+
 	cmpns := strings.SplitN(r.URL.Path[len("/channel/"):], "/", 2)
 	if len(cmpns) != 2 {
 		// Bad Request，URL 不合法
@@ -653,7 +710,8 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	roomId := cmpns[0]
-	id := login(cmpns[1])
+	loginCode := cmpns[1]
+	id := login(loginCode)
 
 	// 确认登录信息有效
 	if id == "" {
@@ -664,14 +722,6 @@ func channelHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 查找/加入玩家数据库
 	player := GetPlayer(id)
-	// 如果是调试用，则任意取一个名字
-	if Config.Debug && cmpns[1][0] == '!' && player.Nickname == "" {
-		player.Nickname = "猫猫" + strconv.Itoa(len(Players))
-		if err := player.Save(); err != nil {
-			w.WriteHeader(500)
-			return
-		}
-	}
 
 	// 确认房间有效
 	if roomId == "my" {
@@ -812,6 +862,10 @@ messageLoop:
 }
 
 func profileHandler(w http.ResponseWriter, r *http.Request) {
+	if Config.Debug {
+		w.Header().Set("Access-Control-Allow-Origin", Config.AllowOrigin)
+	}
+
 	id := login(r.URL.Path[len("/profile/"):])
 
 	obj := map[string]interface{}{
@@ -836,6 +890,10 @@ func init() {
 }
 
 func avatarHandler(w http.ResponseWriter, r *http.Request) {
+	if Config.Debug {
+		w.Header().Set("Access-Control-Allow-Origin", Config.AllowOrigin)
+	}
+
 	id := strings.SplitN(r.URL.Path[len("/avatar/"):], "/", 2)[0]
 	if id == "" {
 		w.Write(defaultAvatar)

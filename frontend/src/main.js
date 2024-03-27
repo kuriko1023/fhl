@@ -11,37 +11,54 @@ Vue.mixin({
   methods: { staticRes }
 });
 
+if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {
+  Vue.prototype.adaptedLogin = (options) => {
+    uni.login({
+      success: (resp) => options.success('wx_login:' + resp.code),
+      fail: () => options.fail && options.fail(),
+    });
+  }
+} else {
+  let uid = null;
+  Vue.prototype.adaptedLogin = (options) => {
+    if (uid === null) {
+      do {
+        uid = prompt('你的名字~（不超过 20 字）');
+      } while (uid === null || uid.length > 20);
+      /* if (uid === null) {
+        if (options.fail) options.fail();
+        return;
+      } */
+    }
+    const hex = [];
+    for (const n of new TextEncoder().encode(uid))
+      hex.push(n.toString(16).padStart('0', 2))
+    options.success('web_login:' + hex.join(''));
+  };
+}
+
 Vue.prototype.retrieveServerProfile = function (callback) {
   if (getApp().globalData.my) {
     callback();
     return;
   }
-  if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {
-    const req = () => uni.login({success: (res) => uni.request({
-      url: `${apiServer}/profile/${res.code}`,
-      success: (res) => {
-        const obj = res.data;
-        if (!obj || !obj.id) {
-          req();
-          return;
-        }
-        getApp().globalData.my = {
-          id: obj.id,
-          nickname: obj.nickname,
-        };
-        callback();
-      },
-      fail: () => req(),
-    })});
-    req();
-  } else {
-    const uid = prompt('input uid');
-    getApp().globalData.my = {
-      id: uid,
-      nickname: '测试玩家' + uid,
-    };
-    callback();
-  }
+  const req = () => this.adaptedLogin({success: (code) => uni.request({
+    url: `${apiServer}/profile/${code}`,
+    success: (res) => {
+      const obj = res.data;
+      if (!obj || !obj.id) {
+        req();
+        return;
+      }
+      getApp().globalData.my = {
+        id: obj.id,
+        nickname: obj.nickname,
+      };
+      callback();
+    },
+    fail: () => req(),
+  })});
+  req();
 };
 
 Vue.prototype.requestLocalProfile = function (callback) {
