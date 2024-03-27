@@ -1,6 +1,6 @@
 <template>
   <view id="background">
-    <image v-if='profileInitialized' class="startButton" @click="onEnter" :src="staticRes('game_start.png')"></image>
+    <image v-if='profileInitialized' class="startButton" @click="enterPressed" :src="staticRes('game_start.png')"></image>
     <image class="background" src="/static/start_background_scaled.jpg" ></image>
     <image class="background" :src="staticRes('start_background.png')" ></image>
     <text class="kai info">
@@ -17,12 +17,17 @@ name: "LandingPage",
   }),
   onLoad() {
     this.retrieveServerProfile(() => this.profileInitialized = true)
+    if (window.location.search.startsWith('?room=')) {
+      uni.navigateTo({
+        url: "/pages/room"
+      })
+    }
   },
   onShow() {
     this.closeSocket()
   },
   methods: {
-    onEnter(){
+    enterPressed() {
       this.requestLocalProfile(() => this.enterRoom())
     },
     enterRoom() {

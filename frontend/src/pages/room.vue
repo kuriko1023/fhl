@@ -38,7 +38,14 @@
 <!--        <p>客人：{{ guest }}</p>-->
       </view>
       <view v-if="isHost && connected" style='text-align: center; font-size: 14px; margin-top: 4ex; line-height: 1.6'>
-        点击右上角「…」按钮<br>邀请好友加入房间
+        <view v-if="webShareLink !== null">
+          <p style='font-size: 1.1em; font-weight: bold'>房间链接</p>
+          <tt class='text-share-link'>{{ webShareLink }}</tt>
+          <button @click='copyShareLink' class='btn-share-link'>复制</button>
+        </view>
+        <view v-else>
+          <p>点击右上角「…」按钮<br>邀请好友加入房间</p>
+        </view>
       </view>
       <view class="bottom">
         <uni-row>
@@ -77,6 +84,8 @@ export default {
       guestAvatar: '',
 
       isHost: false,
+
+      webShareLink: null,
     };
   },
   onLoad() {
@@ -115,17 +124,25 @@ export default {
         },
       });
 
-      this.isHost = getApp().globalData.isHost = (this.room === getApp().globalData.my.id);
+      this.isHost = getApp().globalData.isHost =
+        (this.room === 'my' || this.room === getApp().globalData.my.id);
+      if (uni.getSystemInfoSync().uniPlatform !== 'mp-weixin')
+        this.webShareLink = window.location.origin + '/?room=' + getApp().globalData.my.id
     });
   },
   onShareAppMessage (res) {
     return {
       title: '一起来玩飞花令吧',
-      path: '/pages/RoomPage/RoomPage?room=' + this.room,
+      path: '/pages/room?room=' + this.room,
       imageUrl: '/static/start_background.jpg',
     };
   },
   methods: {
+    copyShareLink() {
+      uni.setClipboardData({
+        data: this.webShareLink,
+      });
+    },
     onSocketMessage() {
       if (this.tryPeekSocketMessage('generated') ||
           this.tryPeekSocketMessage('generate_wait')) {
@@ -251,5 +268,18 @@ export default {
 }
 .spinning {
   animation: spinning 2s linear infinite;
+}
+
+.text-share-link {
+  user-select: text;
+}
+.btn-share-link {
+  background-color: #84765e;
+  color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  width: 30%;
+  min-width: 6em;
+  margin-top: 1ex;
 }
 </style>
