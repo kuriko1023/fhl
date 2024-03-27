@@ -5,13 +5,13 @@
     <view style="width: 100%; height: 100%; padding-top: 20%">
       <view v-if='!connected' class='center'
         style='width: 80%; height: 60px; position: relative'>
-        <view class='vertical-center' style='width: 32px; height: 32px; left: 30%'>
+        <view class='vertical-center' style='width: 32px; height: 32px; left: 30%; line-height: 0'>
           <!-- Dave Gandy, https://www.flaticon.com/authors/dave-gandy -->
           <image src='/static/spinner-of-dots.png'
             class='spinning'
             style='width: 100%; height: 100%' />
         </view>
-        <p style='left: 50%' class='vertical-center'>{{ status }}</p>
+        <p style='left: 50%; font-size: 24px' class='vertical-center'>{{ status }}</p>
       </view>
       <view v-else class="center">
         <view style="margin: 10px 0">
