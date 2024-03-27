@@ -947,6 +947,53 @@ func resetHandler(w http.ResponseWriter, r *http.Request) {
 	DataMutex.Unlock()
 }
 
+// Utilities for wrapping a `ResponseWriter` and silently intercepting errors (4xx, 5xx)
+type RespWriterStatusCapture struct {
+	http.ResponseWriter
+	extraHeaders []HeaderEntry
+	status       int
+	written      []byte
+}
+type HeaderEntry struct {
+	key   string
+	value string
+}
+
+func (w *RespWriterStatusCapture) WriteHeader(status int) {
+	w.status = status
+	if status <= 399 {
+		for _, entry := range w.extraHeaders {
+			w.ResponseWriter.Header().Add(entry.key, entry.value)
+		}
+		w.ResponseWriter.WriteHeader(status)
+	} else {
+		w.written = []byte{}
+	}
+}
+func (w *RespWriterStatusCapture) Write(data []byte) (int, error) {
+	if w.status <= 399 {
+		return w.ResponseWriter.Write(data)
+	}
+	w.written = append(w.written, data...)
+	return len(data), nil
+}
+
+func (w *RespWriterStatusCapture) Clear() {
+	w.written = []byte{}
+	for k := range w.ResponseWriter.Header() {
+		delete(w.ResponseWriter.Header(), k)
+	}
+}
+func (w *RespWriterStatusCapture) Succeeded() bool {
+	return w.status <= 399
+}
+func (w *RespWriterStatusCapture) WriteErrors() {
+	if w.status > 399 {
+		w.ResponseWriter.WriteHeader(w.status)
+		w.ResponseWriter.Write(w.written)
+	}
+}
+
 func SetUpHttp() {
 	http.HandleFunc("/channel/", channelHandler)
 	http.HandleFunc("/profile/", profileHandler)
@@ -955,12 +1002,24 @@ func SetUpHttp() {
 		http.HandleFunc("/test", testHandler)
 		http.HandleFunc("/reset", resetHandler)
 	}
-	fileServer := http.StripPrefix("/static/",
+	fileServerStaticRemote := http.StripPrefix("/static/",
 		http.FileServer(http.Dir("../frontend/src/static_remote")))
-	http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", Config.AllowOrigin)
-		w.Header().Set("Cache-Control", "max-age=604800")
-		fileServer.ServeHTTP(w, r)
+	fileServerStaticLocal := http.StripPrefix("/", http.FileServer(http.Dir("../frontend/dist/build/h5")))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		wCapture := &RespWriterStatusCapture{
+			ResponseWriter: w,
+			extraHeaders: []HeaderEntry{
+				HeaderEntry{key: "Access-Control-Allow-Origin", value: Config.AllowOrigin},
+				HeaderEntry{key: "Cache-Control", value: "max-age=604800"},
+			},
+		}
+		fileServerStaticRemote.ServeHTTP(wCapture, r)
+		if wCapture.Succeeded() {
+			return
+		}
+		wCapture.Clear()
+		fileServerStaticLocal.ServeHTTP(wCapture, r)
+		wCapture.WriteErrors()
 	})
 
 	port := Config.Port
