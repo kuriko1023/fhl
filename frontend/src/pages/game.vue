@@ -33,7 +33,7 @@
     <view id="submit">
       <form>
         <view style="display: flex">
-          <input placeholder="可用标点分隔多句，至多 21 字" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="24" v-model='inputAnswer' :disabled='answerSendTimer !== -1' />
+          <input placeholder="可用标点分隔多句，至多 21 字" @confirm='onSubmitAnswer' placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="24" v-model='inputAnswer' :disabled='answerSendTimer !== -1' />
 
 <!--            TODO: 是否有效-->
         <view v-if='side === 0' form-type="submit" :class="'btn' + (answerSendTimer !== -1 ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
