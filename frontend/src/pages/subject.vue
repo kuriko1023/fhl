@@ -97,7 +97,7 @@
 <script>
 import Subject from "@/components/Subject";
 export default {
-name: "ChoosePage",
+name: "SubjectPage",
   components:{
     "subject-block": Subject,
   },
@@ -189,7 +189,7 @@ name: "ChoosePage",
     onSocketMessage() {
       if (this.tryPeekSocketMessage('game_status')) {
         uni.redirectTo({
-          url: '/pages/GamePage/GamePage'
+          url: '/pages/game'
         });
         return;
       }

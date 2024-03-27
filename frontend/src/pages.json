@@ -9,19 +9,19 @@
 
 	"pages": [//pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
 		{
-			"path": "pages/StartPage/StartPage"
+			"path": "pages/landing"
 		},
 		{
-			"path": "pages/RoomPage/RoomPage"
+			"path": "pages/room"
 		},
 		{
-			"path": "pages/GamePage/GamePage"
+			"path": "pages/subject"
 		},
 		{
-			"path": "pages/ChoosePage/ChoosePage"
+			"path": "pages/game"
 		},
 		{
-			"path": "pages/EndPage/EndPage"
+			"path": "pages/finish"
 		}
 	],
 	"globalStyle": {

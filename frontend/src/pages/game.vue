@@ -203,7 +203,7 @@ export default {
     },
     onEnd(){
       uni.redirectTo({
-        'url': '/pages/EndPage/EndPage'
+        'url': '/pages/finish'
       })
     },
     clearAnswerSendTimer() {
@@ -252,7 +252,7 @@ export default {
     onSocketMessage() {
       if (this.tryPeekSocketMessage('end_status')) {
         uni.redirectTo({
-          url: '/pages/EndPage/EndPage'
+          url: '/pages/finish'
         });
         return;
       }

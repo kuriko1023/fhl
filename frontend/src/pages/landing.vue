@@ -11,7 +11,7 @@
 
 <script>
 export default {
-name: "StartPage",
+name: "LandingPage",
   data: () => ({
     profileInitialized: false,
   }),
@@ -28,7 +28,7 @@ name: "StartPage",
     enterRoom() {
       getApp().globalData.myRoom = true;
       uni.navigateTo({
-        url: "/pages/RoomPage/RoomPage"
+        url: "/pages/room"
       })
     }
   }

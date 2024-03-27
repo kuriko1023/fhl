@@ -1,5 +1,5 @@
 <script>
-  import GamePage from "@/pages/GamePage/GamePage";
+  import GamePage from "@/pages/game";
   import { staticRes } from 'utils';
 	export default {
 		onLaunch: function() {
