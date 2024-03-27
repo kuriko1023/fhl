@@ -4,7 +4,7 @@
     <image class="background" src="/static/start_background_scaled.jpg" ></image>
     <image class="background" :src="staticRes('start_background.png')" ></image>
     <text class="kai info">
-      版本 0.2.0 (2022 年 1 月 18 日)
+      版本 0.2.1 (2024 年 3 月 27 日)
     </text>
   </view>
 </template>
