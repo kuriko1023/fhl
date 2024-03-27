@@ -4,15 +4,15 @@
     <view class="content">
       <view class="modeChoose" v-if="isHost || isSubjectChosen">
         <radio-group @change="onModeChange" >
-          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="A" :checked="mode==='A'?true:false"/><span class="radio_text">梦笔生花</span></label></div>
-          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="B" :checked="mode==='B'?true:false"/><span class="radio_text">走马观花</span></label></div>
-          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="C" :checked="mode==='C'?true:false"/><span class="radio_text">天女散花</span></label></div>
-          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="D" :checked="mode==='D'?true:false"/><span class="radio_text">雾里看花</span></label></div>
+          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="A" :checked="mode==='A'?true:false"/>梦笔生花</label></div>
+          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="B" :checked="mode==='B'?true:false"/>走马观花</label></div>
+          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="C" :checked="mode==='C'?true:false"/>天女散花</label></div>
+          <div><label><radio :disabled="!isHost || isSubjectChosen" class="theme" value="D" :checked="mode==='D'?true:false"/>雾里看花</label></div>
         </radio-group>
       </view>
       <view v-if="isHost || isSubjectChosen">
         <template>
-          <text class="tip" style="margin: 8px 10px 0 10px">题目规则</text>
+          <p class="tip" style="margin: 8px 10px 0 10px">题目规则</p>
           <view class="content_background rule">
             <text>
               {{rule[mode]}}
@@ -23,7 +23,7 @@
         <view v-if="isHost && (mode==='B'||mode==='C'||mode==='D')" class="picker">
           <uni-row>
             <uni-col :span="8">
-              <span class="tip" >选择题型</span>
+              <p class="tip" >选择题型</p>
             </uni-col>
             <uni-col :span="12">
               <picker :disabled="!isHost || isSubjectChosen" :range="range[mode]" @change="onSizeChange" :value="picker" mode="selector" >
@@ -38,7 +38,7 @@
         </view>
 
         <template v-if="isSubject">
-          <text class="tip" style="margin: 8px 10px 0 10px">题目内容</text>
+          <p class="tip" style="margin: 8px 10px 0 10px">题目内容</p>
           <subject-block :mode="mode" :subject="subject"></subject-block>
         </template>
       </view>
@@ -97,7 +97,7 @@
 <script>
 import Subject from "@/components/Subject";
 export default {
-name: "ChoosePage",
+name: "SubjectPage",
   components:{
     "subject-block": Subject,
   },
@@ -189,7 +189,7 @@ name: "ChoosePage",
     onSocketMessage() {
       if (this.tryPeekSocketMessage('game_status')) {
         uni.redirectTo({
-          url: '/pages/GamePage/GamePage'
+          url: '/pages/game'
         });
         return;
       }
@@ -236,11 +236,13 @@ name: "ChoosePage",
   }
   .modeChoose{
     margin: 0 10px 10px 10px;
+    line-height: 0;
   }
   .modeChoose div {
     display: inline-block;
     width: 50%;
     text-align: center;
+    font-size: 14px;
   }
   .picker_btn {
     background-color: white;
@@ -294,10 +296,10 @@ name: "ChoosePage",
   }
   .bottom {
     position: fixed;
-    bottom: 0;
-    left: 0;
+    bottom: 8vh;
+    left: calc(50% - 30vh);
     width: 100%;
-    margin-bottom: 8%;
+    max-width: 60vh;
   }
   .picker {
     margin: 10px;

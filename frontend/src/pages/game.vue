@@ -12,7 +12,7 @@
       <image class="circle" :style="'width: 28px; height: 28px; ' + (((side === 0) ^ isHost) ? '' : 'display: none')" :src="guestAvatar" mode="widthFix"></image>
       <view style="display: flex; width: 100%; overflow: scroll; height: 28px">
         <view v-for="word in answer" :key="word.word">
-          <text class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</text>
+          <p class="kati" :style="{color: answerColor[word.highlight]}">{{word.word}}</p>
         </view>
       </view>
     </view>
@@ -33,7 +33,7 @@
     <view id="submit">
       <form>
         <view style="display: flex">
-          <input placeholder="可用标点分隔多句，至多 21 字" placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="24" v-model='inputAnswer' :disabled='answerSendTimer !== -1' />
+          <input placeholder="可用标点分隔多句，至多 21 字" @confirm='onSubmitAnswer' placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="24" v-model='inputAnswer' :disabled='answerSendTimer !== -1' />
 
 <!--            TODO: 是否有效-->
         <view v-if='side === 0' form-type="submit" :class="'btn' + (answerSendTimer !== -1 ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
@@ -203,7 +203,7 @@ export default {
     },
     onEnd(){
       uni.redirectTo({
-        'url': '/pages/EndPage/EndPage'
+        'url': '/pages/finish'
       })
     },
     clearAnswerSendTimer() {
@@ -252,7 +252,7 @@ export default {
     onSocketMessage() {
       if (this.tryPeekSocketMessage('end_status')) {
         uni.redirectTo({
-          url: '/pages/EndPage/EndPage'
+          url: '/pages/finish'
         });
         return;
       }
@@ -363,10 +363,10 @@ export default {
   }
   #submit{
     position: fixed;
-    bottom: 0;
-    left: 0;
+    bottom: 5vh;
+    left: calc(50% - 30vh);
     width: 100%;
-    margin-bottom: 5%;
+    max-width: 60vh;
   }
   .kati {
     font-family: Kai;

@@ -11,13 +11,39 @@ Vue.mixin({
   methods: { staticRes }
 });
 
+if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {
+  Vue.prototype.adaptedLogin = (options) => {
+    uni.login({
+      success: (resp) => options.success('wx_login:' + resp.code),
+      fail: () => options.fail && options.fail(),
+    });
+  }
+} else {
+  let uid = null;
+  Vue.prototype.adaptedLogin = (options) => {
+    if (uid === null) {
+      do {
+        uid = prompt('你的名字~（不超过 20 字）');
+      } while (uid === null || uid.length > 20);
+      /* if (uid === null) {
+        if (options.fail) options.fail();
+        return;
+      } */
+    }
+    const hex = [];
+    for (const n of new TextEncoder().encode(uid))
+      hex.push(n.toString(16).padStart('0', 2))
+    options.success('web_login:' + hex.join(''));
+  };
+}
+
 Vue.prototype.retrieveServerProfile = function (callback) {
   if (getApp().globalData.my) {
     callback();
     return;
   }
-  const req = () => uni.login({success: (res) => uni.request({
-    url: `${apiServer}/profile/${res.code}`,
+  const req = () => this.adaptedLogin({success: (code) => uni.request({
+    url: `${apiServer}/profile/${code}`,
     success: (res) => {
       const obj = res.data;
       if (!obj || !obj.id) {
@@ -38,19 +64,23 @@ Vue.prototype.retrieveServerProfile = function (callback) {
 Vue.prototype.requestLocalProfile = function (callback) {
   console.log(getApp().globalData.my)
   if (!getApp().globalData.my.nickname) {
-    uni.getUserProfile({
-      desc: '用于向其他玩家展示头像和昵称',
-      success: (res) => {
-        console.log(res)
-        getApp().globalData.my.avatar = res.userInfo.avatarUrl
-        getApp().globalData.my.nickname = res.userInfo.nickName
-        getApp().globalData.my.create = true
-        callback()
-      },
-      fail: () => {
-        console.log('getUserProfile() failed')
-      },
-    })
+    if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {
+      uni.getUserProfile({
+        desc: '用于向其他玩家展示头像和昵称',
+        success: (res) => {
+          console.log(res)
+          getApp().globalData.my.avatar = res.userInfo.avatarUrl
+          getApp().globalData.my.nickname = res.userInfo.nickName
+          getApp().globalData.my.create = true
+          callback()
+        },
+        fail: () => {
+          console.log('getUserProfile() failed')
+        },
+      })
+    } else {
+      alert('!!!')
+    }
   } else {
     callback()
   }

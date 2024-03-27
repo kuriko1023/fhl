@@ -5,13 +5,13 @@
     <view style="width: 100%; height: 100%; padding-top: 20%">
       <view v-if='!connected' class='center'
         style='width: 80%; height: 60px; position: relative'>
-        <view class='vertical-center' style='width: 32px; height: 32px; left: 30%'>
+        <view class='vertical-center' style='width: 32px; height: 32px; left: 30%; line-height: 0'>
           <!-- Dave Gandy, https://www.flaticon.com/authors/dave-gandy -->
           <image src='/static/spinner-of-dots.png'
             class='spinning'
             style='width: 100%; height: 100%' />
         </view>
-        <p style='left: 50%' class='vertical-center'>{{ status }}</p>
+        <p style='left: 50%; font-size: 24px' class='vertical-center'>{{ status }}</p>
       </view>
       <view v-else class="center">
         <view style="margin: 10px 0">
@@ -37,7 +37,14 @@
 <!--        <p>客人：{{ guest }}</p>-->
       </view>
       <view v-if="isHost && connected" style='text-align: center; font-size: 14px; margin-top: 4ex; line-height: 1.6'>
-        点击右上角「…」按钮<br>邀请好友加入房间
+        <view v-if="webShareLink !== null">
+          <p style='font-size: 1.1em; font-weight: bold'>房间链接</p>
+          <tt class='text-share-link'>{{ webShareLink }}</tt>
+          <button @click='copyShareLink' class='btn-share-link'>复制</button>
+        </view>
+        <view v-else>
+          <p>点击右上角「…」按钮<br>邀请好友加入房间</p>
+        </view>
       </view>
       <view class="bottom">
         <uni-row>
@@ -76,6 +83,8 @@ export default {
       guestAvatar: '',
 
       isHost: false,
+
+      webShareLink: null,
     };
   },
   onLoad() {
@@ -86,14 +95,20 @@ export default {
         delete getApp().globalData.myRoom;
         this.room = getApp().globalData.my.id;
       } else {
-        const room = uni.getEnterOptionsSync().query.room;
+        let room = 'my';
+        if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {
+          room = uni.getEnterOptionsSync().query.room;
+        } else {
+          if (window.location.search.startsWith('?room='))
+            room = window.location.search.substring('?room='.length);
+        }
         this.room = room;
       }
 
       const urlPromise = () => new Promise((resolve, reject) => {
-        uni.login({
-          success: (res) => resolve(
-            `${wsServer}/channel/${this.room}/${res.code}`,
+        this.adaptedLogin({
+          success: (code) => resolve(
+            `${wsServer}/channel/${this.room}/${code}`,
           ),
           fail: () => reject(),
         });
@@ -108,27 +123,35 @@ export default {
         },
       });
 
-      this.isHost = getApp().globalData.isHost = (this.room === getApp().globalData.my.id);
+      this.isHost = getApp().globalData.isHost =
+        (this.room === 'my' || this.room === getApp().globalData.my.id);
+      if (uni.getSystemInfoSync().uniPlatform !== 'mp-weixin')
+        this.webShareLink = window.location.origin + '/?room=' + getApp().globalData.my.id
     });
   },
   onShareAppMessage (res) {
     return {
       title: '一起来玩飞花令吧',
-      path: '/pages/RoomPage/RoomPage?room=' + this.room,
+      path: '/pages/room?room=' + this.room,
       imageUrl: '/static/start_background.jpg',
     };
   },
   methods: {
+    copyShareLink() {
+      uni.setClipboardData({
+        data: this.webShareLink,
+      });
+    },
     onSocketMessage() {
       if (this.tryPeekSocketMessage('generated') ||
           this.tryPeekSocketMessage('generate_wait')) {
         uni.redirectTo({
-          url: "/pages/ChoosePage/ChoosePage"
+          url: "/pages/subject"
         })
         return
       } else if (this.tryPeekSocketMessage('game_status')) {
         uni.redirectTo({
-          url: "/pages/GamePage/GamePage"
+          url: "/pages/game"
         })
         return
       }
@@ -166,7 +189,7 @@ export default {
     startGame() {
       this.sendSocketMessage({type: 'start_generate'});
       uni.redirectTo({
-        url: "/pages/ChoosePage/ChoosePage"
+        url: "/pages/subject"
       })
     }
   }
@@ -215,10 +238,10 @@ export default {
 
 .bottom {
   position: fixed;
-  bottom: 0;
-  left: 0;
+  bottom: 8vh;
+  left: calc(50% - 30vh);
   width: 100%;
-  margin-bottom: 8%;
+  max-width: 60vh;
 }
 
 .btn2{
@@ -244,5 +267,18 @@ export default {
 }
 .spinning {
   animation: spinning 2s linear infinite;
+}
+
+.text-share-link {
+  user-select: text;
+}
+.btn-share-link {
+  background-color: #84765e;
+  color: white;
+  border-radius: 10px;
+  font-size: 14px;
+  width: 30%;
+  min-width: 6em;
+  margin-top: 1ex;
 }
 </style>
