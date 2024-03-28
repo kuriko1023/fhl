@@ -37,6 +37,8 @@
 
 **Fei Hua Xiao Ling (飞花小令)** is a game based on an ancient Chinese drinking game of poetry, with added innovations.
 
-Fei Hua Ling (飞花令) is a game where players recite or compose poetry given a theme, which is usually a Chinese character (it was originally fixed to be “花”, “flower”; but variations existed). The verses should also adhere to metrical rules. Inspired by the Chinese Poetry Congress television programme, a set of new gameplay rules were implemented in the game, including themes of two-syllable words, characters in verses, and pools of words.
+Fei Hua Ling (飞花令) is a game where players recite or compose poetry given a theme, which is usually a Chinese character (it was originally fixed to be “花”, “flower”; but variations existed). The verses should contain the theme character/word, while also adhering to metrical rules. Inspired by the Chinese Poetry Congress television programme, a set of new gameplay rules were implemented in the game, including themes of two-syllable words, characters in verses, and pools of words.
 
-We merged several Chinese poetry collections on the Internet and added emendations, obtaining a library of hundreds of thousands of works. We curated a set of frequent words and phrases as well as well-known verses for automatic theme generation and carefully tuned the difficulties, trying our best to deliver interesting and enjoyable games.
+We merged several poetry collections on the Internet and added emendations, obtaining a library of hundreds of thousands of works. We curated a set of frequent words and phrases as well as well-known verses for automatic theme generation and carefully tuned the difficulties, trying our best to deliver interesting and enjoyable games.
+
+Program sources are distributed under the Mulan Public License; please refer to [**COPYING.MulanPubL.md**](COPYING.MulanPubL.md). Other assets are distributed under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) permit.
