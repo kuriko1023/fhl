@@ -539,8 +539,7 @@ func initDataset() {
 		panic(err)
 	}
 
-	fmt.Printf("dataset: %d articles\n", len(articles))
-	fmt.Printf("%d, %d, %d\n", p, q, t)
+	fmt.Printf("篇数 %d, 句数 %d, 字数 %d, 纠错组合数 %d\n", len(articles), p, q, t)
 
 	hotWords1List := byValueDesc{}
 	hotWords2List := byValueDesc{}
@@ -687,6 +686,7 @@ func initDataset() {
 	fmt.Println("预计算词频数据保存完成")
 
 	initErrCorr()
+	fmt.Println("预计算纠错数据保存完成")
 
 	precalFile.Close()
 	if err := loadPrecal(); err != nil {
@@ -849,7 +849,17 @@ func forEachPossibleErrHash(s string, fn func(h HashType) bool) {
 }
 
 func initErrCorr() {
-	x := []ErrCorrRecord{}
+	// 计算纠错记录的总数，避免 slice 反复扩容
+	// XXX: 此数在 `initDataset()` 开头处也计算过，清晰起见这里重新计算一次
+	recordCount := 0
+	for _, article := range articles {
+		for _, s := range article.Content {
+			n := len([]rune(s))
+			recordCount += n*(n+1)/2 + 1
+		}
+	}
+
+	x := make([]ErrCorrRecord, 0, recordCount)
 	for i, article := range articles {
 		for j, s := range article.Content {
 			forEachPossibleErrHash(s, func(h HashType) bool {
@@ -870,7 +880,6 @@ func initErrCorr() {
 	if err := savePrecalErrCorr(x); err != nil {
 		panic(err)
 	}
-	fmt.Println("预计算纠错数据保存完成")
 }
 
 // 在纠错数据库中查找某个 hash 值
