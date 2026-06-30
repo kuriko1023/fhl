@@ -49,8 +49,8 @@ var allHotSentences [][]string
 const ALL_HOT_LEN_MIN = 5
 const ALL_HOT_LEN_MAX = 9
 
-//高频词组合（单字＆单字／单字＆双字／双字＆双字）在诗句中出现的频次
-//用于优化谜之飞花令的题目选择
+// 高频词组合（单字＆单字／单字＆双字／双字＆双字）在诗句中出现的频次
+// 用于优化谜之飞花令的题目选择
 var hotWordsFreq map[string]int
 
 // 返回一句诗词中的所有高频词，按出现次数降序排序；若无，返回空列表
@@ -248,7 +248,7 @@ func generateC(sizeLeft, sizeRight int) ([]string, []string) {
 }
 
 // 生成 2 个长度为 n 的关键词组作为谜之飞花题目
-//其中第二个关键词组全部由双字高频词构成,第一个关键词组由单字或双字高频词构成
+// 其中第二个关键词组全部由双字高频词构成,第一个关键词组由单字或双字高频词构成
 func generateD(n int) ([]string, []string) {
 	var hotWordsList1 []string
 	var hotWordsList2 []string
@@ -355,54 +355,6 @@ func (s byValueDesc) Swap(i, j int) {
 }
 func (s byValueDesc) Less(i, j int) bool {
 	return s[i].int > s[j].int
-}
-
-func furtherInit() {
-	hotWordsFreq = make(map[string]int)
-
-	// 初始化高频词组合频次表，令其包括所有单字&单字、单字&双字、双字&双字的组合
-	for i := 0; i < len(hotWords1); i++ {
-		for j := i + 1; j < len(hotWords1); j++ {
-			hotWordsFreq[hotWords1[i]+hotWords1[j]] = 0
-		}
-		for j := 0; j < len(hotWords2); j++ {
-			//若单字词为双字词的一部分,忽略
-			if !strings.Contains(hotWords2[j], hotWords1[i]) {
-				hotWordsFreq[hotWords1[i]+hotWords2[j]] = 0
-			}
-		}
-	}
-
-	for _, article := range articles {
-		content := article.Content
-		for i := 0; i < len(content)-1; i++ {
-			//拼接两句为一“联”
-			sentence := content[i] + content[i+1]
-			sHotWords, dHotWords := getHotWords(sentence)
-
-			//根据每一“联”诗词中的高频词，更新高频词组合频次表
-			for k := 0; k < len(sHotWords); k++ {
-				for j := k + 1; j < len(sHotWords); j++ {
-					hotWordsFreq[sHotWords[k]+sHotWords[j]]++
-				}
-				for j := 0; j < len(dHotWords); j++ {
-					if !strings.Contains(dHotWords[j], sHotWords[k]) {
-						hotWordsFreq[sHotWords[k]+dHotWords[j]]++
-					}
-				}
-			}
-		}
-	}
-	// for k, v := range hotWordsFreq {
-	// 	fmt.Println(k,v)
-	// }
-	// fmt.Println("finish")
-
-	for k, v := range hotWordsFreq {
-		if v < 50 {
-			delete(hotWordsFreq, k)
-		}
-	}
 }
 
 var datasetFile *os.File
@@ -682,10 +634,57 @@ func initDataset() {
 		fmt.Printf("%d 字：%d 句\n", i+ALL_HOT_LEN_MIN, len(c))
 	}
 
-	furtherInit()
+	// 高频共现的高频词组合
+	hotWordsFreq = make(map[string]int)
+
+	// 初始化高频词组合频次表，令其包括所有单字&单字、单字&双字、双字&双字的组合
+	for i := 0; i < len(hotWords1); i++ {
+		for j := i + 1; j < len(hotWords1); j++ {
+			hotWordsFreq[hotWords1[i]+hotWords1[j]] = 0
+		}
+		for j := 0; j < len(hotWords2); j++ {
+			//若单字词为双字词的一部分,忽略
+			if !strings.Contains(hotWords2[j], hotWords1[i]) {
+				hotWordsFreq[hotWords1[i]+hotWords2[j]] = 0
+			}
+		}
+	}
+
+	for _, article := range articles {
+		content := article.Content
+		for i := 0; i < len(content)-1; i++ {
+			//拼接两句为一“联”
+			sentence := content[i] + content[i+1]
+			sHotWords, dHotWords := getHotWords(sentence)
+
+			//根据每一“联”诗词中的高频词，更新高频词组合频次表
+			for k := 0; k < len(sHotWords); k++ {
+				for j := k + 1; j < len(sHotWords); j++ {
+					hotWordsFreq[sHotWords[k]+sHotWords[j]]++
+				}
+				for j := 0; j < len(dHotWords); j++ {
+					if !strings.Contains(dHotWords[j], sHotWords[k]) {
+						hotWordsFreq[sHotWords[k]+dHotWords[j]]++
+					}
+				}
+			}
+		}
+	}
+	// for k, v := range hotWordsFreq {
+	// 	fmt.Println(k,v)
+	// }
+	// fmt.Println("finish")
+
+	for k, v := range hotWordsFreq {
+		if v < 50 {
+			delete(hotWordsFreq, k)
+		}
+	}
+
 	if err := savePrecalGob(); err != nil {
 		panic(err)
 	}
+	fmt.Println("预计算词频数据保存完成")
 
 	initErrCorr()
 
@@ -871,6 +870,7 @@ func initErrCorr() {
 	if err := savePrecalErrCorr(x); err != nil {
 		panic(err)
 	}
+	fmt.Println("预计算纠错数据保存完成")
 }
 
 // 在纠错数据库中查找某个 hash 值
