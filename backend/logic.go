@@ -494,6 +494,8 @@ func initDataset() {
 	p := 0
 	q := 0
 	t := 0
+    maxContentPerArticle := 0
+    maxWordsPerContent := 0
 	for sc.Scan() {
 		prevOffs := offs
 		offs += int64(len(sc.Text())) + 1
@@ -520,6 +522,12 @@ func initDataset() {
 			p += 1
 			q += n
 			t += n*(n+1)/2 + 1
+			if n > maxWordsPerContent {
+				maxWordsPerContent = n
+			}
+		}
+		if len(article.Content) > maxContentPerArticle {
+			maxContentPerArticle = len(article.Content)
 		}
 
 		// 若不是重复篇目，则计入高频词
@@ -540,6 +548,7 @@ func initDataset() {
 	}
 
 	fmt.Printf("篇数 %d, 句数 %d, 字数 %d, 纠错组合数 %d\n", len(articles), p, q, t)
+	fmt.Printf("每篇上限句数 %d, 每句上限字数 %d\n", maxContentPerArticle, maxWordsPerContent)
 
 	hotWords1List := byValueDesc{}
 	hotWords2List := byValueDesc{}
