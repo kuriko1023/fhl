@@ -27,8 +27,11 @@ type Article struct {
 // 后续建立了一个 LRU 缓存，某篇目不在缓存中时，对应项为 nil
 var articles []*Article
 
-// 每个篇目在文件中的偏移值
+// 每个篇目在文件中的偏移字节数
 var articleOffset []int64
+
+// 每个篇目为止的句子总数，用于压缩编码
+var articleContentOffset []uint32
 
 // 名篇的列表
 var hotArticles []*Article
@@ -361,6 +364,7 @@ var datasetFile *os.File
 
 var gobValues = []interface{}{
 	&articleOffset,
+	&articleContentOffset,
 	&hotWords1,
 	&hotWords2,
 	&hotWords1Count,
@@ -374,8 +378,10 @@ var precalFile *os.File
 var errCorrOffset int64
 var errCorrNumRecords int64
 
+const precalBinFilePath = "../dataset/2c-precal.bin"
+
 func loadPrecal() error {
-	file, err := os.Open("../dataset/2c-precal.bin")
+	file, err := os.Open(precalBinFilePath)
 	if err != nil {
 		return err
 	}
@@ -412,7 +418,7 @@ func loadPrecal() error {
 }
 
 func savePrecalGob() error {
-	file, err := os.Create("../dataset/2c-precal.bin")
+	file, err := os.Create(precalBinFilePath)
 	if err != nil {
 		return err
 	}
@@ -484,6 +490,7 @@ func initDataset() {
 
 	articles = []*Article{}
 	articleOffset = []int64{}
+	articleContentOffset = []uint32{}
 	hotArticles = []*Article{}
 	hotWords1 = []string{}
 	hotWords2 = []string{}
@@ -505,13 +512,14 @@ func initDataset() {
 
 		// 随机抽取千分之一
 		i++
-		if false && sc.Text()[0] != '!' && i%1000 != 0 {
+		if !false && sc.Text()[0] != '!' && i%1000 != 0 {
 			continue
 		}
 
 		// 将篇目加入列表
 		article, flag := parseArticle(len(articles), sc.Text())
 		articleOffset = append(articleOffset, prevOffs)
+		articleContentOffset = append(articleContentOffset, uint32(p))
 		articles = append(articles, article)
 		weight := 1
 		if flag == "!" {
@@ -782,21 +790,38 @@ func getArticle(id int) *Article {
 	return article
 }
 
+// 篇目与句子编号的压缩编码
+
+func combineContentIdx(i int, j int) uint32 {
+	return articleContentOffset[i] + uint32(j)
+}
+
+func splitContentIdx(n uint32) (int, int) {
+	lo := 0
+	hi := len(articleContentOffset)
+	for lo < hi-1 {
+		mid := (lo + hi) / 2
+		if articleContentOffset[mid] < n {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+	return lo, int(n - articleContentOffset[lo])
+}
+
 // 对称删除纠错算法
 
 type HashType uint64
-type ArticleIdxType uint32
 type ContentIdxType uint32
 type ErrCorrRecord struct {
 	Hash       HashType
-	ArticleIdx ArticleIdxType
 	ContentIdx ContentIdxType
 }
 
 const HASH_W = 5
-const ART_IDX_W = 3
-const CON_IDX_W = 2
-const RECORD_W = HASH_W + ART_IDX_W + CON_IDX_W
+const CON_IDX_W = 3
+const RECORD_W = HASH_W + CON_IDX_W
 
 func hash(rs []rune) HashType {
 	h := HashType(0)
@@ -811,14 +836,11 @@ func hash(rs []rune) HashType {
 func readErrCorrRecord(index int64) ErrCorrRecord {
 	buf := [RECORD_W]byte{}
 	precalFile.ReadAt(buf[:], errCorrOffset+index*RECORD_W)
-	rec := ErrCorrRecord{0, 0, 0}
+	rec := ErrCorrRecord{0, 0}
 	for i, b := range buf[0:HASH_W] {
 		rec.Hash += (HashType(b) << (i * 8))
 	}
-	for i, b := range buf[HASH_W : HASH_W+ART_IDX_W] {
-		rec.ArticleIdx += (ArticleIdxType(b) << (i * 8))
-	}
-	for i, b := range buf[HASH_W+ART_IDX_W:] {
+	for i, b := range buf[HASH_W:] {
 		rec.ContentIdx += (ContentIdxType(b) << (i * 8))
 	}
 	return rec
@@ -829,11 +851,8 @@ func writeErrCorrRecord(w *bufio.Writer, rec ErrCorrRecord) error {
 	for i := 0; i < HASH_W; i++ {
 		buf[i] = byte(rec.Hash >> (i * 8))
 	}
-	for i := 0; i < ART_IDX_W; i++ {
-		buf[HASH_W+i] = byte(rec.ArticleIdx >> (i * 8))
-	}
 	for i := 0; i < CON_IDX_W; i++ {
-		buf[HASH_W+ART_IDX_W+i] = byte(rec.ContentIdx >> (i * 8))
+		buf[HASH_W+i] = byte(rec.ContentIdx >> (i * 8))
 	}
 	_, err := w.Write(buf[:])
 	return err
@@ -877,8 +896,7 @@ func initErrCorr() {
 			forEachPossibleErrHash(s, func(h HashType) bool {
 				x = append(x, ErrCorrRecord{
 					Hash:       h,
-					ArticleIdx: ArticleIdxType(i),
-					ContentIdx: ContentIdxType(j),
+					ContentIdx: ContentIdxType(combineContentIdx(i, j)),
 				})
 				return false
 			})
@@ -937,8 +955,9 @@ func lookupText(text []string) (bool, int, int) {
 				break
 			}
 
-			article := getArticle(int(rec.ArticleIdx))
-			i := int(rec.ContentIdx) - pivot
+			articleIdx, contentIdx := splitContentIdx(uint32(rec.ContentIdx))
+			article := getArticle(articleIdx)
+			i := int(contentIdx) - pivot
 			if i >= 0 && i+len(text) <= len(article.Content) {
 				// 检查两段文字是否相同或接近
 				templ := article.Content[i : i+len(text)]
@@ -952,7 +971,7 @@ func lookupText(text []string) (bool, int, int) {
 				}
 				if totalDist < bestDist {
 					bestDist = totalDist
-					bestArticle = int(rec.ArticleIdx)
+					bestArticle = int(articleIdx)
 					bestContent = i
 					if totalDist == 0 {
 						return true
