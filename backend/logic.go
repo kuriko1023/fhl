@@ -357,7 +357,11 @@ func (s byValueDesc) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 func (s byValueDesc) Less(i, j int) bool {
-	return s[i].int > s[j].int
+	if s[i].int != s[j].int {
+		return s[i].int > s[j].int
+	} else {
+		return s[i].string < s[j].string
+	}
 }
 
 var datasetFile *os.File
