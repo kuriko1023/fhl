@@ -426,6 +426,9 @@ func savePrecalGob() error {
 		}
 	}
 
+	offs, _ := file.Seek(0, os.SEEK_CUR)
+	fmt.Printf("纠错组合起始偏移字节 %d\n", offs)
+
 	// 纠错数据将在之后保存
 	precalFile = file
 	return nil
@@ -445,7 +448,7 @@ func savePrecalErrCorr(x []ErrCorrRecord) error {
 	}
 
 	w.Flush()
-	println(count)
+	fmt.Printf("去重后的纠错组合数 %d\n", count)
 	return nil
 }
 
@@ -494,17 +497,17 @@ func initDataset() {
 	p := 0
 	q := 0
 	t := 0
-    maxContentPerArticle := 0
-    maxWordsPerContent := 0
+	maxContentPerArticle := 0
+	maxWordsPerContent := 0
 	for sc.Scan() {
 		prevOffs := offs
 		offs += int64(len(sc.Text())) + 1
 
-		// 随机抽取十分之一
+		// 随机抽取千分之一
 		i++
-		/*if sc.Text()[0] != '!' && i%10 != 0 {
+		if false && sc.Text()[0] != '!' && i%1000 != 0 {
 			continue
-		}*/
+		}
 
 		// 将篇目加入列表
 		article, flag := parseArticle(len(articles), sc.Text())
@@ -881,7 +884,7 @@ func initErrCorr() {
 			})
 		}
 	}
-	println(len(x))
+	fmt.Printf("纠错组合数 %d（应与开头一致）\n", len(x))
 	sort.Slice(x, func(i, j int) bool {
 		return x[i].Hash < x[j].Hash
 	})
