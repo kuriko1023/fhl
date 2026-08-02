@@ -411,7 +411,7 @@ func loadPrecal() error {
 		file.Close()
 		return err
 	}
-	errCorrNumRecords = (stat.Size() - offs) / RECORD_W
+	errCorrNumRecords = (stat.Size() - offs - 4*(1<<24)) / RECORD_W
 
 	precalFile = file
 	return nil
@@ -440,13 +440,38 @@ func savePrecalGob() error {
 	return nil
 }
 
+func encodeU32LE(x uint32) []byte {
+	s := []byte{
+		byte(x >> 0),
+		byte(x >> 8),
+		byte(x >> 16),
+		byte(x >> 24),
+	}
+	return s[:]
+}
+
 func savePrecalErrCorr(x []ErrCorrRecord) error {
 	w := bufio.NewWriter(precalFile)
 
 	count := 0
+	last := -1
 	for i, rec := range x {
 		if i == 0 || rec != x[i-1] {
+			val := int(rec.Hash % (1 << 24))
+			for last < val {
+				w.Write(encodeU32LE(uint32(count)))
+				last++
+			}
 			count++
+		}
+	}
+	for last < (1<<24)-1 {
+		w.Write(encodeU32LE(uint32(count)))
+		last++
+	}
+
+	for i, rec := range x {
+		if i == 0 || rec != x[i-1] {
 			if err := writeErrCorrRecord(w, rec); err != nil {
 				return err
 			}
@@ -831,9 +856,9 @@ type ErrCorrRecord struct {
 	ContentIdx ContentIdxType
 }
 
-const HASH_W = 5
+const HASH_W = 3
 const CON_IDX_W = 3
-const RECORD_W = HASH_W + CON_IDX_W
+const RECORD_W = CON_IDX_W
 
 func hash(rs []rune) HashType {
 	h := HashType(0)
@@ -847,12 +872,9 @@ func hash(rs []rune) HashType {
 
 func readErrCorrRecord(index int64) ErrCorrRecord {
 	buf := [RECORD_W]byte{}
-	precalFile.ReadAt(buf[:], errCorrOffset+index*RECORD_W)
+	precalFile.ReadAt(buf[:], errCorrOffset+index*RECORD_W+4*16777216)
 	rec := ErrCorrRecord{0, 0}
-	for i, b := range buf[0:HASH_W] {
-		rec.Hash += (HashType(b) << (i * 8))
-	}
-	for i, b := range buf[HASH_W:] {
+	for i, b := range buf[0:] {
 		rec.ContentIdx += (ContentIdxType(b) << (i * 8))
 	}
 	return rec
@@ -860,11 +882,8 @@ func readErrCorrRecord(index int64) ErrCorrRecord {
 
 func writeErrCorrRecord(w *bufio.Writer, rec ErrCorrRecord) error {
 	buf := [RECORD_W]byte{}
-	for i := 0; i < HASH_W; i++ {
-		buf[i] = byte(rec.Hash >> (i * 8))
-	}
 	for i := 0; i < CON_IDX_W; i++ {
-		buf[HASH_W+i] = byte(rec.ContentIdx >> (i * 8))
+		buf[i] = byte(rec.ContentIdx >> (i * 8))
 	}
 	_, err := w.Write(buf[:])
 	return err
@@ -924,21 +943,21 @@ func initErrCorr() {
 	}
 }
 
-// 在纠错数据库中查找某个 hash 值
-// 返回 >= 此 hash 的最小记录位置，即 lower_bound
-func lookupErrCorr(x HashType) int64 {
-	lo := int64(-1)
-	hi := errCorrNumRecords
-	for lo < hi-1 {
-		mid := (lo + hi) / 2
-		rec := readErrCorrRecord(mid)
-		if rec.Hash < x {
-			lo = mid
-		} else {
-			hi = mid
-		}
+func lookupErrCorr(x HashType) (int64, int64) {
+	buf := [8]byte{}
+	precalFile.ReadAt(buf[:], errCorrOffset+int64(x)*4)
+	a := int64(buf[0]) +
+		(int64(buf[1]) << 8) +
+		(int64(buf[2]) << 16) +
+		(int64(buf[3]) << 24)
+	b := int64(buf[4]) +
+		(int64(buf[5]) << 8) +
+		(int64(buf[6]) << 16) +
+		(int64(buf[7]) << 24)
+	if x == (1<<24)-1 {
+		b = errCorrNumRecords
 	}
-	return hi
+	return a, b
 }
 
 // 检查句子是否在诗词库中
@@ -960,12 +979,9 @@ func lookupText(text []string) (bool, int, int) {
 	bestContent := -1
 
 	forEachPossibleErrHash(text[pivot], func(h HashType) bool {
-		index := lookupErrCorr(h)
-		for index < errCorrNumRecords {
+		index, indexEnd := lookupErrCorr(h)
+		for index < indexEnd {
 			rec := readErrCorrRecord(index)
-			if rec.Hash != h {
-				break
-			}
 
 			articleIdx, contentIdx := splitContentIdx(uint32(rec.ContentIdx))
 			article := getArticle(articleIdx)
