@@ -485,6 +485,18 @@ func initDataset() {
 
 	if loadPrecal() == nil {
 		initArticleCache()
+		if true {
+			for i := 0; i < 4; i++ {
+				fmt.Printf("%+v\n", readErrCorrRecord(int64(10000+i)))
+			}
+			println(lookupText([]string{"海上明月共潮生"}))
+			println(lookupText([]string{"上海明月共潮生"}))
+			println(lookupText([]string{"李白乘舟将欲行"}))
+			println(lookupText([]string{"我乘舟将欲行"}))
+			println(lookupText([]string{"忽闻岸上鸽声"}))
+			println(lookupText([]string{"我乘舟将欲行", "忽闻岸上鸽声"}))
+			println(lookupText([]string{"我是大文豪"}))
+		}
 		return
 	}
 
@@ -512,7 +524,7 @@ func initDataset() {
 
 		// 随机抽取千分之一
 		i++
-		if !false && sc.Text()[0] != '!' && i%1000 != 0 {
+		if false && sc.Text()[0] != '!' && i%1000 != 0 {
 			continue
 		}
 
@@ -801,7 +813,7 @@ func splitContentIdx(n uint32) (int, int) {
 	hi := len(articleContentOffset)
 	for lo < hi-1 {
 		mid := (lo + hi) / 2
-		if articleContentOffset[mid] < n {
+		if articleContentOffset[mid] <= n {
 			lo = mid
 		} else {
 			hi = mid
