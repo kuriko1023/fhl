@@ -514,7 +514,7 @@ func initDataset() {
 
 	if loadPrecal() == nil {
 		initArticleCache()
-		if true {
+		if !true { // XXX: Debug use
 			for i := 0; i < 4; i++ {
 				fmt.Printf("%+v\n", readErrCorrRecord(int64(10000+i)))
 			}
@@ -524,7 +524,7 @@ func initDataset() {
 			println(lookupText([]string{"我乘舟将欲行"}))
 			println(lookupText([]string{"忽闻岸上鸽声"}))
 			println(lookupText([]string{"我乘舟将欲行", "忽闻岸上鸽声"}))
-			println(lookupText([]string{"我是大文豪"}))
+			println(lookupText([]string{"我是大文豪哈哈"}))
 		}
 		return
 	}
@@ -539,7 +539,6 @@ func initDataset() {
 	hotWords1Count = map[rune]int{}
 	hotWords2Count = map[RunePair]int{}
 
-	i := 0
 	sc := bufio.NewScanner(file)
 	offs := int64(0)
 	p := 0
@@ -550,12 +549,6 @@ func initDataset() {
 	for sc.Scan() {
 		prevOffs := offs
 		offs += int64(len(sc.Text())) + 1
-
-		// 随机抽取千分之一
-		i++
-		if false && sc.Text()[0] != '!' && i%1000 != 0 {
-			continue
-		}
 
 		// 将篇目加入列表
 		article, flag := parseArticle(len(articles), sc.Text())
@@ -853,7 +846,7 @@ func splitContentIdx(n uint32) (int, int) {
 
 // 对称删除纠错算法
 
-type HashType uint64
+type HashType uint32
 type ContentIdxType uint32
 type ErrCorrRecord struct {
 	Hash       HashType
