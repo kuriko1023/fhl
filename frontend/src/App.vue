@@ -36,6 +36,9 @@ uni-page {
   position: relative;
 }
 
+uni-page-head { display: none !important; }
+uni-page-wrapper { height: calc(100% - env(safe-area-inset-top)) !important; }
+
 	/*每个页面公共css */
   radio::before,
   checkbox::before {
