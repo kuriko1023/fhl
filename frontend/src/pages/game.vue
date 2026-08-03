@@ -33,10 +33,8 @@
     <view id="submit">
       <form>
         <view style="display: flex">
-          <input placeholder="可用标点分隔多句，至多 21 字" @confirm='onSubmitAnswer' placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="24" v-model='inputAnswer' :disabled='answerSendTimer !== -1' />
-
-<!--            TODO: 是否有效-->
-        <view v-if='side === 0' form-type="submit" :class="'btn' + (answerSendTimer !== -1 ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
+          <input :placeholder="side === 0 ? '可用标点分隔多句，至多 21 字' : '轮到对方，等待中'" @confirm='onSubmitAnswer' placeholder-style="color: #bac3ab; font-size: 12px" name="myAnswer"  class="input" adjust-position="false" maxlength="24" v-model='inputAnswer' :disabled='answerSendTimer !== -1' />
+          <view v-if='side === 0' form-type="submit" :class="'btn' + (answerSendTimer !== -1 ? ' disabled' : '')" @click='onSubmitAnswer'>发送</view>
         </view>
       </form>
     </view>
@@ -216,6 +214,7 @@ export default {
       }
     },
     onSubmitAnswer(e){
+      if (this.side !== 0) return;
       if (this.answerSendTimer !== -1) return;
       this.answerSendTimer = setTimeout(() => {
         if (this.clearAnswerSendTimer()) {
