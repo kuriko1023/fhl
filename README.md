@@ -2,7 +2,7 @@
 
 在古代酒令游戏“飞花令”基础上设计的双人诗词游戏，共有四种多样的玩法。借助完善的诗词数据库，支持随机出题、检查答案。
 
-**在线游玩** → **[fhxl.ayu.land](https://fhxl.ayu.land)**
+**在线游玩** → **[feihua.ayu.land](https://feihua.ayu.land)**
 
 ## 玩法
 
