@@ -16,14 +16,10 @@
         </view>
       </view>
     </view>
-<!--      <progress percent="80" stroke-width="3"/>-->
-<!--      <progress percent="100" stroke-width="3"/>-->
       <view class="count_down">
-      <count-down :active="active1" :color="playerColor[side]" :update="timerUpdate" :time="TURN_TIMER_MAX" :current="current1" @finish="onFinish" ref="countdown1"></count-down>
-      <count-down :active="active2" color="#65d4e5" :update="timerUpdate" :time="CUMULATIVE_TIMER_MAX" :current="current2" @finish="onExtraFinish" @stop="onCountStop"></count-down>
+        <count-down :active="timersActive" :color="playerColor[side]" :total="TURN_TIMER_MAX" :start="timerStart1" :end="timerEnd1"></count-down>
+        <count-down :active="timersActive" color="#65d4e5" :total="CUMULATIVE_TIMER_MAX" :start="timerEnd1" :end="timerEnd2"></count-down>
       </view>
-        <!--      <button @click="onStop">stop</button>-->
-<!--      <button @click="onStop2">stop2</button>-->
     </view>
     <image src="/static/history_background_scaled.jpg" class="history_background"></image>
     <image :src="staticRes('history_background.png')" class="history_background"></image>
@@ -38,14 +34,8 @@
         </view>
       </form>
     </view>
-<!--    临时测试用-->
-<!--    <button @click="onEnd"> end </button>-->
-<!--    <button @click="pop">test</button>-->
     <uni-popup ref="popup" type="message">
       <uni-popup-message type="warn" :message="popMessage"/>
-<!--      <view id="popup">-->
-<!--        test-->
-<!--      </view>-->
     </uni-popup>
   </view>
 </template>
@@ -83,13 +73,10 @@ export default {
       },
       TURN_TIMER_MAX: 60,
       CUMULATIVE_TIMER_MAX: 60,
-      //shot countDown
-      active1: true,
-      //long countDown
-      active2: false,
-      current1: 0,
-      current2: 0,
-      timerUpdate: 0,
+      timerActive: false,
+      timerStart1: 0,
+      timerEnd1: 0,
+      timerEnd2: 0,
       side: 0,  // 0 -- 我方  1 -- 对方
       myExtraTime: 29.99,
       sideExtraTime: 29.99,
@@ -140,69 +127,27 @@ export default {
     pop(){
       this.$refs.popup.open()
     },
-    onFinish(){
-      this.info = 'finish'
-      // this.$refs.countdown1.active = false
-      // this.$refs.countdown2.active = true
-      this.active1 = false
-      this.active2 = true
-    },
-    onExtraFinish(){
-      this.active2 = false
-      /*this.sendMessage({
-        'type': 'timeout'
-      })*/
-    },
     //change count down side
     changeSide(){
       this.history.push(this.answer)
       this.answer = []
 
-      this.current1 = this.TURN_TIMER_MAX
+      let extraTime
       if(this.side) {
-        console.log("side the other" + this.side)
+        console.log("side opponent -> my")
         this.side = 0
-        this.current2 = this.myExtraTime
-        console.log("myExtraTime" + this.myExtraTime)
+        extraTime = this.myExtraTime
       }
       else {
-        console.log("side my" + this.side)
+        console.log("side my -> opponent")
         this.side = 1
-        this.current2 = this.sideExtraTime
-        console.log("sideExtraTime" + this.sideExtraTime)
+        extraTime = this.sideExtraTime
       }
-      this.active1 = true
-      this.active2 = false
-      this.timerUpdate += 1
-    },
-    onStop(){
-      this.active1 = false
-      this.current1 = 0
-      setTimeout(this.changeSide, 2000)
-      // this.$refs.countdown1.active = false
-    },
-    onStop2(){
-      this.active2 = false
-      this.current1 = 0
-      setTimeout(this.changeSide, 2000)
-    },
-    onCountStop(val){
-      /*
-      console.log('countStop')
-      if(this.side) {
-        console.log(val)
-        this.sideExtraTime = val
-      }
-      else{
-        console.log(val)
-        this.myExtraTime = val
-      }
-      */
-    },
-    onEnd(){
-      uni.redirectTo({
-        'url': '/pages/finish'
-      })
+      const now = Date.now() / 1000
+      this.timerStart1 = now
+      this.timerEnd1 = now + this.TURN_TIMER_MAX
+      this.timerEnd2 = now + this.TURN_TIMER_MAX + extraTime
+      this.timersActive = true
     },
     clearAnswerSendTimer() {
       if (this.answerSendTimer !== -1) {
@@ -241,11 +186,12 @@ export default {
         this.myExtraTime = guestTimer;
         this.sideExtraTime = hostTimer;
       }
-      this.current1 = msg.turn_timer / 1000;
-      this.current2 = (this.side === 0 ? this.myExtraTime : this.sideExtraTime);
-      this.active1 = (this.current1 > 0)
-      this.active2 = (this.current1 === 0)
-      this.timerUpdate += 1
+      const now = Date.now() / 1000
+      this.timerStart1 = now
+      this.timerEnd1 = now + msg.turn_timer / 1000
+      this.timerEnd2 = now + msg.turn_timer / 1000 +
+        (this.side === 0 ? this.myExtraTime : this.sideExtraTime)
+      this.timersActive = true
     },
 
     onSocketMessage() {
@@ -274,7 +220,7 @@ export default {
         case 'game_update':{
           console.log('game_update', msg);
           this.answer = this.historySentenceParse(msg.text)
-          this.active1 = this.active2 = false
+          this.timersActive = false
           if (this.side === 0) this.inputAnswer = ''
           setTimeout(() => {
             this.clearAnswerSendTimer()
