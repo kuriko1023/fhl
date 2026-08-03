@@ -88,12 +88,15 @@ export default {
     };
   },
   onLoad() {
+    window.history.pushState({}, '', window.location.pathname + window.location.search);
     this.retrieveServerProfile(() => {
       this.status = '连接房间';
 
       if (getApp().globalData.myRoom) {
         delete getApp().globalData.myRoom;
         this.room = getApp().globalData.my.id;
+        window.history.pushState({}, '',
+          window.location.pathname + '?room=' + this.room);
       } else {
         let room = 'my';
         if (uni.getSystemInfoSync().uniPlatform === 'mp-weixin') {

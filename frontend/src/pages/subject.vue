@@ -135,6 +135,7 @@ name: "SubjectPage",
     }
   },
   onLoad() {
+    window.history.pushState({}, '', window.location.pathname + window.location.search);
     this.registerSocketMessageListener();
     this.isHost = getApp().globalData.isHost;
     this.hostAvatar = getApp().globalData.hostAvatar;

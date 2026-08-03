@@ -117,6 +117,7 @@ export default {
     }
   },
   onLoad() {
+    window.history.pushState({}, '', window.location.pathname + window.location.search);
     this.isHost = getApp().globalData.isHost;
     this.side = (this.isHost ? 0 : 1);
     this.hostAvatar = getApp().globalData.hostAvatar;

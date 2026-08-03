@@ -16,6 +16,7 @@ name: "LandingPage",
     profileInitialized: false,
   }),
   onLoad() {
+    window.history.pushState({}, '', window.location.pathname + window.location.search)
     this.retrieveServerProfile(() => this.profileInitialized = true)
     if (window.location.search.startsWith('?room=')) {
       uni.navigateTo({

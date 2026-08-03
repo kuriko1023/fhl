@@ -66,6 +66,7 @@ name: "FinishPage",
     }
   },
   onLoad() {
+    window.history.pushState({}, '', window.location.pathname + window.location.search);
     this.host = getApp().globalData.host;
     this.guest = getApp().globalData.guest;
     this.hostAvatar = getApp().globalData.hostAvatar;
