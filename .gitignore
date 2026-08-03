@@ -12,9 +12,7 @@
 /backend/config?*.json
 
 # 数据文件
-/backend/dataset.txt
-/backend/dataset_precal.bin
-/backend/fhl.db
+/backend/feihua.db
 
 # 前端库与发布包
 /frontend/node_modules/

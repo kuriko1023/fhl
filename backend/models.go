@@ -327,7 +327,7 @@ var Rooms map[string]*Room
 // 与数据库交互的逻辑
 
 func SetUpDatabase() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "fhl.db")
+	db, err := sql.Open("sqlite3", "feihua.db")
 	if err != nil {
 		return nil, err
 	}
