@@ -393,6 +393,59 @@ func loadPrecal() error {
 	// 解码 Gob
 	decoder := gob.NewDecoder(file)
 	for _, v := range gobValues {
+		// 特殊处理所有涉及的 map 类型以保持顺序确定性；Go 1.17 不支持泛型
+		if v, ok := v.(*map[rune]int); ok {
+			type entry struct {
+				K rune
+				V int
+			}
+			var a []entry
+			if err := decoder.Decode(&a); err != nil {
+				file.Close()
+				return err
+			}
+			m := make(map[rune]int)
+			for _, e := range a {
+				m[e.K] = e.V
+			}
+			*v = m
+			continue
+		}
+		if v, ok := v.(*map[RunePair]int); ok {
+			type entry struct {
+				K RunePair
+				V int
+			}
+			var a []entry
+			if err := decoder.Decode(&a); err != nil {
+				file.Close()
+				return err
+			}
+			m := make(map[RunePair]int)
+			for _, e := range a {
+				m[e.K] = e.V
+			}
+			*v = m
+			continue
+		}
+		if v, ok := v.(*map[string]int); ok {
+			type entry struct {
+				K string
+				V int
+			}
+			var a []entry
+			if err := decoder.Decode(&a); err != nil {
+				file.Close()
+				return err
+			}
+			m := make(map[string]int)
+			for _, e := range a {
+				m[e.K] = e.V
+			}
+			*v = m
+			continue
+		}
+		// 普通解码
 		if err := decoder.Decode(v); err != nil {
 			file.Close()
 			return err
@@ -430,7 +483,52 @@ func savePrecalGob() error {
 	// 保存 Gob
 	encoder := gob.NewEncoder(file)
 	for _, v := range gobValues {
-		if err := encoder.Encode(v); err != nil {
+		encodeValue := v
+		// 特殊处理所有涉及的 map 类型以保持顺序确定性；Go 1.17 不支持泛型
+		if v, ok := v.(*map[rune]int); ok {
+			type entry struct {
+				K rune
+				V int
+			}
+			a := make([]entry, len(*v))
+			for k, v := range *v {
+				a = append(a, entry{k, v})
+			}
+			sort.Slice(a, func(i int, j int) bool { return a[i].K < a[j].K })
+			encodeValue = &a
+		}
+		if v, ok := v.(*map[RunePair]int); ok {
+			type entry struct {
+				K RunePair
+				V int
+			}
+			a := make([]entry, len(*v))
+			for k, v := range *v {
+				a = append(a, entry{k, v})
+			}
+			sort.Slice(a, func(i int, j int) bool {
+				if a[i].K.A != a[j].K.A {
+					return a[i].K.A < a[j].K.A
+				} else {
+					return a[i].K.B < a[j].K.B
+				}
+			})
+			encodeValue = &a
+		}
+		if v, ok := v.(*map[string]int); ok {
+			type entry struct {
+				K string
+				V int
+			}
+			a := make([]entry, len(*v))
+			for k, v := range *v {
+				a = append(a, entry{k, v})
+			}
+			sort.Slice(a, func(i int, j int) bool { return a[i].K < a[j].K })
+			encodeValue = &a
+		}
+		// 普通编码
+		if err := encoder.Encode(encodeValue); err != nil {
 			file.Close()
 			return err
 		}
