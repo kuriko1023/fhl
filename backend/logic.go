@@ -27,8 +27,8 @@ type Article struct {
 // 后续建立了一个 LRU 缓存，某篇目不在缓存中时，对应项为 nil
 var articles []*Article
 
-// 每个篇目在文件中的偏移字节数
-var articleOffset []int64
+// 每个篇目在原始数据集文件中的偏移字节数
+var articleOffset []int32
 
 // 每个篇目为止的句子总数，用于压缩编码
 var articleContentOffset []uint32
@@ -530,7 +530,7 @@ func initDataset() {
 	}
 
 	articles = []*Article{}
-	articleOffset = []int64{}
+	articleOffset = []int32{}
 	articleContentOffset = []uint32{}
 	hotArticles = []*Article{}
 	hotWords1 = []string{}
@@ -540,7 +540,7 @@ func initDataset() {
 	hotWords2Count = map[RunePair]int{}
 
 	sc := bufio.NewScanner(file)
-	offs := int64(0)
+	offs := int32(0)
 	p := 0
 	q := 0
 	t := 0
@@ -548,7 +548,7 @@ func initDataset() {
 	maxWordsPerContent := 0
 	for sc.Scan() {
 		prevOffs := offs
-		offs += int64(len(sc.Text())) + 1
+		offs += int32(len(sc.Text())) + 1
 
 		// 将篇目加入列表
 		article, flag := parseArticle(len(articles), sc.Text())
@@ -792,7 +792,7 @@ func getArticle(id int) *Article {
 	}
 
 	// 读入篇目
-	datasetFile.Seek(articleOffset[id], os.SEEK_SET)
+	datasetFile.Seek(int64(articleOffset[id]), os.SEEK_SET)
 	datasetFileReader.Reset(datasetFile)
 	s, err := datasetFileReader.ReadString('\n')
 	if err != nil {
