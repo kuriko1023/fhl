@@ -395,52 +395,55 @@ func loadPrecal() error {
 	for _, v := range gobValues {
 		// 特殊处理所有涉及的 map 类型以保持顺序确定性；Go 1.17 不支持泛型
 		if v, ok := v.(*map[rune]int); ok {
-			type entry struct {
-				K rune
-				V int
+			var ks []rune
+			var vs []int
+			if err := decoder.Decode(&ks); err != nil {
+				file.Close()
+				return err
 			}
-			var a []entry
-			if err := decoder.Decode(&a); err != nil {
+			if err := decoder.Decode(&vs); err != nil {
 				file.Close()
 				return err
 			}
 			m := make(map[rune]int)
-			for _, e := range a {
-				m[e.K] = e.V
+			for i, k := range ks {
+				m[k] = vs[i]
 			}
 			*v = m
 			continue
 		}
 		if v, ok := v.(*map[RunePair]int); ok {
-			type entry struct {
-				K RunePair
-				V int
+			var ks []RunePair
+			var vs []int
+			if err := decoder.Decode(&ks); err != nil {
+				file.Close()
+				return err
 			}
-			var a []entry
-			if err := decoder.Decode(&a); err != nil {
+			if err := decoder.Decode(&vs); err != nil {
 				file.Close()
 				return err
 			}
 			m := make(map[RunePair]int)
-			for _, e := range a {
-				m[e.K] = e.V
+			for i, k := range ks {
+				m[k] = vs[i]
 			}
 			*v = m
 			continue
 		}
 		if v, ok := v.(*map[string]int); ok {
-			type entry struct {
-				K string
-				V int
+			var ks []string
+			var vs []int
+			if err := decoder.Decode(&ks); err != nil {
+				file.Close()
+				return err
 			}
-			var a []entry
-			if err := decoder.Decode(&a); err != nil {
+			if err := decoder.Decode(&vs); err != nil {
 				file.Close()
 				return err
 			}
 			m := make(map[string]int)
-			for _, e := range a {
-				m[e.K] = e.V
+			for i, k := range ks {
+				m[k] = vs[i]
 			}
 			*v = m
 			continue
@@ -484,53 +487,62 @@ func savePrecalGob() error {
 	encoder := gob.NewEncoder(file)
 	for _, v := range gobValues {
 		encodeValue := v
+		var encodeValueExtra interface{}
 		// 特殊处理所有涉及的 map 类型以保持顺序确定性；Go 1.17 不支持泛型
 		if v, ok := v.(*map[rune]int); ok {
-			type entry struct {
-				K rune
-				V int
+			ks := make([]rune, 0, len(*v))
+			for k, _ := range *v {
+				ks = append(ks, k)
 			}
-			a := make([]entry, len(*v))
-			for k, v := range *v {
-				a = append(a, entry{k, v})
+			sort.Slice(ks, func(i int, j int) bool { return ks[i] < ks[j] })
+			vs := make([]int, len(*v))
+			for i, k := range ks {
+				vs[i] = (*v)[k]
 			}
-			sort.Slice(a, func(i int, j int) bool { return a[i].K < a[j].K })
-			encodeValue = &a
+			encodeValue = &ks
+			encodeValueExtra = &vs
 		}
 		if v, ok := v.(*map[RunePair]int); ok {
-			type entry struct {
-				K RunePair
-				V int
+			ks := make([]RunePair, 0, len(*v))
+			for k, _ := range *v {
+				ks = append(ks, k)
 			}
-			a := make([]entry, len(*v))
-			for k, v := range *v {
-				a = append(a, entry{k, v})
-			}
-			sort.Slice(a, func(i int, j int) bool {
-				if a[i].K.A != a[j].K.A {
-					return a[i].K.A < a[j].K.A
+			sort.Slice(ks, func(i int, j int) bool {
+				if ks[i].A != ks[j].A {
+					return ks[i].A < ks[j].A
 				} else {
-					return a[i].K.B < a[j].K.B
+					return ks[i].B < ks[j].B
 				}
 			})
-			encodeValue = &a
+			vs := make([]int, len(*v))
+			for i, k := range ks {
+				vs[i] = (*v)[k]
+			}
+			encodeValue = &ks
+			encodeValueExtra = &vs
 		}
 		if v, ok := v.(*map[string]int); ok {
-			type entry struct {
-				K string
-				V int
+			ks := make([]string, 0, len(*v))
+			for k, _ := range *v {
+				ks = append(ks, k)
 			}
-			a := make([]entry, len(*v))
-			for k, v := range *v {
-				a = append(a, entry{k, v})
+			sort.Slice(ks, func(i int, j int) bool { return ks[i] < ks[j] })
+			vs := make([]int, len(*v))
+			for i, k := range ks {
+				vs[i] = (*v)[k]
 			}
-			sort.Slice(a, func(i int, j int) bool { return a[i].K < a[j].K })
-			encodeValue = &a
+			encodeValue = &ks
+			encodeValueExtra = &vs
 		}
-		// 普通编码
 		if err := encoder.Encode(encodeValue); err != nil {
 			file.Close()
 			return err
+		}
+		if encodeValueExtra != nil {
+			if err := encoder.Encode(encodeValueExtra); err != nil {
+				file.Close()
+				return err
+			}
 		}
 	}
 
